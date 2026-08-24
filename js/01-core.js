@@ -1141,8 +1141,14 @@ function canopy(x, y, z, rx, ry, n, mat, group, seed){
    the sky shader stands in for the ground instead. */
 var envScene = new T.Scene();
 envScene.add(new T.Mesh(new T.SphereGeometry(100, 32, 20), skyMat));
-var envRT = null, envPM = null;
+var envRT = null, envPM = null, HDRI_READY = false;
 function buildEnv(){
+  /* Once the real captured sky (below) has loaded, reflections stay fixed to
+     it - the time-of-day slider keeps driving the sun, the sky dome and every
+     direct light, just not this pass. A photographed sky doesn't have a
+     dusk-shifted twin to swap in, and re-tinting the PMREM output per frame
+     costs far more than the mismatch is worth. */
+  if(HDRI_READY) return;
   /* A fresh generator every time, and the old one released only after the new
      texture is in place. Disposing first, or reusing one generator across
      rebuilds, yields a target that renders every lit surface black - which is
@@ -1155,6 +1161,21 @@ function buildEnv(){
   envRT = rt; envPM = pm;
 }
 buildEnv();
+
+/* Swap in a real captured sky for reflections as soon as it's downloaded.
+   Everything glazed, wet or polished picks up actual cloud detail and
+   horizon colour instead of the smooth procedural gradient. */
+new T.RGBELoader().load("assets/sky.hdr", function(hdrTex){
+  hdrTex.mapping = T.EquirectangularReflectionMapping;
+  var pm = new T.PMREMGenerator(renderer);
+  var rt = pm.fromEquirectangular(hdrTex);
+  scene.environment = rt.texture;
+  hdrTex.dispose();
+  pm.dispose();
+  if(envRT) envRT.dispose();
+  envRT = null;
+  HDRI_READY = true;
+});
 
 /* ---------- collision + floor registries ---------- */
 var COLLIDERS = [];
