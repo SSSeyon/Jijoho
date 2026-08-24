@@ -1,0 +1,370 @@
+"use strict";
+/* ============================================================
+   PART 3  -  the site: ground, fence, gate, driveway, garden
+
+   REVISION: hard-standing cut back hard. The first pass paved
+   roughly 211 sqm of the compound - both side yards at full
+   width, a deep rear terrace, a full-width BQ apron and a fully
+   paved utility yard - which left the plot reading as concrete
+   with grass in the gaps. This pass keeps paving only where a
+   car, a wheelbarrow or a bin actually has to run and hands the
+   rest back to lawn.  Paved now: ~128 sqm.  Soft: ~290 sqm.
+   ============================================================ */
+
+/* ---------- terrain ---------- */
+var groundGeo = new T.PlaneGeometry(400,400);
+(function(){ /* scale the ground plane UVs so the scrub tiles at 3.2 m */
+  var uv = groundGeo.attributes.uv, k = 400/3.2;
+  for(var i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*k, uv.getY(i)*k);
+  uv.needsUpdate = true;
+})();
+var groundMesh = new T.Mesh(groundGeo, MAT.scrub);
+groundMesh.rotation.x = -Math.PI/2; groundMesh.position.y = -0.02;
+groundMesh.receiveShadow = true; gSite.add(groundMesh);
+addFloor(-200,200,-200,200,0);
+
+/* street in front */
+addBox(120, 0.10, 7.4, 0, -0.05, Z0-1.6-3.7, MAT.asphalt, gSite, {cast:false});
+addBox(120, 0.16, 1.5, 0, -0.02, Z0-0.75, MAT.paver, gSite, {cast:false});
+addBox(120, 0.20, 0.14, 0, 0.02, Z0-1.52, MAT.white, gSite, {cast:false});   /* kerb */
+for(var i=-5;i<=5;i++){
+  addBox(2.4,0.02,0.16, i*6.0, 0.02, Z0-1.6-3.7, M(0xe8e2cf,{r:0.92}), gSite, {cast:false});
+}
+/* No neighbouring buildings. Everything standing in this model is on your
+   plot; the land beyond the boundary wall is left as open ground so nothing
+   in view can be mistaken for part of the property. */
+
+/* ---------- plot surfaces ---------- */
+function surf(x0,z0,x1,z1,mat,y){
+  addBox(Math.abs(x1-x0), 0.06, Math.abs(z1-z0), (x0+x1)/2, (y||0)-0.03, (z0+z1)/2, mat, gSite, {cast:false});
+}
+/* lawn base over the whole plot; everything below is cut out of it */
+surf(X0,Z0,X1,Z1,MAT.grass,0.005);
+
+/* driveway + carport apron - 7.6 x 5.2 m, cars nose-in   (39 sqm) */
+surf(-9.475,-16.60,-1.90,-11.40, MAT.paver, 0.02);
+[-6.75,-4.15].forEach(function(x){ addBox(0.09,0.02,4.6,x,0.04,-13.9,MAT.white,gSite,{cast:false}); });
+
+/* entrance walkway, 1.2 m wide, pedestrian gate straight to the porch (8.5 sqm) */
+surf(-1.05,-16.60,0.15,-11.56, MAT.paverWarm, 0.02);
+surf(-1.05,-12.30, 2.30,-11.56, MAT.paverWarm, 0.02);
+
+/* east service path, 1.1 m - the only run a bin or a jerrycan needs  (28 sqm) */
+surf( 7.95,-11.40, 9.05,14.20, MAT.paver, 0.02);
+
+/* west side: stepping stones set into the lawn instead of a slab path (3 sqm) */
+for(var sz=-10.60; sz<=3.20; sz+=0.78){
+  addBox(0.55,0.07,0.55, -7.90, 0.015, sz, MAT.paverWarm, gSite, {cast:false});
+}
+
+/* rear terrace, pulled tight against the house   (14 sqm) */
+surf(-1.20,1.74,4.80,4.10, MAT.paverWarm, 0.02);
+
+/* BQ apron - 1.1 m, just the doorstep strip   (15 sqm)
+   Built into gBQ so it disappears with the block when the court is up. */
+addBox(13.80, 0.06, 1.10, 0, -0.01, 7.19, MAT.paver, gBQ, {cast:false});
+
+/* utility yard - a 1.4 m service strip hard against the rear wall.
+   It used to run 3 m out from the wall, which put the generator and the tank
+   stand in the middle of the only piece of ground big enough for a court.
+   Pulled back, it still works and it clears z = 15.0 southwards. (14 sqm) */
+surf(-6.60,15.10,-3.20,16.50, MAT.paver, 0.02);
+surf(-0.60,15.10, 4.20,16.50, MAT.paver, 0.02);
+
+/* ---------- perimeter fence ---------- */
+var FH = 2.40, FT = 0.23;
+function fenceRun(x0,z0,x1,z1){
+  var horiz = Math.abs(z1-z0)<1e-6;
+  var len = horiz?Math.abs(x1-x0):Math.abs(z1-z0);
+  if(len<0.05) return;
+  var cx=(x0+x1)/2, cz=(z0+z1)/2;
+  addBox(horiz?len:FT, FH, horiz?FT:len, cx, FH/2, cz, MAT.fence, gSite, {solid:true});
+  addBox(horiz?len:FT+0.10, 0.16, horiz?FT+0.10:len, cx, FH+0.08, cz, MAT.accent, gSite, {});
+  var n = Math.max(1, Math.round(len/3.2));
+  for(var i=0;i<=n;i++){
+    var f=i/n;
+    var px = horiz? x0+(x1-x0)*f : cx;
+    var pz = horiz? cz : z0+(z1-z0)*f;
+    addBox(0.36,FH+0.42,0.36, px, (FH+0.42)/2, pz, MAT.stone, gSite, {solid:true});
+    addBox(0.44,0.10,0.44, px, FH+0.47, pz, MAT.accent, gSite, {});
+  }
+}
+/* front wall with two gate openings */
+fenceRun(X0, Z0, -8.60, Z0);
+fenceRun(-4.10, Z0, -1.15, Z0);
+fenceRun(0.25, Z0, X1, Z0);
+fenceRun(X0, Z1, X1, Z1);
+fenceRun(X0, Z0, X0, Z1);
+fenceRun(X1, Z0, X1, Z1);
+
+/* gate pillars */
+function gatePillar(x,z,lamp){
+  addBox(0.55,3.10,0.55,x,1.55,z,MAT.stone,gSite,{solid:true});
+  addBox(0.68,0.14,0.68,x,3.17,z,MAT.accent,gSite,{});
+  if(lamp){
+    addBox(0.26,0.42,0.26,x,3.45,z,MAT.lamp,gSite,{cast:false});
+    addBox(0.34,0.08,0.34,x,3.70,z,MAT.accent,gSite,{});
+  }
+}
+gatePillar(-8.85,Z0,true); gatePillar(-3.85,Z0,true);
+gatePillar(-1.30,Z0,false); gatePillar(0.40,Z0,false);
+
+/* sliding vehicle gate (half open, parked to the left) */
+(function(){
+  var gx0=-8.60, gx1=-4.10, w=gx1-gx0;
+  var open = 1.5;
+  addBox(w-open, 0.16, 0.10, gx0+(w-open)/2, 2.32, Z0, MAT.gate, gSite, {});
+  addBox(w-open, 0.16, 0.10, gx0+(w-open)/2, 0.14, Z0, MAT.gate, gSite, {});
+  var n=Math.round((w-open)/0.19);
+  for(var i=0;i<n;i++){
+    addBox(0.10,2.22,0.09, gx0+0.1+i*0.19, 1.22, Z0, MAT.gate, gSite, {});
+  }
+  addCollider(gx0-0.1, gx0+(w-open)+0.1, Z0-0.12, Z0+0.12, 0, 2.4);
+  addBox(4.9,0.06,0.16,-6.35,0.03,Z0+0.30,MAT.steel,gSite,{cast:false});
+})();
+/* pedestrian gate left open - you can walk out to the street */
+(function(){
+  var gx0=-1.15;
+  var n=6;
+  for(var i=0;i<n;i++) addBox(0.07,2.05,0.07, gx0-0.10, 1.05, Z0-0.10-i*0.16, MAT.gate, gSite, {});
+  addBox(0.10,0.10,1.05, gx0-0.10, 2.12, Z0-0.55, MAT.gate, gSite, {});
+})();
+/* house number plaque */
+addBox(0.46,0.30,0.04, -1.30, 1.85, Z0-0.30, MAT.accent, gSite, {});
+
+/* rear service gate in the boundary wall (utility yard) */
+addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gSite, {});
+
+/* ---------- carport ---------- */
+(function(){
+  var cx0=-9.30, cx1=-2.30, cz0=-16.30, cz1=-11.50;
+  var cy=3.05;
+  addBox(cx1-cx0+0.5, 0.16, cz1-cz0+0.5, (cx0+cx1)/2, cy, (cz0+cz1)/2, MAT.accent, gSite, {});
+  addBox(cx1-cx0+0.3, 0.10, cz1-cz0+0.3, (cx0+cx1)/2, cy+0.11, (cz0+cz1)/2, MAT.fascia, gSite, {});
+  [[cx0+0.2,cz0+0.2],[cx1-0.2,cz0+0.2],[cx0+0.2,cz1-0.2],[cx1-0.2,cz1-0.2]].forEach(function(p){
+    addBox(0.26,cy,0.26,p[0],cy/2,p[1],MAT.accent,gSite,{solid:true});
+  });
+  [[-7.6,-15.0],[-4.0,-15.0],[-7.6,-12.6],[-4.0,-12.6]].forEach(function(p){
+    var m=addCyl(0.09,0.09,0.04,p[0],cy-0.10,p[1],MAT.lamp,gSite,12); m.castShadow=false;
+  });
+})();
+
+/* ---------- cars ---------- */
+function car(cx,cz,y,mat,facing){
+  var g=new T.Group(); gSite.add(g);
+  var b=function(w,h,d,x,yy,z,m){ var q=new T.Mesh(BOXG,m); q.scale.set(w,h,d); q.position.set(x,yy,z); q.castShadow=true; q.receiveShadow=true; g.add(q); };
+  b(1.92,0.62,4.42, cx, y+0.78, cz, mat);
+  b(1.80,0.24,4.30, cx, y+1.10, cz, mat);
+  b(1.74,0.62,2.45, cx, y+1.40, cz, MAT.carGlass);
+  b(1.80,0.14,2.30, cx, y+1.72, cz-0.05, mat);
+  b(1.86,0.20,0.30, cx, y+0.62, cz-2.20, MAT.black);
+  b(1.86,0.20,0.30, cx, y+0.62, cz+2.20, MAT.black);
+  b(0.70,0.16,0.06, cx-0.55, y+0.92, cz-2.22, MAT.white);
+  b(0.70,0.16,0.06, cx+0.55, y+0.92, cz-2.22, MAT.white);
+  b(0.62,0.14,0.06, cx-0.60, y+0.98, cz+2.22, MAT.bloom1);
+  b(0.62,0.14,0.06, cx+0.60, y+0.98, cz+2.22, MAT.bloom1);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(s){
+    var w=new T.Mesh(new T.CylinderGeometry(0.36,0.36,0.24,20), MAT.tyre);
+    w.rotation.z=Math.PI/2; w.position.set(cx+s[0]*0.90, y+0.36, cz+s[1]*1.45);
+    w.castShadow=true; g.add(w);
+    var r=new T.Mesh(new T.CylinderGeometry(0.20,0.20,0.26,14), MAT.steel);
+    r.rotation.z=Math.PI/2; r.position.set(cx+s[0]*0.91, y+0.36, cz+s[1]*1.45); g.add(r);
+  });
+  addCollider(cx-1.0,cx+1.0,cz-2.3,cz+2.3,0,1.9);
+}
+car(-6.75,-13.85,0,MAT.carBody);
+car(-4.15,-13.85,0,MAT.carBody2);
+
+/* ---------- planting ---------- */
+/* palm fronds are drooping strips of quads rather than flat planks, which is
+   most of the difference between reading as a diagram and reading as a tree */
+function frondGeo(len, wid, droop, segs){
+  var pos=[], uvs=[];
+  for(var i=0;i<segs;i++){
+    var t0=i/segs, t1=(i+1)/segs;
+    var y0=-droop*t0*t0*len, y1=-droop*t1*t1*len;
+    var x0=t0*len, x1=t1*len;
+    var w0=wid*Math.sin(Math.PI*Math.min(1,t0*1.15+0.08));
+    var w1=wid*Math.sin(Math.PI*Math.min(1,t1*1.15+0.08));
+    pos.push(x0,y0,-w0, x1,y1,-w1, x1,y1,w1);
+    pos.push(x0,y0,-w0, x1,y1,w1, x0,y0,w0);
+    uvs.push(t0,0, t1,0, t1,1, t0,0, t1,1, t0,1);
+  }
+  var g=new T.BufferGeometry();
+  g.setAttribute("position", new T.Float32BufferAttribute(pos,3));
+  g.setAttribute("uv", new T.Float32BufferAttribute(uvs,2));
+  g.computeVertexNormals();
+  return g;
+}
+var FROND = frondGeo(2.05, 0.30, 0.55, 7);
+function palm(x,z,h){
+  h=h||6.2;
+  var lean = (Math.random()-0.5)*0.10;
+  for(var s=0;s<7;s++){
+    var t=s/7, r0=0.22-0.11*t;
+    var m=addCyl(r0*0.94, r0, h/7+0.02, x+lean*t*h*0.16, h*(t+0.5/7), z, MAT.trunk, gSite, 12);
+    m.rotation.z = -lean*0.5;
+  }
+  var top = h+0.05, tx = x+lean*h*0.16;
+  for(var i=0;i<13;i++){
+    var a=i*(Math.PI*2/13)+Math.random()*0.12, tilt=0.30+(i%4)*0.20;
+    var f=new T.Mesh(FROND, MAT.palm);
+    f.position.set(tx, top, z);
+    f.rotation.y=-a; f.rotation.z=-tilt;
+    f.castShadow=true; f.receiveShadow=true;
+    gSite.add(f);
+  }
+  addSphere(0.30, tx, top+0.06, z, MAT.leaf, gSite);
+  for(var c=0;c<5;c++){
+    addSphere(0.11, tx+Math.cos(c*1.3)*0.30, top-0.16, z+Math.sin(c*1.3)*0.30, MAT.leaf2, gSite);
+  }
+  addCollider(x-0.28,x+0.28,z-0.28,z+0.28,0,2.5);
+}
+/* broadleaf: an irregular cluster rather than a snowman of three spheres */
+function tree(x,z,s){
+  s=s||1;
+  addCyl(0.15*s,0.28*s,2.4*s,x,1.20*s,z,MAT.trunk,gSite,12);
+  [[0.5,0.7,1.9],[-0.6,0.5,2.1],[0.1,-0.7,2.0]].forEach(function(b){
+    var m=addCyl(0.07*s,0.11*s,1.1*s, x+b[0]*0.45*s, b[2]*s, z+b[1]*0.45*s, MAT.trunk, gSite, 8);
+    m.rotation.z = -b[0]*0.45; m.rotation.x = b[1]*0.45;
+  });
+  var seed = Math.abs(Math.sin(x*12.9898+z*78.233))*43758.5453;
+  function rr(i){ var v=Math.sin(seed+i*1.7)*43758.5453; return v-Math.floor(v); }
+  for(var i=0;i<11;i++){
+    var a=i*2.399, rad=(0.42+rr(i)*0.62)*s;
+    var dist=(0.25+rr(i+40)*1.25)*s;
+    var m=addSphere(rad, x+Math.cos(a)*dist, (2.75+(rr(i+80)-0.45)*1.30)*s, z+Math.sin(a)*dist,
+      (i%3===0)?MAT.leaf2:MAT.leaf, gSite);
+    m.scale.set(1, 0.78+rr(i+120)*0.30, 1);
+  }
+  addCollider(x-0.35*s,x+0.35*s,z-0.35*s,z+0.35*s,0,2.4*s);
+}
+function shrub(x,z,s){
+  s=s||1;
+  for(var i=0;i<5;i++){
+    var a=i*2.399;
+    addSphere((0.24+((i*37)%9)/26)*s, x+Math.cos(a)*0.24*s, (0.30+((i*53)%7)/17)*s, z+Math.sin(a)*0.24*s,
+      (i%2)?MAT.hedge:MAT.leaf, gSite);
+  }
+}
+function hedgeRun(x0,z0,x1,z1,h){
+  h=h||0.85;
+  var horiz=Math.abs(z1-z0)<1e-6;
+  var len=horiz?Math.abs(x1-x0):Math.abs(z1-z0);
+  addBox(horiz?len:0.6, h, horiz?0.6:len, (x0+x1)/2, h/2, (z0+z1)/2, MAT.hedge, gSite, {solid:true});
+  /* break the box silhouette with a scalloped top */
+  var n=Math.max(2,Math.round(len/0.55));
+  for(var i=0;i<n;i++){
+    var f=(i+0.5)/n;
+    addSphere(0.33, horiz?(x0+(x1-x0)*f):(x0+x1)/2, h-0.06, horiz?(z0+z1)/2:(z0+(z1-z0)*f), MAT.hedge, gSite);
+  }
+}
+function flowerBed(x0,z0,x1,z1){
+  var w=Math.abs(x1-x0), d=Math.abs(z1-z0), cx=(x0+x1)/2, cz=(z0+z1)/2;
+  addBox(w,0.30,d,cx,0.15,cz,MAT.soil,gSite,{cast:false});
+  addBox(w+0.12,0.34,0.12,cx,0.17,cz-d/2,MAT.planter,gSite,{});
+  addBox(w+0.12,0.34,0.12,cx,0.17,cz+d/2,MAT.planter,gSite,{});
+  addBox(0.12,0.34,d,cx-w/2,0.17,cz,MAT.planter,gSite,{});
+  addBox(0.12,0.34,d,cx+w/2,0.17,cz,MAT.planter,gSite,{});
+  var cols=[MAT.bloom1,MAT.bloom2,MAT.bloom3,MAT.leaf2];
+  var n=Math.max(6,Math.round(w*d*3.0));
+  for(var i=0;i<n;i++){
+    var px=cx+(Math.random()-0.5)*(w-0.35);
+    var pz=cz+(Math.random()-0.5)*(d-0.35);
+    addSphere(0.11+Math.random()*0.09, px, 0.36+Math.random()*0.14, pz, MAT.hedge, gSite);
+    addSphere(0.08+Math.random()*0.07, px+0.06, 0.50+Math.random()*0.14, pz, cols[i%4], gSite);
+  }
+  addCollider(cx-w/2,cx+w/2,cz-d/2,cz+d/2,0,0.5);
+}
+function potPlant(x,z,y,g,s){
+  s=s||1;
+  addCyl(0.24*s,0.19*s,0.44*s,x,y+0.22*s,z,MAT.planter,g,14,{furn:true});
+  addSphere(0.34*s,x,y+0.78*s,z,MAT.leaf,g,{furn:true});
+  addSphere(0.24*s,x+0.22*s,y+0.62*s,z,MAT.leaf2,g,{furn:true});
+  addCollider(x-0.3*s,x+0.3*s,z-0.3*s,z+0.3*s,y,y+0.6*s);
+}
+
+/* ---------- front garden: planting on the edges, the lawn left open ---------- */
+palm(8.55,-15.90,5.4); palm(6.60,-16.15,6.0);
+flowerBed(1.40,-16.35,4.60,-15.70);
+/* low shrubs, not a hedge, between the drive and the walk: a hedge here reads
+   well in plan but stands in the 1.2 m walkway once you are actually on it */
+[-15.90,-14.60,-13.30,-12.00].forEach(function(z){ shrub(-1.62,z,0.85); });
+hedgeRun(0.60,-11.30,7.40,-11.30,0.7);
+tree(9.00,-12.90,0.80);
+shrub(2.10,-12.20); shrub(3.40,-15.10); shrub(5.30,-12.60);
+
+/* water feature, tucked into the corner clear of the lawn */
+(function(){
+  var x=8.35, z=-14.35;
+  addCyl(1.20,1.30,0.55,x,0.27,z,MAT.stone,gSite,28);
+  addCyl(1.04,1.04,0.10,x,0.52,z,MAT.water,gSite,28);
+  addCyl(0.24,0.32,0.85,x,0.42,z,MAT.stone,gSite,18);
+  addCyl(0.46,0.10,0.16,x,0.92,z,MAT.water,gSite,18);
+  addCollider(x-1.4,x+1.4,z-1.4,z+1.4,0,0.6);
+})();
+
+/* ---------- side yards ---------- */
+hedgeRun(-9.35,-10.60,-9.35,13.60,0.9);
+hedgeRun( 9.35,-10.60, 9.35,13.60,0.9);
+[-6.0,-1.0,4.0,9.0].forEach(function(z){ potPlant(-9.50,z,0,gSite,1.05); });
+
+/* ---------- rear garden: one clear lawn, everything on the perimeter ---------- */
+tree(-8.90,0.60,0.75);
+tree(-8.85,12.40,0.70);
+
+shrub(7.30,2.40); shrub(7.30,5.60); shrub(-8.60,9.40);
+
+/* rear terrace furniture, hard against the house */
+diningSet(1.80,2.90,0.02,6,0,gSite);
+(function(){ // parasol
+  addCyl(0.05,0.05,2.35,1.80,1.20,2.90,MAT.steel,gSite,12);
+  var c=new T.Mesh(new T.ConeGeometry(1.65,0.55,12), MAT.linen);
+  c.position.set(1.80,2.55,2.90); c.castShadow=true; c.receiveShadow=true; gSite.add(c);
+})();
+/* barbecue against the house wall, clear of the rear door */
+addBox(1.20,0.90,0.60,4.10,0.45,2.20,MAT.counter,gSite,{solid:true});
+addBox(1.26,0.06,0.66,4.10,0.93,2.20,MAT.steel,gSite,{});
+
+/* ---------- gazebo, moved off the lawn into the west corner ---------- */
+(function(){
+  var gx=-7.35, gz=5.30, s=1.45;
+  addBox(s*2+0.5,0.22,s*2+0.5,gx,0.11,gz,MAT.paverWarm,gSite,{cast:false});
+  addFloor(gx-s-0.25,gx+s+0.25,gz-s-0.25,gz+s+0.25,0.22);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){
+    addBox(0.20,2.60,0.20, gx+p[0]*s, 1.52, gz+p[1]*s, MAT.wood, gSite, {solid:true});
+  });
+  addBox(s*2+0.3,0.18,0.18, gx, 2.90, gz-s, MAT.wood, gSite, {});
+  addBox(s*2+0.3,0.18,0.18, gx, 2.90, gz+s, MAT.wood, gSite, {});
+  addBox(0.18,0.18,s*2+0.3, gx-s, 2.90, gz, MAT.wood, gSite, {});
+  addBox(0.18,0.18,s*2+0.3, gx+s, 2.90, gz, MAT.wood, gSite, {});
+  hipRoof(gx-s-0.1,gz-s-0.1,gx+s+0.1,gz+s+0.1, 3.0, 1.05, 0.45, MAT.woodDark, gSite);
+  sofa(gx,gz-s+0.55,0.22,2.0,0,gSite,MAT.fabric2);
+  coffeeTable(gx,gz+0.25,0.22,1.0,0.6,gSite);
+  var pl=addCyl(0.16,0.08,0.20,gx,3.10,gz,MAT.lamp,gSite,12); pl.castShadow=false;
+})();
+
+/* ---------- utility yard behind the BQ ---------- */
+(function(){
+  /* generator house, backed onto the rear wall */
+  addBox(2.60,2.35,1.40, -4.90, 1.175, 15.80, MAT.wallExt, gSite, {solid:true});
+  hipRoof(-6.20,15.10,-3.60,16.50, 2.35, 0.50, 0.28, MAT.roof, gSite);
+  addBox(1.10,0.55,0.06, -4.90, 1.35, 15.09, MAT.steel, gSite, {});
+  /* overhead water tanks on a stand */
+  var tx=1.80, tz=15.85;
+  [[-0.85,-0.50],[0.85,-0.50],[-0.85,0.50],[0.85,0.50]].forEach(function(p){
+    addBox(0.14,3.20,0.14, tx+p[0], 1.60, tz+p[1], MAT.steel, gSite, {solid:true});
+  });
+  addBox(2.10,0.12,1.40, tx, 3.25, tz, MAT.steel, gSite, {});
+  addCyl(0.72,0.72,1.35, tx-0.02, 4.00, tz, M(0x2f5f8f,{r:0.45,m:0.10,env:1.4}), gSite, 22);
+  addCyl(0.78,0.78,0.10, tx-0.02, 4.72, tz, M(0x24476b,{r:0.45,m:0.10}), gSite, 22);
+  /* septic / soakaway covers - moved to the east strip, clear of the court */
+  addBox(1.40,0.10,1.40, 8.40, 0.05, 15.60, MAT.paver, gSite, {cast:false});
+  addBox(1.10,0.10,1.10, 8.45, 0.05, 13.60, MAT.paver, gSite, {cast:false});
+  /* drying line, tucked against the rear wall */
+  addCyl(0.06,0.06,2.0,-1.40,1.0,15.30,MAT.steel,gSite,10);
+  addCyl(0.06,0.06,2.0,-1.40,1.0,16.50,MAT.steel,gSite,10);
+  addBox(0.03,0.03,1.2,-1.40,1.95,15.90,MAT.white,gSite,{cast:false});
+})();
+
+/* ---------- solar array on the BQ roof is added with the BQ ---------- */
