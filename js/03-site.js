@@ -4,7 +4,7 @@
 
    REVISION: hard-standing cut back hard. The first pass paved
    roughly 211 sqm of the compound - both side yards at full
-   width, a deep rear terrace, a full-width BQ apron and a fully
+   width, a deep rear terrace, a full-width rear apron and a fully
    paved utility yard - which left the plot reading as concrete
    with grass in the gaps. This pass keeps paving only where a
    car, a wheelbarrow or a bin actually has to run and hands the
@@ -35,8 +35,8 @@ for(var i=-5;i<=5;i++){
    in view can be mistaken for part of the property. */
 
 /* ---------- plot surfaces ---------- */
-function surf(x0,z0,x1,z1,mat,y){
-  addBox(Math.abs(x1-x0), 0.06, Math.abs(z1-z0), (x0+x1)/2, (y||0)-0.03, (z0+z1)/2, mat, gSite, {cast:false});
+function surf(x0,z0,x1,z1,mat,y,g){
+  addBox(Math.abs(x1-x0), 0.06, Math.abs(z1-z0), (x0+x1)/2, (y||0)-0.03, (z0+z1)/2, mat, g||gSite, {cast:false});
 }
 /* lawn base over the whole plot; everything below is cut out of it */
 surf(X0,Z0,X1,Z1,MAT.grass,0.005);
@@ -60,9 +60,6 @@ for(var sz=-10.60; sz<=3.20; sz+=0.78){
 /* rear terrace, pulled tight against the house   (14 sqm) */
 surf(-1.20,1.74,4.80,4.10, MAT.paverWarm, 0.02);
 
-/* BQ apron - 1.1 m, just the doorstep strip   (15 sqm)
-   Built into gBQ so it disappears with the block when the court is up. */
-addBox(13.80, 0.06, 1.10, 0, -0.01, 7.19, MAT.paver, gBQ, {cast:false});
 
 /* utility yard - a 1.4 m service strip hard against the rear wall.
    It used to run 3 m out from the wall, which put the generator and the tank
@@ -202,7 +199,7 @@ function palm(x,z,h){
   var lean = (Math.random()-0.5)*0.10;
   for(var s=0;s<7;s++){
     var t=s/7, r0=0.22-0.11*t;
-    var m=addCyl(r0*0.94, r0, h/7+0.02, x+lean*t*h*0.16, h*(t+0.5/7), z, MAT.trunk, gSite, 12);
+    var m=addCyl(r0*0.94, r0, h/7+0.02, x+lean*t*h*0.16, h*(t+0.5/7), z, MAT.trunk, (PGRP||gSite), 12);
     m.rotation.z = -lean*0.5;
   }
   var top = h+0.05, tx = x+lean*h*0.16;
@@ -212,75 +209,77 @@ function palm(x,z,h){
     f.position.set(tx, top, z);
     f.rotation.y=-a; f.rotation.z=-tilt;
     f.castShadow=true; f.receiveShadow=true;
-    gSite.add(f);
+    (PGRP||gSite).add(f);
   }
-  addSphere(0.30, tx, top+0.06, z, MAT.leaf, gSite);
+  /* the crown shoot, and a ring of coconuts under the fronds */
+  canopy(tx, top+0.10, z, 0.30, 0.34, 3, MAT.foliage2, (PGRP||gSite), Math.floor(x*11+z*5)+1);
   for(var c=0;c<5;c++){
-    addSphere(0.11, tx+Math.cos(c*1.3)*0.30, top-0.16, z+Math.sin(c*1.3)*0.30, MAT.leaf2, gSite);
+    addSphere(0.11, tx+Math.cos(c*1.3)*0.30, top-0.16, z+Math.sin(c*1.3)*0.30, MAT.leaf2, (PGRP||gSite));
   }
   addCollider(x-0.28,x+0.28,z-0.28,z+0.28,0,2.5);
 }
-/* broadleaf: an irregular cluster rather than a snowman of three spheres */
+/* broadleaf: a trunk, three limbs and a canopy of intersecting leaf cards */
 function tree(x,z,s){
   s=s||1;
-  addCyl(0.15*s,0.28*s,2.4*s,x,1.20*s,z,MAT.trunk,gSite,12);
+  addCyl(0.15*s,0.28*s,2.4*s,x,1.20*s,z,MAT.trunk,(PGRP||gSite),12);
   [[0.5,0.7,1.9],[-0.6,0.5,2.1],[0.1,-0.7,2.0]].forEach(function(b){
-    var m=addCyl(0.07*s,0.11*s,1.1*s, x+b[0]*0.45*s, b[2]*s, z+b[1]*0.45*s, MAT.trunk, gSite, 8);
+    var m=addCyl(0.07*s,0.11*s,1.1*s, x+b[0]*0.45*s, b[2]*s, z+b[1]*0.45*s, MAT.trunk, (PGRP||gSite), 8);
     m.rotation.z = -b[0]*0.45; m.rotation.x = b[1]*0.45;
   });
-  var seed = Math.abs(Math.sin(x*12.9898+z*78.233))*43758.5453;
-  function rr(i){ var v=Math.sin(seed+i*1.7)*43758.5453; return v-Math.floor(v); }
-  for(var i=0;i<11;i++){
-    var a=i*2.399, rad=(0.42+rr(i)*0.62)*s;
-    var dist=(0.25+rr(i+40)*1.25)*s;
-    var m=addSphere(rad, x+Math.cos(a)*dist, (2.75+(rr(i+80)-0.45)*1.30)*s, z+Math.sin(a)*dist,
-      (i%3===0)?MAT.leaf2:MAT.leaf, gSite);
-    m.scale.set(1, 0.78+rr(i+120)*0.30, 1);
-  }
+  var seed = Math.floor(Math.abs(Math.sin(x*12.9898+z*78.233))*43758.5453);
+  /* Two overlapping canopies rather than one: a big mass, and a smaller one
+     offset and turned, which breaks the ellipsoid silhouette that a single
+     card cluster still has when you see it against the sky. */
+  canopy(x, 3.05*s, z, 1.85*s, 1.30*s, 9, MAT.foliage,  (PGRP||gSite), seed);
+  canopy(x + 0.42*s, 3.65*s, z - 0.30*s, 1.15*s, 0.86*s, 6, MAT.foliage2, (PGRP||gSite), seed+37);
   addCollider(x-0.35*s,x+0.35*s,z-0.35*s,z+0.35*s,0,2.4*s);
 }
 function shrub(x,z,s){
   s=s||1;
-  for(var i=0;i<5;i++){
-    var a=i*2.399;
-    addSphere((0.24+((i*37)%9)/26)*s, x+Math.cos(a)*0.24*s, (0.30+((i*53)%7)/17)*s, z+Math.sin(a)*0.24*s,
-      (i%2)?MAT.hedge:MAT.leaf, gSite);
-  }
+  var seed = Math.floor(Math.abs(Math.sin(x*31.7+z*17.3))*9781);
+  canopy(x, 0.42*s, z, 0.48*s, 0.40*s, 5, MAT.foliageLo, (PGRP||gSite), seed);
 }
 function hedgeRun(x0,z0,x1,z1,h){
   h=h||0.85;
   var horiz=Math.abs(z1-z0)<1e-6;
   var len=horiz?Math.abs(x1-x0):Math.abs(z1-z0);
-  addBox(horiz?len:0.6, h, horiz?0.6:len, (x0+x1)/2, h/2, (z0+z1)/2, MAT.hedge, gSite, {solid:true});
-  /* break the box silhouette with a scalloped top */
-  var n=Math.max(2,Math.round(len/0.55));
+  /* The clipped body stays a box - a hedge really is a box, and it is what
+     stops you walking through it. Only the top and the two long faces get
+     cards, which is where the eye reads the leaf texture and the soft edge. */
+  addBox(horiz?len:0.52, h, horiz?0.52:len, (x0+x1)/2, h/2, (z0+z1)/2, MAT.hedge, (PGRP||gSite), {solid:true});
+  var n=Math.max(2,Math.round(len/0.62));
   for(var i=0;i<n;i++){
     var f=(i+0.5)/n;
-    addSphere(0.33, horiz?(x0+(x1-x0)*f):(x0+x1)/2, h-0.06, horiz?(z0+z1)/2:(z0+(z1-z0)*f), MAT.hedge, gSite);
+    var cx = horiz?(x0+(x1-x0)*f):(x0+x1)/2;
+    var cz = horiz?(z0+z1)/2:(z0+(z1-z0)*f);
+    canopy(cx, h-0.05, cz, 0.36, 0.26, 4, MAT.foliageHi, (PGRP||gSite), i*13+1);
   }
 }
 function flowerBed(x0,z0,x1,z1){
   var w=Math.abs(x1-x0), d=Math.abs(z1-z0), cx=(x0+x1)/2, cz=(z0+z1)/2;
-  addBox(w,0.30,d,cx,0.15,cz,MAT.soil,gSite,{cast:false});
-  addBox(w+0.12,0.34,0.12,cx,0.17,cz-d/2,MAT.planter,gSite,{});
-  addBox(w+0.12,0.34,0.12,cx,0.17,cz+d/2,MAT.planter,gSite,{});
-  addBox(0.12,0.34,d,cx-w/2,0.17,cz,MAT.planter,gSite,{});
-  addBox(0.12,0.34,d,cx+w/2,0.17,cz,MAT.planter,gSite,{});
+  addBox(w,0.30,d,cx,0.15,cz,MAT.soil,(PGRP||gSite),{cast:false});
+  addBox(w+0.12,0.34,0.12,cx,0.17,cz-d/2,MAT.planter,(PGRP||gSite),{});
+  addBox(w+0.12,0.34,0.12,cx,0.17,cz+d/2,MAT.planter,(PGRP||gSite),{});
+  addBox(0.12,0.34,d,cx-w/2,0.17,cz,MAT.planter,(PGRP||gSite),{});
+  addBox(0.12,0.34,d,cx+w/2,0.17,cz,MAT.planter,(PGRP||gSite),{});
   var cols=[MAT.bloom1,MAT.bloom2,MAT.bloom3,MAT.leaf2];
   var n=Math.max(6,Math.round(w*d*3.0));
   for(var i=0;i<n;i++){
     var px=cx+(Math.random()-0.5)*(w-0.35);
     var pz=cz+(Math.random()-0.5)*(d-0.35);
-    addSphere(0.11+Math.random()*0.09, px, 0.36+Math.random()*0.14, pz, MAT.hedge, gSite);
-    addSphere(0.08+Math.random()*0.07, px+0.06, 0.50+Math.random()*0.14, pz, cols[i%4], gSite);
+    canopy(px, 0.40+Math.random()*0.12, pz, 0.20+Math.random()*0.07, 0.17+Math.random()*0.06,
+           3, MAT.foliageLo, (PGRP||gSite), i*29+7);
+    /* the bloom stays a small solid: a flower head at this size is a blob of
+       colour, and a cut-out card would only alias */
+    addSphere(0.075+Math.random()*0.055, px+0.06, 0.56+Math.random()*0.14, pz, cols[i%4], (PGRP||gSite));
   }
   addCollider(cx-w/2,cx+w/2,cz-d/2,cz+d/2,0,0.5);
 }
 function potPlant(x,z,y,g,s){
   s=s||1;
   addCyl(0.24*s,0.19*s,0.44*s,x,y+0.22*s,z,MAT.planter,g,14,{furn:true});
-  addSphere(0.34*s,x,y+0.78*s,z,MAT.leaf,g,{furn:true});
-  addSphere(0.24*s,x+0.22*s,y+0.62*s,z,MAT.leaf2,g,{furn:true});
+  var pc = canopy(x, y+0.74*s, z, 0.38*s, 0.32*s, 5, MAT.foliageLo, g, Math.floor(x*7+z*13)+3);
+  FURN.push(pc);
   addCollider(x-0.3*s,x+0.3*s,z-0.3*s,z+0.3*s,y,y+0.6*s);
 }
 
@@ -326,25 +325,8 @@ diningSet(1.80,2.90,0.02,6,0,gSite);
 addBox(1.20,0.90,0.60,4.10,0.45,2.20,MAT.counter,gSite,{solid:true});
 addBox(1.26,0.06,0.66,4.10,0.93,2.20,MAT.steel,gSite,{});
 
-/* ---------- gazebo, moved off the lawn into the west corner ---------- */
-(function(){
-  var gx=-7.35, gz=5.30, s=1.45;
-  addBox(s*2+0.5,0.22,s*2+0.5,gx,0.11,gz,MAT.paverWarm,gSite,{cast:false});
-  addFloor(gx-s-0.25,gx+s+0.25,gz-s-0.25,gz+s+0.25,0.22);
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){
-    addBox(0.20,2.60,0.20, gx+p[0]*s, 1.52, gz+p[1]*s, MAT.wood, gSite, {solid:true});
-  });
-  addBox(s*2+0.3,0.18,0.18, gx, 2.90, gz-s, MAT.wood, gSite, {});
-  addBox(s*2+0.3,0.18,0.18, gx, 2.90, gz+s, MAT.wood, gSite, {});
-  addBox(0.18,0.18,s*2+0.3, gx-s, 2.90, gz, MAT.wood, gSite, {});
-  addBox(0.18,0.18,s*2+0.3, gx+s, 2.90, gz, MAT.wood, gSite, {});
-  hipRoof(gx-s-0.1,gz-s-0.1,gx+s+0.1,gz+s+0.1, 3.0, 1.05, 0.45, MAT.woodDark, gSite);
-  sofa(gx,gz-s+0.55,0.22,2.0,0,gSite,MAT.fabric2);
-  coffeeTable(gx,gz+0.25,0.22,1.0,0.6,gSite);
-  var pl=addCyl(0.16,0.08,0.20,gx,3.10,gz,MAT.lamp,gSite,12); pl.castShadow=false;
-})();
 
-/* ---------- utility yard behind the BQ ---------- */
+/* ---------- utility yard along the rear wall ---------- */
 (function(){
   /* generator house, backed onto the rear wall */
   addBox(2.60,2.35,1.40, -4.90, 1.175, 15.80, MAT.wallExt, gSite, {solid:true});
@@ -367,4 +349,4 @@ addBox(1.26,0.06,0.66,4.10,0.93,2.20,MAT.steel,gSite,{});
   addBox(0.03,0.03,1.2,-1.40,1.95,15.90,MAT.white,gSite,{cast:false});
 })();
 
-/* ---------- solar array on the BQ roof is added with the BQ ---------- */
+/* ---------- the solar array is added with the court, on the main roof ---------- */

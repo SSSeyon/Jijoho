@@ -16,19 +16,29 @@
 </div>
 
 <div id="bar">
-  <div class="brand">JIJOHO RESIDENCE <span>&nbsp;&middot;&nbsp; 4-bed duplex + twin BQ &nbsp;&middot;&nbsp; 655 m&sup2;</span></div>
+  <div class="brand">JIJOHO RESIDENCE <span>&nbsp;&middot;&nbsp; 4-bed duplex + games pavilion &nbsp;&middot;&nbsp; 655 m&sup2;</span></div>
   <div class="grp">
     <button class="b on" id="btnWalk">Walk</button>
     <button class="b" id="btnOrbit">Dollhouse</button>
   </div>
   <div class="grp">
-    <button class="b on" id="btnBQ">BQ</button>
+    <button class="b on" id="btnGarden">Garden</button>
     <button class="b" id="btnSport">Sports court</button>
   </div>
   <button class="b" id="btnRoof">Roof off</button>
   <button class="b" id="btnFloor">Upper floor off</button>
   <button class="b" id="btnFurn">Empty</button>
-  <button class="b" id="btnDusk">Dusk</button>
+  <div class="tod" title="Time of day - drag for the sun angle">
+    <span class="sunico">&#9788;</span>
+    <input type="range" id="tod" min="5.6" max="19.4" step="0.1" value="17.3">
+    <span id="todLbl">17:06</span>
+  </div>
+  <select class="b" id="qual" title="Graphics quality">
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+    <option value="ultra">Ultra</option>
+  </select>
   <select class="b" id="goto"><option value="">Jump to&hellip;</option></select>
   <div class="spacer"></div>
   <button class="b" id="btnInfo">Specs &amp; costs</button>
@@ -78,7 +88,7 @@
   <div class="doc">
     <h1>Jijoho Residence</h1>
     <div class="sub">
-      Four-bedroom duplex with a twin boys&rsquo; quarters and an indoor games room.<br>
+      Four-bedroom duplex with a glazed games pavilion and a landscaped rear garden or sports court.<br>
       Plot 19.55&nbsp;m &times; 33.52&nbsp;m &mdash; 655.1&nbsp;m&sup2; &middot; 6.418988&deg;N, 2.893992&deg;E (Badagry axis, Lagos State).
     </div>
 
@@ -88,31 +98,28 @@
       <div>Duplex footprint (per floor)</div><div>155.8 m&sup2;</div>
       <div>Duplex, two floors</div><div>311.6 m&sup2;</div>
       <div>Front balcony &amp; porch</div><div>41.4 m&sup2;</div>
-      <div>Boys&rsquo; quarters block</div><div>81.3 m&sup2;</div>
-      <div>Total covered area</div><div>237.1 m&sup2;</div>
-      <div>Building coverage</div><div>36.2 %</div>
-      <div>Open compound</div><div>418.0 m&sup2;</div>
-      <div>&nbsp;&nbsp;&mdash; paved hardstanding</div><div>&asymp; 128 m&sup2;</div>
-      <div>&nbsp;&nbsp;&mdash; soft landscape</div><div>&asymp; 290 m&sup2;</div>
-      <div>Total hard surface (roofs + paving)</div><div>&asymp; 55.8 %</div>
+      <div>Games pavilion</div><div>20.2 m&sup2;</div>
+      <div>Total covered area</div><div>176.0 m&sup2;</div>
+      <div>Building coverage</div><div>26.9 %</div>
+      <div>Open compound</div><div>479.1 m&sup2;</div>
+      <div>&nbsp;&nbsp;&mdash; paved hardstanding</div><div>&asymp; 135 m&sup2;</div>
+      <div>&nbsp;&nbsp;&mdash; soft landscape</div><div>&asymp; 344 m&sup2;</div>
+      <div>Total hard surface (roofs + paving)</div><div>&asymp; 47 %</div>
     </div>
     <div class="note">
       <b>Two different numbers, and the second is the one you can see.</b>
-      <i>Building coverage</i> &mdash; the 36.2&nbsp;% a planning authority asks for &mdash; counts only what sits
-      under a roof. Walking the model you also see the driveway, walkways, terrace and service pads, and those read
-      as built even though no permit counts them. The first version of this design paved about
-      <b>211&nbsp;m&sup2;</b>, which put the total hard surface at roughly 68&nbsp;% and is exactly why the open
-      space was not visible. This revision cuts paving to about <b>128&nbsp;m&sup2;</b>: the west side path is now
-      stepping stones in grass, the east path is 1.1&nbsp;m instead of 1.8&nbsp;m, the rear terrace is pulled tight
-      against the house, the BQ apron is a 1.1&nbsp;m doorstep strip and the utility yard is two working pads rather
-      than a full-width slab. That is <b>&asymp;&nbsp;83&nbsp;m&sup2; of concrete returned to lawn.</b>
+      <i>Building coverage</i> &mdash; the 26.9&nbsp;% a planning authority asks for &mdash; counts only what sits
+      under a roof, and with the boys&rsquo; quarters gone it is now well under half the residential limit. Walking
+      the model you also see the driveway, walkways, terrace, garden paving and service pads, and those read as
+      built even though no permit counts them. Total hard surface including paving is about <b>47&nbsp;%</b>,
+      which is why the plot finally reads as a garden with a house in it rather than the reverse.
     </div>
 
-    <h2>The rear of the plot: BQ <i>or</i> sports court</h2>
+    <h2>The rear of the plot: garden <i>or</i> sports court</h2>
     <div class="note">
-      Use the <b>BQ / Sports court</b> switch in the top bar. It is either/or, not a pair of options: the court
-      needs the entire rear of the plot, which is exactly the ground the BQ stands on. There is no arrangement
-      of a four-bedroom duplex, a twin BQ, three parking spaces and a marked court on 655&nbsp;m&sup2;.
+      Use the <b>Garden / Sports court</b> switch in the top bar. It is either/or, not a pair of options: the
+      court needs the entire rear of the plot, which is exactly the ground the garden is laid out on. The games
+      pavilion on the west side is outside the switch &mdash; it is there in both.
     </div>
     <div class="kv">
       <div>Court slab</div><div>16.20 &times; 8.00 m &mdash; 129.6 m&sup2;</div>
@@ -135,10 +142,10 @@
       <br><br>
       <b>Cost, order of magnitude.</b> Concrete raft and acrylic surfacing &asymp;&nbsp;&#8358;5&ndash;8&nbsp;m;
       hoop, goal, netting and poles &asymp;&nbsp;&#8358;2&ndash;4&nbsp;m; floodlighting
-      &asymp;&nbsp;&#8358;1.5&ndash;3&nbsp;m. Against that, building the court means <i>not</i> building the BQ,
-      which saves roughly &#8358;18&ndash;24&nbsp;m &mdash; but it also loses two lettable units, the domestic
-      staff accommodation and the indoor games room. Get a local contractor to price the court before deciding;
-      these are planning figures, not a quotation.
+      &asymp;&nbsp;&#8358;1.5&ndash;3&nbsp;m &mdash; call it <b>&#8358;8.5&ndash;15&nbsp;m</b> against
+      <b>&#8358;7&ndash;12&nbsp;m</b> for the garden as drawn, so the two options cost about the same. The real
+      difference is character and upkeep: acrylic and netting against planting that needs a gardener. Get a local
+      contractor to price both before deciding; these are planning figures, not a quotation.
       <br><br>
       <b>The utility yard moved.</b> The generator house, tank stand and drying line used to sit 3&nbsp;m out from
       the rear wall, in the middle of the only ground wide enough for a court. They are now pulled hard against the
@@ -174,75 +181,100 @@
       <tr><td>Linen &amp; plant store</td><td>5.00 &times; 1.60</td><td class="n">8.0 m&sup2;</td></tr>
       <tr><td>Front balcony (covered)</td><td>11.50 &times; 1.80</td><td class="n">20.7 m&sup2;</td></tr>
     </table>
-    <h3>Boys&rsquo; quarters &mdash; 81.3 m&sup2;</h3>
+    <h3>Games pavilion &mdash; 20.2 m&sup2;</h3>
     <table>
       <tr><th>Room</th><th>Size</th><th class="n">Area</th></tr>
-      <tr><td>Unit A &mdash; parlour</td><td>5.00 &times; 3.00</td><td class="n">15.0 m&sup2;</td></tr>
-      <tr><td>Unit A &mdash; bedroom</td><td>3.10 &times; 3.00</td><td class="n">9.3 m&sup2;</td></tr>
-      <tr><td>Unit A &mdash; kitchenette</td><td>1.90 &times; 1.40</td><td class="n">2.7 m&sup2;</td></tr>
-      <tr><td>Unit A &mdash; bathroom / WC</td><td>1.90 &times; 1.60</td><td class="n">3.0 m&sup2;</td></tr>
-      <tr><td>Unit B</td><td>mirror of unit A</td><td class="n">30.0 m&sup2;</td></tr>
-      <tr><td>Indoor games room</td><td>3.55 &times; 6.00</td><td class="n">21.3 m&sup2;</td></tr>
+      <tr><td>Games room (single space)</td><td>5.40 &times; 3.35 internal</td><td class="n">18.1 m&sup2;</td></tr>
+      <tr><td>&nbsp;&nbsp;&mdash; table tennis</td><td>2.74 &times; 1.52 table</td><td class="n">1.33 m end run-off</td></tr>
+      <tr><td>&nbsp;&nbsp;&mdash; board-game corner, dartboard, sofa, shelving</td><td>&mdash;</td><td class="n">&mdash;</td></tr>
     </table>
-    <p style="color:#9fb0bd;font-size:12.2px">The games room sits between the two units so that each self-contained
-    unit gets both a rear wall and an external side wall &mdash; every habitable room, kitchenette and bathroom is
-    naturally lit and cross-ventilated. It holds a full-size table-tennis table, a board-game table, a dartboard,
-    shelving and a small sofa.</p>
+    <p style="color:#9fb0bd;font-size:12.2px">A standalone glazed garden room on the west side, on the ground the
+    open gazebo used to occupy. It sits outside the garden/court switch deliberately, so the indoor games space
+    survives whichever rear option you build. The long house-facing side is two sets of sliding doors, so it opens
+    onto the lawn; the rear wall carries high strip windows for cross-ventilation without losing the dartboard wall.
+    <br><br>
+    <b>Honest note on the table tennis.</b> The footprint is set by the table. 5.40&nbsp;m internal leaves
+    <b>1.33&nbsp;m of run-off at each end</b>. A club would want 2&nbsp;m and a tournament 3.5&nbsp;m; this is
+    playable for family games and better than the garage most people actually play in, but it is not generous. If
+    you want a full 2&nbsp;m each end the pavilion has to grow to 6.75&nbsp;m, which pushes it into the court&rsquo;s
+    west run-off &mdash; possible if you commit to the garden option and drop the court.</p>
 
     <h2>Recreation &amp; compound</h2>
-    <p>You chose lawn and garden over marked courts. The 418&nbsp;m&sup2; of open compound breaks down as:</p>
+    <p>With the boys&rsquo; quarters removed, the open compound is <b>479&nbsp;m&sup2;</b> &mdash; up from
+    418&nbsp;m&sup2; &mdash; and, far more importantly, the rear of the plot is now one continuous piece of ground
+    instead of a 4.9&nbsp;m band trapped between the house and a second building. That single change is what makes
+    the &ldquo;a lot of space&rdquo; in your brief actually true.</p>
+    <div class="kv">
+      <div>Rear garden / court ground</div><div>19.5 &times; 8.3 m &mdash; &asymp; 162 m&sup2;</div>
+      <div>Front garden</div><div>&asymp; 30 m&sup2;</div>
+      <div>West flank</div><div>&asymp; 40 m&sup2;</div>
+      <div>Rear terrace (paved)</div><div>6.0 &times; 2.4 m</div>
+      <div>Games pavilion</div><div>5.70 &times; 3.55 m</div>
+    </div>
+
+    <h3>The garden option</h3>
     <ul>
-      <li><b>Rear garden, &asymp;&nbsp;80&nbsp;m&sup2; of lawn</b> &mdash; the strip between the house and the BQ.
-        It is 17.0&nbsp;m wide but only <b>4.9&nbsp;m deep</b>, and the terrace takes a 6.0&nbsp;m bite out of the
-        middle of it, so the largest single clear rectangle is about <b>13.6&nbsp;m &times; 2.5&nbsp;m</b>, with two
-        4.5&nbsp;m &times; 4.9&nbsp;m pockets either side of the terrace. Good for a hammock, a table, a paddling pool
-        or a five-a-side kickabout across the width. Not a field.</li>
-      <li><b>Front garden, &asymp;&nbsp;30&nbsp;m&sup2; of open lawn</b> east of the entrance walk, with palms, a flower
-        bed, a shade tree and a water feature pushed onto the boundary so the middle stays clear.</li>
-      <li><b>West flank, &asymp;&nbsp;40&nbsp;m&sup2;</b> &mdash; a 2.3&nbsp;m grass strip with stepping stones instead of
-        a paved path, running from the driveway to the gazebo.</li>
-      <li><b>Timber gazebo, 3.4&nbsp;m &times; 3.4&nbsp;m</b> &mdash; pyramid roof, built-in seating, lamp overhead. Moved
-        into the west corner so it no longer stands in the middle of the lawn.</li>
-      <li><b>Rear terrace, 6.0&nbsp;m &times; 2.4&nbsp;m</b> &mdash; paved, tight against the kitchen and rear lobby, with a
-        six-seat dining set, a parasol and a masonry barbecue.</li>
-      <li><b>Indoor games</b> &mdash; the 21.3&nbsp;m&sup2; games room in the BQ block, plus the 14.7&nbsp;m&sup2; upstairs family lounge.</li>
-      <li><b>Utility yard</b> behind the BQ &mdash; generator house, tanks on a stand, septic and soakaway covers, drying lines, its own service gate.</li>
+      <li><b>Lawn</b> &mdash; a watered, mown garden lawn over the whole rear, laid a shade richer than the tougher
+        grass used elsewhere on the plot, with the planting cut into it rather than fenced off from it.</li>
+      <li><b>Path</b> &mdash; individual slabs set in grass, out of the rear terrace, up the east side and across the
+        back. Laid with lawn showing between them so it reads as a garden path and not a corridor.</li>
+      <li><b>Pergola, 4.2&nbsp;m &times; 3.6&nbsp;m</b> &mdash; timber posts, cross beams and close-spaced rafters, with
+        a climber over the top. Sofa, two armchairs and a low table under it. A pergola is mostly the shadow it
+        throws, so the rafters are spaced at 340&nbsp;mm rather than the usual sparse decorative pitch.</li>
+      <li><b>Outdoor kitchen</b> &mdash; a 4.4&nbsp;m masonry counter run against a low screen wall, with a built-in
+        grill, a sink, cupboards below and a breakfast bar with four stools on the garden side. This is the
+        equivalent of the grill and covered dining set in the reference image you sent.</li>
+      <li><b>Kitchen garden</b> &mdash; three raised timber beds along the rear, planted, plus three fruit trees
+        placed clear of the beds so they will not shade them through the afternoon.</li>
+      <li><b>Planting</b> &mdash; deep kerbed beds on three sides, clipped hedging, two royal palms, two broadleaf
+        shade trees and eight shrubs, with a stone birdbath where the two paths meet.</li>
     </ul>
+
+    <h3>The sports court option</h3>
+    <p style="color:#9fb0bd;font-size:12.2px">Same ground, laid out as the multi-use hard court specified above:
+    full-size badminton and pickleball, a basketball half court and a kickabout goal, with ball-stop netting and
+    four floodlights. Choosing it means giving up the garden entirely &mdash; not part of it.</p>
+
+    <h3>In both options</h3>
+    <ul>
+      <li><b>Games pavilion</b> &mdash; the 20.2&nbsp;m&sup2; glazed garden room on the west side, with the table
+        tennis, dartboard and board-game corner, plus the 14.7&nbsp;m&sup2; upstairs family lounge indoors.</li>
+      <li><b>Rear terrace, 6.0&nbsp;m &times; 2.4&nbsp;m</b> &mdash; paved, tight against the kitchen and rear lobby,
+        with a six-seat dining set, a parasol and a masonry barbecue.</li>
+      <li><b>Front garden</b> &mdash; open lawn east of the entrance walk, with palms, a flower bed, a shade tree and a
+        circular water feature pushed onto the boundary so the middle stays clear.</li>
+      <li><b>West flank</b> &mdash; a grass strip with stepping stones running from the driveway to the pavilion door.</li>
+      <li><b>Utility yard</b> along the rear wall &mdash; generator house, tanks on a stand, septic and soakaway covers,
+        drying lines, its own service gate. Pulled hard against the wall in a 1.4&nbsp;m strip so it does not eat
+        into either option.</li>
+      <li><b>Solar array</b> on the rear slope of the main roof. It used to sit on the BQ roof; with that block gone
+        it is on the house in both options &mdash; bigger, higher, and nothing shades it.</li>
+    </ul>
+
     <div class="note">
-      <b>Straight answer on &ldquo;a lot of space&rdquo;.</b> A 156&nbsp;m&sup2; house plus an 81&nbsp;m&sup2; BQ plus
-      three parking spaces on a 655&nbsp;m&sup2; plot does not leave a big garden, and cutting the paving back does not
-      change that &mdash; it only makes the garden you do have visible. The plot is 19.55&nbsp;m wide, the side setbacks
-      take 6.0&nbsp;m of it, and the front setback and the BQ take 13.0&nbsp;m of the 33.52&nbsp;m depth. What is left
-      is a 4.9&nbsp;m band. Three moves would actually change it, and any of them can be built into this model:
-      <ul>
-        <li><b>Slide everything 2&nbsp;m forward</b> &mdash; front setback 7.0&nbsp;m down to 5.0&nbsp;m (still legal on a
-          local road with a sliding gate; confirm for your street). Rear garden goes from 4.9&nbsp;m to 6.9&nbsp;m deep,
-          giving <b>&asymp;&nbsp;110&nbsp;m&sup2;</b> in one piece. Costs nothing.</li>
-        <li><b>Stack the BQ</b> &mdash; unit B over unit A instead of beside it. The block shrinks from 13.55&nbsp;m to
-          6.8&nbsp;m wide, opening a 6.8 &times; 6.0&nbsp;m corner and taking the contiguous lawn to
-          <b>&asymp;&nbsp;120&nbsp;m&sup2;</b>. Adds roughly &#8358;6&ndash;10&nbsp;m for the extra slab and stair.</li>
-        <li><b>Move the BQ out of the back garden entirely</b> &mdash; two units and the games room as a first floor over
-          the carport at the front. The whole rear becomes one garden, <b>&asymp;&nbsp;200&nbsp;m&sup2;</b>, 17&nbsp;m
-          &times; 12&nbsp;m. Adds roughly &#8358;18&ndash;25&nbsp;m and puts service circulation at the front rather than
-          the back, which some owners want and some do not.</li>
-      </ul>
-      The first two together give <b>&asymp;&nbsp;150&nbsp;m&sup2;</b> for about &#8358;6&ndash;10&nbsp;m. Tell me which
-      and I will rebuild the model.
+      <b>What removing the BQ costs you.</b> This is worth stating plainly, because it is a real trade and not a
+      free win. You lose <b>two self-contained lettable units</b> (roughly &#8358;18&ndash;24&nbsp;m of build cost,
+      but also whatever they would have earned or housed), and you lose on-plot accommodation for domestic staff or
+      extended family. If either of those matters, the honest alternatives are a first floor over the carport at the
+      front, or a single stacked unit in the north-east corner &mdash; both of which can be built into this model.
+      <br><br>
+      What you gain is the whole rear of the plot: <b>&asymp;&nbsp;162&nbsp;m&sup2; in one piece</b>, 19.5&nbsp;m
+      wide and 8.3&nbsp;m deep, against the 4.9&nbsp;m band the BQ used to leave. Building coverage falls from
+      36.2&nbsp;% to <b>26.9&nbsp;%</b>, and total hard surface from 55.8&nbsp;% to about <b>47&nbsp;%</b>.
     </div>
     <div class="note">
       <b>On the sports brief.</b> A regulation tennis court needs 648&nbsp;m&sup2; and a regulation basketball court
-      420&nbsp;m&sup2; &mdash; both larger than the entire open compound. If you want marked play, the rear lawn as drawn
-      will take a <b>13.6&nbsp;m &times; 2.5&nbsp;m</b> practice strip only; a proper <b>13.6 &times; 6.0&nbsp;m mini court</b>
-      (basketball half-court to a hoop on the BQ wall, plus badminton or pickleball) needs one of the three moves above
-      first, and then costs roughly &#8358;4&ndash;7&nbsp;m in surfacing, netting and line-marking.
+      420&nbsp;m&sup2; &mdash; both larger than the entire open compound, so neither was ever possible here. What the
+      rear will now take, with the BQ gone, is the full multi-use hard court drawn in the court option: that was
+      previously only achievable by <i>not</i> building the BQ, and is now simply available.
     </div>
 
     <h2>Site strategy</h2>
     <ul>
       <li><b>Setbacks:</b> 7.0&nbsp;m front, 3.0&nbsp;m both sides, 3.02&nbsp;m rear. Confirm the exact requirement for your street with the Lagos State Physical Planning Permit Authority before drawings go in.</li>
-      <li><b>Building coverage 36.2 %</b> &mdash; comfortably inside the residential limit. Total hard surface including
-        paving is 55.8 %, down from 68 % in the first version.</li>
-      <li><b>Raised plinth of 600&nbsp;mm</b> on the duplex and 450&nbsp;mm on the BQ. This is the Badagry axis: sandy soil, a high water table and seasonal surface water. Do not build at grade.</li>
+      <li><b>Building coverage 26.9 %</b> &mdash; well inside the residential limit. Total hard surface including
+        paving is about 47 %, down from 68 % in the first version and 55.8 % before the BQ was removed.</li>
+      <li><b>Raised plinth of 600&nbsp;mm</b> on the duplex and 300&nbsp;mm on the games pavilion. This is the Badagry axis: sandy soil, a high water table and seasonal surface water. Do not build at grade.</li>
       <li><b>Orientation:</b> modelled with the street to the south, so the long elevations face east and west. The 2.05&nbsp;m front canopy and 680&nbsp;mm eaves do the shading work. If your frontage actually faces another direction, tell me and I will re-orient the plan &mdash; it changes where the master and the living room want to sit.</li>
       <li><b>Cross-ventilation</b> in every habitable room &mdash; each has openings on two sides or a window opposite its door.</li>
       <li><b>Parking</b> for three cars under a 7.0&nbsp;m &times; 4.8&nbsp;m carport canopy, with the 4.5&nbsp;m sliding gate lined up on it.</li>
@@ -254,19 +286,21 @@
       <tr><th>Element</th><th>Specification</th></tr>
       <tr><td>Foundation</td><td>Reinforced concrete raft, 150&nbsp;mm blinding, 1000-gauge DPM, sand fill compacted in 225&nbsp;mm layers</td></tr>
       <tr><td>Frame</td><td>RC columns, beams and 150&nbsp;mm suspended slab; 225&nbsp;mm sandcrete block infill</td></tr>
-      <tr><td>External walls</td><td>Cement/sand render, textured masonry paint in warm off-white; charcoal fluted-panel accents; stone cladding to porch columns and fence pillars</td></tr>
+      <tr><td>External walls</td><td>Cement/sand render, textured masonry paint in warm off-white; charcoal fluted accent panels, 90&nbsp;mm half-round ribs at 110&nbsp;mm centres, full two storeys; split-face stone cladding to porch columns and fence pillars</td></tr>
+      <tr><td>External trim</td><td>100&nbsp;mm rendered architrave to every external opening; projecting cast sills with a 20&nbsp;mm drip groove; 160&nbsp;mm plinth band with a weathered chamfer right round the building</td></tr>
       <tr><td>Roof</td><td>Hip roof at ~22&deg;, treated hardwood or light-gauge steel trusses, stone-coated steel tiles in charcoal, 680&nbsp;mm eaves, aluminium gutters and PVC downpipes</td></tr>
       <tr><td>Windows</td><td>Powder-coated aluminium sliders and casements, 6&nbsp;mm tinted grey glass, marine-grade coating for the salt air; burglar-proof behind, not across, the glazing</td></tr>
-      <tr><td>Doors</td><td>Glazed aluminium entrance and balcony doors; solid-core flush internal doors on hardwood frames; steel doors to the BQ, store and generator house</td></tr>
+      <tr><td>Doors</td><td>Glazed aluminium entrance and balcony doors; solid-core flush internal doors on hardwood frames; steel doors to the store and generator house</td></tr>
       <tr><td>Floors</td><td>800 &times; 800&nbsp;mm polished porcelain to living areas; 600 &times; 600&nbsp;mm anti-slip porcelain to wet areas, kitchen and external terraces</td></tr>
       <tr><td>Ceilings</td><td>Suspended POP with cove lighting to living, dining, master and lounge; flat POP elsewhere; 3.0&nbsp;m clear height on both floors</td></tr>
       <tr><td>Joinery</td><td>Fitted wardrobes to all bedrooms; gloss MDF kitchen with quartz or granite worktop and a 2.2&nbsp;m island; TV and feature units</td></tr>
       <tr><td>Bathrooms</td><td>Full-height wall tiling, vanity units, frameless shower screens, chrome fittings, WC and WHB per en-suite</td></tr>
+      <tr><td>Skirting</td><td>105&nbsp;mm painted skirting throughout, both faces of partitions and the inner face of external walls</td></tr>
       <tr><td>Balustrades</td><td>Stainless-steel verticals with a hardwood handrail, to the stair and both balconies</td></tr>
       <tr><td>Fence</td><td>2.4&nbsp;m block wall, 300&nbsp;mm capping, stone-clad pillars at 3.2&nbsp;m centres, 4.5&nbsp;m sliding steel vehicle gate, 1.1&nbsp;m pedestrian gate, rear service gate</td></tr>
       <tr><td>External paving</td><td>60&nbsp;mm interlocking concrete pavers on 50&nbsp;mm sharp sand over compacted hardcore</td></tr>
-      <tr><td>Landscape</td><td>Carpet-grass lawn, royal palms, mango and almond shade trees, ixora and hibiscus hedging, kerbed flower beds, timber gazebo, circular water feature</td></tr>
-      <tr><td>Power</td><td>Solar / inverter hybrid on the BQ roof, backed by a soundproofed generator in the utility yard with an automatic changeover</td></tr>
+      <tr><td>Landscape</td><td>Carpet-grass lawn, royal palms, mango and almond shade trees, ixora and hibiscus hedging, kerbed flower beds, timber pergola, raised vegetable beds, circular water feature, stone birdbath</td></tr>
+      <tr><td>Power</td><td>Solar / inverter hybrid on the rear roof slope, backed by a soundproofed generator in the utility yard with an automatic changeover</td></tr>
       <tr><td>Water</td><td>Borehole with treatment, two overhead tanks on a 3.2&nbsp;m steel stand, plus an underground reservoir</td></tr>
     </table>
 
@@ -287,16 +321,23 @@
       <tr><td>Finishes &mdash; screeding, POP, tiling, painting</td><td class="n">&#8358;22 m</td><td class="n">&#8358;34 m</td></tr>
       <tr><td>Joinery &mdash; wardrobes, kitchen, feature units</td><td class="n">&#8358;9 m</td><td class="n">&#8358;15 m</td></tr>
       <tr><td>Mechanical &amp; electrical, sanitary fittings</td><td class="n">&#8358;14 m</td><td class="n">&#8358;22 m</td></tr>
-      <tr><td>BQ block &mdash; 2 self-cons + games room</td><td class="n">&#8358;20 m</td><td class="n">&#8358;30 m</td></tr>
+      <tr><td>Games pavilion &mdash; 20.2 m&sup2; glazed garden room</td><td class="n">&#8358;6 m</td><td class="n">&#8358;10 m</td></tr>
       <tr><td>External works &mdash; fence, gates, paving, drainage</td><td class="n">&#8358;13 m</td><td class="n">&#8358;20 m</td></tr>
-      <tr><td>Landscaping, gazebo, terrace, water feature</td><td class="n">&#8358;5 m</td><td class="n">&#8358;9 m</td></tr>
+      <tr><td>Garden &mdash; pergola, outdoor kitchen, planting, paths</td><td class="n">&#8358;7 m</td><td class="n">&#8358;12 m</td></tr>
       <tr><td>Borehole, tanks, septic &amp; soakaway</td><td class="n">&#8358;5.5 m</td><td class="n">&#8358;9 m</td></tr>
       <tr><td>Solar / inverter + generator + changeover</td><td class="n">&#8358;9 m</td><td class="n">&#8358;16 m</td></tr>
       <tr><td>Professional fees &amp; planning permit</td><td class="n">&#8358;8 m</td><td class="n">&#8358;14 m</td></tr>
-      <tr class="tot"><td>Indicative total</td><td class="n">&#8358;177 m</td><td class="n">&#8358;276 m</td></tr>
+      <tr class="tot"><td>Indicative total</td><td class="n">&#8358;165 m</td><td class="n">&#8358;259 m</td></tr>
     </table>
-    <p style="color:#9fb0bd;font-size:12.2px">That works out at roughly &#8358;560,000&ndash;&#8358;870,000 per m&sup2;
-    of covered area &mdash; consistent with a well-finished private duplex in Lagos at 2026 prices.</p>
+    <p style="color:#9fb0bd;font-size:12.2px">Removing the boys&rsquo; quarters takes roughly
+    <b>&#8358;12&ndash;17&nbsp;m</b> off the total: the 20.2&nbsp;m&sup2; pavilion and the garden together cost
+    about &#8358;13&ndash;22&nbsp;m against the &#8358;20&ndash;30&nbsp;m the BQ block would have taken.
+    <br><br>
+    Note that the cost <i>per square metre of covered area</i> goes up, from about
+    &#8358;750,000&ndash;&#8358;1.16&nbsp;m to &#8358;940,000&ndash;&#8358;1.47&nbsp;m. That is arithmetic, not the
+    house getting more expensive: the fence, gates, borehole, septic, solar, generator and professional fees are
+    fixed site costs that do not care how much floor area you build, and they are now spread over 176&nbsp;m&sup2;
+    instead of 237&nbsp;m&sup2;. The absolute figure is the one to budget against.</p>
 
     <h2>What this model is and isn&rsquo;t</h2>
     <p>This is a <b>design study</b>, dimensionally consistent and buildable in principle: every wall, opening,
@@ -309,24 +350,39 @@
     655&nbsp;m&sup2;. The street, kerb and boundary wall remain, and the land beyond the wall is left as open
     ground &mdash; that is a drawing convention, not a survey of what is actually next door.</p>
     <p><b>Rendering.</b> Every surface is physically based: colour, tangent-space normal, per-texel roughness and
-    ambient occlusion, all generated in the browser at load rather than downloaded, which is why the whole thing
-    is still one file. Lighting is a sun with 4096&nbsp;px soft shadows plus image-based lighting from the sky
-    dome, tone-mapped ACES Filmic. Glazing is real refracting glass at IOR&nbsp;1.5. That last one costs an extra
-    full pass over the scene each frame; if the frame rate cannot carry it the model quietly drops the glass back
-    to a reflective pane rather than becoming a slideshow. On integrated graphics at full-screen you should expect
-    roughly 15&ndash;25&nbsp;fps at full screen; on a discrete GPU it is smooth. Press <b>G</b> to force the
-    refracting glass back on, or off, whichever way you prefer the trade.</p>
+    ambient occlusion, all generated in the browser at load rather than downloaded, which is why the model needs
+    no asset library and works offline. Lighting is a sun on a continuous day cycle plus image-based lighting from
+    a procedural sky with a cloud deck &mdash; the clouds matter more than they look, because the same sky is baked
+    into the reflection probe, so they appear in every window pane, the car and the polished floors. Tone mapping
+    is ACES Filmic through a post chain of screen-space ambient occlusion, bloom, colour grading and SMAA, with a
+    little depth of field in the dollhouse view only. Glazing is real refracting glass at IOR&nbsp;1.5.</p>
+    <p><b>The sun slider</b> in the top bar runs from 05:36 to 19:24 and drives sun angle, colour, sky, cloud cover,
+    exposure and the reflection probe together. It defaults to <b>17:18</b>, which puts the sun at about
+    21&deg;. That is not an arbitrary choice: an overhead sun is the worst light a building can be shown in,
+    because nothing casts a shadow across a facade and every surface flattens out. The fluted panels, the sills
+    and the plinth band are all drawn to be read in raking light.</p>
+    <p><b>Performance.</b> Four quality presets, from Low to Ultra, switchable at any time and picked automatically
+    on first load from what the device looks like; a watchdog measures the real frame rate and steps down a level
+    at a time until it holds, and stops the moment you choose a preset yourself. Underneath, the static geometry is
+    merged by material at load, which took the model from about 2,600 objects and 2,000 draw calls to under 400 and
+    330 &mdash; roughly a fourfold speed-up on integrated graphics, and the reason the higher presets are usable at
+    all. Press <b>G</b> to force the refracting glass on or off, whichever way you prefer the trade.</p>
+    <p><b>Planting</b> is cut-out foliage cards, not solid blobs: each canopy is a handful of intersecting quads
+    carrying a leaf-clump texture, with the vertex normals pushed outwards so they shade like a mass of leaves
+    rather than like flat panes, and a slow wind in the vertex shader. Leaf size is set per plant type so a hedge
+    leaf and a mango leaf are the right size relative to each other.</p>
     <div>
       <span class="pill">18 risers &times; 183 mm</span>
       <span class="pill">3.0 m clear ceilings</span>
       <span class="pill">600 mm plinth</span>
       <span class="pill">225 mm external walls</span>
-      <span class="pill">36.2 % coverage</span>
+      <span class="pill">26.9 % coverage</span>
     </div>
   </div>
 </div>
 
 <script src="js/vendor/three.min.js"></script>
+<script src="js/vendor/three-post.js"></script>
 <script src="js/01-core.js"></script>
 <script src="js/02-fittings.js"></script>
 <script src="js/03-site.js"></script>

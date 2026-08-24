@@ -19,15 +19,8 @@ var CH = 3.00;                           // clear ceiling height
 var SLAB = 0.30;
 var RF = FF + CH + SLAB;                 // 7.20  roof slab top
 
-var BX = -6.775, BZ = 7.74;              // BQ local origin
-var BW = 13.55,  BD = 6.00;
-var BF = 0.45;                           // BQ floor level
-var BCH = 2.90;
-
 function hx(u){ return HX + u; }
 function hz(v){ return HZ + v; }
-function bxf(u){ return BX + u; }
-function bzf(v){ return BZ + v; }
 
 /* ---------- renderer / scene ---------- */
 var scene = new T.Scene();
@@ -48,25 +41,60 @@ renderer.toneMapping = T.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.02;
 document.getElementById("app").appendChild(renderer.domElement);
 
-/* ---------- sky ---------- */
+/* ---------- sky ----------
+   A gradient dome with a procedural cloud deck. The clouds are worth more than
+   they look: the same material is rendered into the PMREM environment map
+   below, so every window pane, the car, the water and the polished floor gets
+   a sky with structure in it instead of a flat wash. That is most of what
+   separates a render from a viewport. */
 var skyMat = new T.ShaderMaterial({
   side: T.BackSide, depthWrite:false,
   uniforms:{ top:{value:new T.Color(0x2f7fc4)}, mid:{value:new T.Color(0x9fc9e6)},
              bot:{value:new T.Color(0xe9e2d2)}, sunv:{value:new T.Vector3(0.5,0.7,-0.4)},
-             sunc:{value:new T.Color(0xfff0d0)}, sunI:{value:1.0} },
+             sunc:{value:new T.Color(0xfff0d0)}, sunI:{value:1.0},
+             cLit:{value:new T.Color(0xffffff)}, cDark:{value:new T.Color(0xa9b4c2)},
+             cCov:{value:0.50}, cAmt:{value:0.85}, uT:{value:0.0} },
   vertexShader:"varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
   fragmentShader:[
     "uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunv; uniform vec3 sunc;",
-    "uniform float sunI; varying vec3 vP;",
+    "uniform vec3 cLit; uniform vec3 cDark;",
+    "uniform float sunI; uniform float cCov; uniform float cAmt; uniform float uT;",
+    "varying vec3 vP;",
+    "float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }",
+    "float vn(vec2 p){",
+    "  vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f);",
+    "  return mix(mix(h21(i),h21(i+vec2(1.0,0.0)),u.x), mix(h21(i+vec2(0.0,1.0)),h21(i+vec2(1.0,1.0)),u.x), u.y);",
+    "}",
+    "float fbm(vec2 p){",
+    "  float v=0.0, a=0.5;",
+    "  for(int i=0;i<5;i++){ v += a*vn(p); p = p*2.03 + 17.3; a *= 0.5; }",
+    "  return v;",
+    "}",
     "void main(){",
     "  vec3 d = normalize(vP);",
     "  float hgt = d.y;",
     "  vec3 c = hgt>0.0 ? mix(mid, top, pow(hgt,0.55)) : mix(mid, bot, pow(-hgt,0.35));",
-    "  float s = max(0.0, dot(d, normalize(sunv)));",
+    "  vec3 sv = normalize(sunv);",
+    "  float s = max(0.0, dot(d, sv));",
     "  c += sunc * (pow(s, 110.0)*2.2 + pow(s, 7.0)*0.26) * sunI;",
+    "  if(d.y > 0.015 && cAmt > 0.001){",
+    "    vec2 cp = (d.xz / max(d.y, 0.015)) * 2.70 + vec2(uT*0.010, uT*0.004);",
+    "    float n  = fbm(cp*1.05);",
+    "    float n2 = fbm(cp*2.60 + 4.0);",
+    "    float dens = smoothstep(cCov, cCov+0.26, n*0.78 + n2*0.22);",
+    "    dens *= smoothstep(0.015, 0.26, d.y);",
+    "    float sl = max(0.0, dot(normalize(vec3(d.x,0.0,d.z)+1e-5), normalize(vec3(sv.x,0.0,sv.z)+1e-5)));",
+    "    vec3 cc = mix(cDark, cLit, clamp(pow(sl,1.6)*0.55 + n*0.62, 0.0, 1.0));",
+    "    c = mix(c, cc, clamp(dens*cAmt, 0.0, 1.0));",
+    "  }",
     "  gl_FragColor = vec4(c,1.0);",
     "}"].join("\n")
 });
+/* The cloud deck is a flat plane at a notional height: the view direction is
+   projected onto it, which buys real perspective convergence towards the
+   horizon for the cost of one divide. Past the horizon that projection
+   stretches to infinity, so it is faded out below 15 degrees - otherwise the
+   deck smears into a streak that reads as a bug rather than as distance. */
 scene.add(new T.Mesh(new T.SphereGeometry(300, 40, 24), skyMat));
 
 /* ---------- lights ---------- */
@@ -83,16 +111,123 @@ sun.shadow.radius = 2;
 scene.add(sun); scene.add(sun.target);
 sun.target.position.set(0,0,0);
 
+/* ---------- time of day ----------
+   The model used to have exactly two lighting states, noon and dusk, and noon
+   is the worst light a building can be shown in: the sun is overhead, nothing
+   casts a shadow across a facade, and every surface flattens out.
+   Architectural photography happens in the two hours before sunset, with the
+   sun at twenty or thirty degrees, because that is when a wall shows its
+   modelling. This turns those two states into one continuous parameter and
+   defaults to the good end of it. */
+var PAL = {
+  night:{ top:0x0f1b31, mid:0x35456a, bot:0x8a6350, sunc:0xffb173,
+          fog:0x2c3a4e, sunCol:0xffa863, sunI:0.26,
+          ambCol:0x8ea6c8, ambI:0.20, hemiS:0x3c4c68, hemiG:0x241d18, hemiI:0.34,
+          exp:1.17, cLit:0x6a6072, cDark:0x272c3e, cov:0.52, env:0.80 },
+  gold:{  top:0x3d80bb, mid:0xa6c6dc, bot:0xf2d2a4, sunc:0xffd9a0,
+          fog:0xe0d5c2, sunCol:0xffc287, sunI:1.46,
+          ambCol:0xffe2c2, ambI:0.17, hemiS:0xbcd8f2, hemiG:0x7d6a50, hemiI:0.33,
+          exp:1.07, cLit:0xfff0da, cDark:0xb0a096, cov:0.44, env:1.00 },
+  noon:{  top:0x2f7fc4, mid:0x9fc9e6, bot:0xe9e2d2, sunc:0xfff0d0,
+          fog:0xcfe0ea, sunCol:0xfff2d8, sunI:1.55,
+          ambCol:0xffffff, ambI:0.17, hemiS:0xbfe0ff, hemiG:0x6b6350, hemiI:0.30,
+          exp:1.02, cLit:0xffffff, cDark:0xa9b4c2, cov:0.50, env:1.00 }
+};
+var _c1 = new T.Color(), _c2 = new T.Color();
+/* No convertSRGBToLinear() here, deliberately, and it is not an oversight.
+   Material colours go through M() and are converted, because the shading maths
+   needs them linear. These are light colours, fog and raw sky-shader uniforms,
+   none of which three colour-manages in r136 - the old hard-coded values were
+   authored against that behaviour and converting them here darkened the sky by
+   a full stop. */
+function mixCol(target, a, b, t){
+  _c1.setHex(a); _c2.setHex(b);
+  target.copy(_c1).lerp(_c2, t);
+  return target;
+}
+function lerpN(a,b,t){ return a + (b-a)*t; }
+function blendPal(a, b, t){
+  var o = {};
+  o.top=[a.top,b.top,t]; o.mid=[a.mid,b.mid,t]; o.bot=[a.bot,b.bot,t];
+  o.sunc=[a.sunc,b.sunc,t]; o.fog=[a.fog,b.fog,t]; o.sunCol=[a.sunCol,b.sunCol,t];
+  o.ambCol=[a.ambCol,b.ambCol,t]; o.hemiS=[a.hemiS,b.hemiS,t]; o.hemiG=[a.hemiG,b.hemiG,t];
+  o.cLit=[a.cLit,b.cLit,t]; o.cDark=[a.cDark,b.cDark,t];
+  o.sunI=lerpN(a.sunI,b.sunI,t); o.ambI=lerpN(a.ambI,b.ambI,t); o.hemiI=lerpN(a.hemiI,b.hemiI,t);
+  o.exp=lerpN(a.exp,b.exp,t); o.cov=lerpN(a.cov,b.cov,t); o.env=lerpN(a.env,b.env,t);
+  return o;
+}
+var DAYENV = 1.0;
+var DAYH = 17.3;                  /* the default: late afternoon, raking light */
+var DAYE = 1.0;                   /* sin(elevation), 0 at the horizon */
+var sunDir = new T.Vector3(0.5, 0.7, -0.4);
+var sunOff = new T.Vector3(26, 42, -20);
+function setSky(h, doEnv){
+  DAYH = h;
+  var frac = Math.max(0, Math.min(1, (h - 6.0) / 12.6));   /* 06:00 .. 18:36 */
+  var arc  = Math.PI * frac;
+  var elev = 1.30 * Math.sin(arc);          /* peak ~74 deg, near-equatorial */
+  if(h < 6.05 || h > 18.55) elev = -0.16;   /* below the horizon: night */
+  var e = Math.sin(elev);                   /* 0 at the horizon, 1 overhead */
+  DAYE = e;
+
+  /* the sun tracks east to west, leaning a little towards the road side */
+  var hor = Math.cos(elev);
+  sunDir.set(Math.cos(arc)*hor, Math.sin(elev), -0.34*hor).normalize();
+  /* the light direction is allowed to drop to the horizon, but the light
+     POSITION is not: below about eight degrees the shadow of a two-storey
+     house runs off the end of the plot and the depth map runs out of range */
+  sunOff.copy(sunDir); sunOff.y = Math.max(0.145, sunOff.y);
+  sunOff.normalize().multiplyScalar(58);
+
+  var p = (e <= 0.10)
+    ? blendPal(PAL.night, PAL.gold, Math.max(0, Math.min(1, (e + 0.16) / 0.26)))
+    : blendPal(PAL.gold,  PAL.noon, Math.min(1, (e - 0.10) / 0.92));
+
+  mixCol(sun.color, p.sunCol[0], p.sunCol[1], p.sunCol[2]);
+  sun.intensity = p.sunI;
+  mixCol(amb.color,  p.ambCol[0], p.ambCol[1], p.ambCol[2]); amb.intensity  = p.ambI;
+  mixCol(hemi.color, p.hemiS[0],  p.hemiS[1],  p.hemiS[2]);  hemi.intensity = p.hemiI;
+  mixCol(hemi.groundColor, p.hemiG[0], p.hemiG[1], p.hemiG[2]);
+  mixCol(scene.fog.color, p.fog[0], p.fog[1], p.fog[2]);
+
+  var u = skyMat.uniforms;
+  mixCol(u.top.value,  p.top[0],  p.top[1],  p.top[2]);
+  mixCol(u.mid.value,  p.mid[0],  p.mid[1],  p.mid[2]);
+  mixCol(u.bot.value,  p.bot[0],  p.bot[1],  p.bot[2]);
+  mixCol(u.sunc.value, p.sunc[0], p.sunc[1], p.sunc[2]);
+  mixCol(u.cLit.value,  p.cLit[0],  p.cLit[1],  p.cLit[2]);
+  mixCol(u.cDark.value, p.cDark[0], p.cDark[1], p.cDark[2]);
+  u.cCov.value = p.cov;
+  u.sunv.value.copy(sunDir);
+  u.sunI.value = Math.max(0.25, e*0.8 + 0.35);
+  renderer.toneMappingExposure = p.exp;
+
+  /* a low sun throws a long shadow, so the shadow frustum has to grow to hold
+     it or the far end of the shadow is simply clipped off */
+  var span = 30 + (1 - Math.max(0,e)) * 26;
+  sc.left = -span; sc.right = span; sc.top = span + 4; sc.bottom = -(span + 4);
+  sc.updateProjectionMatrix();
+  /* a low sun also grazes surfaces, which is exactly when shadow acne shows */
+  sun.shadow.normalBias = 0.022 + (1 - Math.max(0,e)) * 0.028;
+
+  DAYENV = p.env;
+  if(doEnv !== false && typeof buildEnv === "function") buildEnv();
+  if(typeof envDim === "function") envDim(DAYENV);
+}
+
 /* ---------- groups (toggleable) ---------- */
 var gSite = new T.Group();
 var gGF   = new T.Group();
 var gFF   = new T.Group();
 var gRoof = new T.Group();
-var gBQ   = new T.Group();
-var gBQR  = new T.Group();
-var gSport = new T.Group();      /* the sports court - alternative to the BQ */
+/* The rear of the plot is either a sports court or a landscaped garden. One or
+   the other: the court needs the whole of it, which is exactly the ground the
+   garden wants. The games pavilion sits outside both and is always there. */
+var gSport  = new T.Group();
+var gGarden = new T.Group();
+var gPav    = new T.Group();     /* games pavilion - present in both options */
 var gSolar = null;               /* PV on the main roof, only in court mode */
-[gSite,gGF,gFF,gRoof,gBQ,gBQR,gSport].forEach(function(g){ scene.add(g); });
+[gSite,gGF,gFF,gRoof,gSport,gGarden,gPav].forEach(function(g){ scene.add(g); });
 var FURN = [];   // furniture meshes, for the furniture toggle
 
 /* ============================================================
@@ -719,10 +854,9 @@ var MAT = {
   asphalt   : M(0xffffff, {r:0.96, t:"asphalt",   env:0.4}),
   soil      : M(0xffffff, {r:1.00, t:"soil"}),
   water     : M(0x2f7fa8, {r:0.03, m:0.30, op:0.80, t:"ripple", keep:true, bs:0.012, env:3.0}),
-  trunk     : M(0xffffff, {r:0.95, t:"woodDark",  tint:0x9d7c58, tile:0.9}),
+  trunk     : M(0xffffff, {r:0.95, t:"woodDark",  tint:0xc9b79c, tile:1.4}),
   leaf      : M(0xffffff, {r:0.92, t:"leaf",      env:0.5}),
   leaf2     : M(0xffffff, {r:0.92, t:"leaf",      tint:0xc8e0a8, tile:0.8, env:0.5}),
-  palm      : M(0x3f7a35, {r:0.90, side:true, env:0.5}),
   fabric    : M(0xffffff, {r:0.94, t:"fabric",    env:0.5}),
   fabric2   : M(0xffffff, {r:0.94, t:"fabric2",   env:0.5}),
   linen     : M(0xffffff, {r:0.92, t:"linen",     env:0.6}),
@@ -783,6 +917,221 @@ MAT.netFine = new T.MeshStandardMaterial({
 });
 MAT.netFine.color.convertSRGBToLinear();
 
+/* ============================================================
+   FOLIAGE  -  alpha-cut cards instead of clusters of spheres
+   ------------------------------------------------------------
+   Every tree, shrub and hedge in the model used to be a heap of
+   MeshStandardMaterial spheres with a leaf texture painted on them. A leaf
+   texture on a ball still reads as a ball, and it was the single most obvious
+   "this is CG" tell left in the model - worse now that the whole rear of the
+   plot is a garden you can stand in.
+
+   The replacement is what games and archviz both actually use: a handful of
+   intersecting quads carrying a cut-out leaf-clump texture. Three things make
+   it work, and leaving any of them out is what makes card foliage look bad:
+
+     1. alphaTest, not transparency. A cut-out is opaque - it writes depth, it
+        sorts normally, and it can be merged with everything else. Blended
+        transparency would need per-object sorting and could not be merged.
+     2. Spherical normals. The normal at each vertex is pushed to point away
+        from the centre of the canopy rather than square out of the flat card.
+        The cards then shade as though they were the surface of a ball of
+        leaves, which is what stops them reading as flat billboards.
+     3. Enough cards, at enough angles, that no single view sees a card edge-on
+        across the whole canopy.
+
+   It is also cheaper than what it replaces: one canopy is one geometry of a
+   few dozen triangles, against eleven spheres of a few hundred each. */
+
+/* A clump of leaves on a transparent ground. Drawn as overlapping ellipses
+   with a midrib, in a spread of greens, so the cut-out edge is ragged in the
+   way a real clump is - a clean circular blob is instantly readable as fake. */
+/* `size` is the length of one leaf as a fraction of the card it is drawn on,
+   which is how the real-world leaf size is controlled: a 3.7 m tree canopy and
+   a 0.7 m hedge card both sample 0..1 of their texture, so they need different
+   relative leaf sizes to end up with leaves of a believable absolute size. */
+function texLeafClump(seed, base, count, size){
+  var n = 256, C = cv(n), g = C.x;
+  var r = PRNG(seed);
+  g.clearRect(0,0,n,n);
+  var col = new T.Color(base);
+  count = count || 130;
+  size  = size  || 0.030;
+  for(var i=0;i<count;i++){
+    /* biased towards the middle so the clump has a dense core and a broken
+       edge, rather than a uniform disc */
+    var a  = r()*Math.PI*2;
+    var rad = Math.pow(r(), 0.62) * n*0.46;
+    var x = n/2 + Math.cos(a)*rad, y = n/2 + Math.sin(a)*rad;
+    var len = n*size*(0.72 + r()*0.62), wid = len*(0.42 + r()*0.32);
+    var sh = 0.62 + r()*0.62;                 /* per-leaf light and shade */
+    var hs = (r()-0.5)*0.05;
+    var lc = col.clone();
+    lc.offsetHSL(hs, (r()-0.5)*0.10, (sh-1.0)*0.16);
+    g.save();
+    g.translate(x,y); g.rotate(r()*Math.PI*2);
+    g.fillStyle = "#" + lc.getHexString();
+    g.beginPath(); g.ellipse(0, 0, len, wid, 0, 0, Math.PI*2); g.fill();
+    /* midrib: a slightly darker line, which is most of what tells the eye
+       these are leaves and not confetti */
+    lc.offsetHSL(0, 0, -0.09);
+    g.strokeStyle = "#" + lc.getHexString();
+    g.lineWidth = Math.max(1, len*0.055);
+    g.beginPath(); g.moveTo(-len*0.92, 0); g.lineTo(len*0.92, 0); g.stroke();
+    g.restore();
+  }
+  return C.c;
+}
+function leafTex_raw(canvas){
+  var t = new T.CanvasTexture(canvas);
+  t.anisotropy = ANISO;
+  t.encoding = T.sRGBEncoding;
+  return t;
+}
+function leafTex(seed, base, count, size){ return leafTex_raw(texLeafClump(seed, base, count, size)); }
+
+/* Wind. One uniform, shared by every foliage material, updated once a frame.
+   The phase comes from the WORLD position of the vertex, so each plant sways
+   on its own beat - which matters because the merge pass bakes every canopy in
+   the garden into a single mesh, and without a positional phase the whole
+   garden would sway as one object. Amplitude is per-material: a mango tree
+   moves, a clipped hedge barely does. */
+var WIND = { value: 0.0 };
+var FOLIAGE_MATS = [];
+function foliageMat(tex, sway, o){
+  o = o || {};
+  var m = new T.MeshStandardMaterial({
+    map: tex,
+    alphaTest: o.cut != null ? o.cut : 0.42,
+    transparent: false,          /* a cut-out is opaque: it merges and it sorts */
+    side: T.DoubleSide,
+    roughness: 0.92,
+    metalness: 0.0
+  });
+  m.envMapIntensity = o.env != null ? o.env : 0.45;
+  m.onBeforeCompile = function(sh){
+    sh.uniforms.uWind = WIND;
+    sh.uniforms.uSway = { value: sway };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>",
+               "#include <common>\nuniform float uWind;\nuniform float uSway;")
+      .replace("#include <begin_vertex>",
+        [ "#include <begin_vertex>",
+          "{",
+          "  vec3 wP = (modelMatrix * vec4(transformed, 1.0)).xyz;",
+          "  float ph = wP.x * 0.43 + wP.z * 0.31;",
+          "  transformed.x += sin(uWind * 1.30 + ph) * uSway;",
+          "  transformed.z += cos(uWind * 1.07 + ph * 1.27) * uSway * 0.78;",
+          "}" ].join("\n"));
+    m.userData.shader = sh;
+  };
+  /* three keys its shader cache on this string; without a distinct one, two
+     materials with different sway would share a compiled program and the
+     second sway value would be ignored. */
+  m.customProgramCacheKey = function(){ return "foliage" + sway.toFixed(3) + m.alphaTest.toFixed(2); };
+  FOLIAGE_MATS.push(m);
+  return m;
+}
+
+/* A mango leaf is about 150 mm. On a 3.7 m canopy card that is 0.040 of the
+   card; on a 0.7 m hedge card the same leaf is 0.21 of it. Getting this wrong
+   is what makes card foliage look like a cartoon. */
+var TX_LEAF  = leafTex(9301, 0x4e8f3a, 620, 0.030);
+var TX_LEAF2 = leafTex(4517, 0x6aa845, 560, 0.032);
+var TX_SHRUB = leafTex(3313, 0x5c9a3e, 380, 0.070);
+var TX_HEDGE = leafTex(7723, 0x3f7a35, 330, 0.075);
+
+MAT.foliage   = foliageMat(TX_LEAF,  0.045);
+MAT.foliage2  = foliageMat(TX_LEAF2, 0.052, {env:0.5});
+MAT.foliageHi = foliageMat(TX_HEDGE, 0.014, {cut:0.50, env:0.35});   /* hedges */
+MAT.foliageLo = foliageMat(TX_SHRUB, 0.022, {env:0.4});              /* shrubs */
+
+/* A pinnate frond: a rachis with leaflets combed off it at an angle, on a
+   transparent ground. The palms were solid green blades before, which is the
+   one shape in nature that is never solid. UV runs u along the length and v
+   across the width, matching frondGeo(). */
+function texFrondBlade(seed){
+  var n = 256, C = cv(n), g = C.x;
+  var r = PRNG(seed);
+  g.clearRect(0,0,n,n);
+  var col = new T.Color(0x3f7a35);
+  /* rachis */
+  g.strokeStyle = "#2f5c28"; g.lineWidth = n*0.026;
+  g.beginPath(); g.moveTo(0, n/2); g.lineTo(n, n/2); g.stroke();
+  var N = 46;
+  for(var i=0;i<N;i++){
+    var u = 0.03 + (i/N)*0.95;
+    /* leaflets shorten towards the tip, and the whole blade tapers */
+    var taper = Math.sin(Math.PI*Math.min(1, u*1.12+0.05));
+    for(var s=-1;s<=1;s+=2){
+      var lc = col.clone();
+      lc.offsetHSL((r()-0.5)*0.04, (r()-0.5)*0.10, (r()-0.5)*0.13);
+      g.save();
+      g.translate(u*n, n/2);
+      g.rotate(s * (0.62 + r()*0.16));      /* combed back towards the tip */
+      g.fillStyle = "#" + lc.getHexString();
+      g.beginPath();
+      g.ellipse(0, s*n*0.20*taper, n*0.016, n*0.215*taper, 0, 0, Math.PI*2);
+      g.fill();
+      g.restore();
+    }
+  }
+  return C.c;
+}
+/* replaces the flat DoubleSide blade that used to be in the MAT table */
+MAT.palm = foliageMat(leafTex_raw(texFrondBlade(6151)), 0.030, {cut:0.38, env:0.5});
+
+/* ---------- canopy geometry ----------
+   n intersecting quads inside an ellipsoid, returned as one geometry centred
+   on the origin. The normals are the point of the exercise: each is the
+   direction from the canopy centre to that vertex, squashed by the ellipsoid,
+   so the cards light like a mass of leaves rather than like flat panes. */
+function canopyGeo(rx, ry, n, seed){
+  var r = PRNG(seed || 1), pos = [], uv = [], nor = [];
+  var q = new T.Quaternion(), e = new T.Euler();
+  var ux = new T.Vector3(), uy = new T.Vector3(), o = new T.Vector3(), v = new T.Vector3();
+  function push(p){
+    pos.push(p.x, p.y, p.z);
+    v.set(p.x / rx, p.y / ry, p.z / rx);
+    if(v.lengthSq() < 1e-8) v.set(0,1,0);
+    v.normalize();
+    nor.push(v.x, v.y, v.z);
+  }
+  for(var i=0;i<n;i++){
+    /* the golden angle keeps successive cards from stacking up on one side */
+    e.set((r()-0.5)*1.15, i*2.399 + r()*0.35, (r()-0.5)*0.75);
+    q.setFromEuler(e);
+    var w = rx * (0.78 + r()*0.55), h = ry * (0.80 + r()*0.55);
+    ux.set(1,0,0).applyQuaternion(q).multiplyScalar(w);
+    uy.set(0,1,0).applyQuaternion(q).multiplyScalar(h);
+    var d = Math.pow(r(), 0.7) * 0.42;
+    o.set((r()-0.5)*rx*d*2, (r()-0.5)*ry*d*2, (r()-0.5)*rx*d*2);
+    var a = o.clone().sub(ux).sub(uy), b = o.clone().add(ux).sub(uy),
+        c = o.clone().add(ux).add(uy), dd = o.clone().sub(ux).add(uy);
+    push(a); push(b); push(c);
+    push(a); push(c); push(dd);
+    uv.push(0,0, 1,0, 1,1,  0,0, 1,1, 0,1);
+  }
+  var g = new T.BufferGeometry();
+  g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute("normal",   new T.Float32BufferAttribute(nor, 3));
+  g.setAttribute("uv",       new T.Float32BufferAttribute(uv, 2));
+  return g;
+}
+/* Canopies are cached by their rounded dimensions: the garden has a lot of
+   shrubs of nearly the same size, and there is no reason to build a fresh
+   geometry for each when the merge pass is going to copy it anyway. */
+var CANOPY = {};
+function canopy(x, y, z, rx, ry, n, mat, group, seed){
+  var k = rx.toFixed(2) + "_" + ry.toFixed(2) + "_" + n + "_" + ((seed||1) % 7);
+  var g = CANOPY[k] || (CANOPY[k] = canopyGeo(rx, ry, n, seed || 1));
+  var m = new T.Mesh(g, mat);
+  m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  (group || gSite).add(m);
+  return m;
+}
+
 /* ---------- image-based lighting from the sky ---------- */
 /* One PMREM pass over a miniature of the same sky dome. This is what puts real
    reflections in the glazing, the cars, the water and the polished floors, and
@@ -813,6 +1162,13 @@ var FLOORS    = [];
 /* Colliders and floors carry the tag that was current when they were built.
    The BQ and the sports court are mutually exclusive, so their physics has to
    switch with them - otherwise you walk into a wall that isn't drawn. */
+/* Which group new planting is added to. The five planting helpers below were
+   written straight into gSite because everything green was permanent; now that
+   the garden is one of two mutually exclusive rear options, the same helpers
+   have to be able to build into gGarden instead. Same trick as CTAG. */
+var PGRP = null;                                 /* null means gSite */
+function planting(g, fn){ var p = PGRP; PGRP = g; fn(); PGRP = p; }
+
 var CTAG = null;
 var CTOFF = {};                                  /* tag -> true when disabled */
 function tagged(fn, tag){ var p = CTAG; CTAG = tag; fn(); CTAG = p; }
@@ -936,6 +1292,35 @@ function wall(x0,z0,x1,z1,o){
       if((b-a) > 1.4){
         addBox(horiz?0.07:0.09, top-sill, horiz?0.09:0.07, horiz?(a+b)/2:cross, y+(sill+top)/2, horiz?cross:(a+b)/2, fm, g, {cast:false});
       }
+      /* ---------- architrave, sill and drip ----------
+         o.trim is the OUTWARD direction along the cross axis (+1 or -1). The
+         reference elevation gets most of its crispness from these: a white
+         band around each opening, and a sill that projects far enough to throw
+         a shadow of its own. The groove under the sill is 20 mm of nothing,
+         and it is the detail that stops rain tracking back along the underside
+         and staining the wall below every window - worth drawing because it is
+         worth building. */
+      if(o.trim){
+        var sgn = o.trim, face = cross + sgn*(t/2 + 0.024), tw = 0.105, ov = 0.085;
+        var aa = a - tw, bb = b + tw;
+        var band = function(u0, u1, yc, hh2){
+          addBox(horiz ? (u1-u0) : 0.05, hh2, horiz ? 0.05 : (u1-u0),
+                 horiz ? (u0+u1)/2 : face, yc, horiz ? face : (u0+u1)/2,
+                 MAT.white, g, {cast:false});
+        };
+        band(aa, a,  y+(sill+top)/2 + tw/2, (top-sill) + tw);   /* left jamb  */
+        band(b,  bb, y+(sill+top)/2 + tw/2, (top-sill) + tw);   /* right jamb */
+        band(aa, bb, y+top+tw/2, tw);                           /* head       */
+        /* sill: projects past the wall face, and past the jambs on both sides */
+        addBox(horiz ? (bb-aa)+0.06 : ov*2, 0.065, horiz ? ov*2 : (bb-aa)+0.06,
+               horiz ? (aa+bb)/2 : cross + sgn*(t/2 + ov*0.55), y+sill-0.020,
+               horiz ? cross + sgn*(t/2 + ov*0.55) : (aa+bb)/2,
+               MAT.white, g, {cast:false});
+        addBox(horiz ? (bb-aa) : 0.022, 0.018, horiz ? 0.022 : (bb-aa),
+               horiz ? (aa+bb)/2 : cross + sgn*(t/2 + ov*0.92), y+sill-0.062,
+               horiz ? cross + sgn*(t/2 + ov*0.92) : (aa+bb)/2,
+               MAT.accent, g, {cast:false});
+      }
     }
   });
   if(cur < B) solids.push({a:cur,b:B,y0:y,y1:y+h});
@@ -945,10 +1330,25 @@ function wall(x0,z0,x1,z1,o){
     addBox(horiz?len:t, hh, horiz?t:len,
            horiz?(s.a+s.b)/2:cross, (s.y0+s.y1)/2, horiz?cross:(s.a+s.b)/2,
            mat, g, {solid:true});
+    /* Skirting. Keyed off the material and the trim flag rather than a flag
+       at each of the hundred-odd call sites: a partition gets a board on both
+       faces, an external wall gets one on the inside only. Nobody consciously
+       notices skirting; everybody notices a wall meeting a floor in a bare
+       line. */
+    if(hh > 1.6 && s.y0 <= y + 0.01){
+      var faces = null;
+      if(mat === MAT.wallInt)  faces = [-1, 1];   /* partition: both sides */
+      else if(o.trim)          faces = [-o.trim]; /* exterior: the inside only */
+      if(faces) for(var fi = 0; fi < faces.length; fi++){
+        var sf = cross + faces[fi]*(t/2 + 0.009);
+        addBox(horiz?len:0.018, 0.105, horiz?0.018:len,
+               horiz?(s.a+s.b)/2:sf, s.y0 + 0.0525, horiz?sf:(s.a+s.b)/2,
+               MAT.white, g, {cast:false});
+      }
+    }
   });
 }
 function hwall(u0,v0,u1,v1,o){ wall(hx(u0),hz(v0),hx(u1),hz(v1),o); }
-function bwall(u0,v0,u1,v1,o){ wall(bxf(u0),bzf(v0),bxf(u1),bzf(v1),o); }
 
 /* ---------- hip roof ---------- */
 function hipRoof(x0,z0,x1,z1,baseY,height,over,mat,group){
@@ -1001,6 +1401,57 @@ function hipRoof(x0,z0,x1,z1,baseY,height,over,mat,group){
 }
 
 /* ---------- balustrade ---------- */
+/* ---------- fluted charcoal panels ----------
+   The one detail that most separates the reference elevation from a plain
+   rendered box. A flat charcoal rectangle painted on a wall reads as paint; a
+   fluted one reads as a material, because the ribs catch the low sun on one
+   side and shade on the other. It only works with a raking sun, which is
+   exactly what the time-of-day default now gives.
+
+   Ribs are half-round, 90 mm wide at 110 mm centres, standing 45 mm proud of a
+   charcoal backing board. Each rib is a low-segment cylinder rather than a
+   box: at this size the difference between a flat chamfer and a real curve is
+   the difference between a shadow line and a gradient. */
+function flutePanel(cx, cy, cz, w, h, face, group){
+  /* `face` is the outward direction of the wall the panel sits on: "+z", "-z",
+     "+x" or "-x". It has to be the outward one - ribs pushed into the wall
+     instead of out of it are invisible, and silently so. */
+  var alongZ = (face === "+x" || face === "-x");
+  var sgn = (face === "-z" || face === "-x") ? -1 : 1;
+  var back = 0.05, prj = 0.045, rr = 0.045, pitch = 0.110;
+  group = group || gGF;
+
+  /* backing board, slightly proud of the render so the panel has an edge */
+  addBox(alongZ ? back*2 : w, h, alongZ ? w : back*2,
+         cx, cy, cz, MAT.accent, group, {cast:false});
+
+  var n = Math.max(2, Math.floor(w / pitch));
+  var span = (n - 1) * pitch;
+  for(var i=0;i<n;i++){
+    var off = -span/2 + i*pitch;
+    var rx = alongZ ? cx + sgn*(back + prj*0.5) : cx + off;
+    var rz = alongZ ? cz + off                  : cz + sgn*(back + prj*0.5);
+    var m = addCyl(rr, rr, h, rx, cy, rz, MAT.accent, group, 7, {cast:false});
+    /* squash the cylinder into a half-round standing off the board */
+    m.scale.z = alongZ ? 1 : 0.62;
+    m.scale.x = alongZ ? 0.62 : 1;
+  }
+}
+
+/* ---------- stone-clad column ----------
+   A structural column in a charcoal casing, wrapped in split-face stone with a
+   rendered cap and base band - the porch columns in the reference. The bands
+   matter as much as the stone: without them the cladding runs into the slab
+   and the column loses its base. */
+function stoneColumn(x, y0, y1, z, core, group){
+  var h = y1 - y0, cy = (y0 + y1) / 2;
+  var band = 0.13, cw = core + 0.20;
+  addBox(core, h, core, x, cy, z, MAT.accent, group, {solid:true});
+  addBox(cw, h - band*2, cw, x, cy, z, MAT.stone, group, {cast:false});
+  addBox(cw + 0.06, band, cw + 0.06, x, y0 + band/2, z, MAT.white, group, {cast:false});
+  addBox(cw + 0.06, band, cw + 0.06, x, y1 - band/2, z, MAT.white, group, {cast:false});
+}
+
 function rail(x0,z0,x1,z1,y,group,mat){
   var horiz = Math.abs(z1-z0)<1e-6;
   var len = horiz? Math.abs(x1-x0) : Math.abs(z1-z0);

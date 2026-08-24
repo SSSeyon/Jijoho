@@ -16,6 +16,31 @@ slab(hx(0),hz(0),hx(HW),hz(HD), GF, 0.12, MAT.tileF, gGF, {cast:false});
 addBox(11.50, GF, 1.80, hx(6.75), GF/2, hz(-0.90), MAT.stone, gGF, {});
 addCollider(hx(1.0), hx(12.5), hz(-1.80), hz(0), 0, GF);
 slab(hx(1.0),hz(-1.80),hx(12.5),hz(0), GF, 0.10, MAT.paverWarm, gGF, {cast:false});
+
+/* ---------- plinth band ----------
+   The 600 mm raised plinth used to meet the wall in a single flush plane, so
+   from outside the house looked as though it had been extruded straight out of
+   the ground. A projecting band with a weathered top gives the building a base
+   to stand on and throws a continuous shadow line right round it - the same
+   trick as the sills, at building scale. */
+(function(){
+  var pb = 0.055, ph = 0.16, yb = GF - ph/2;
+  [[0,0,HW,0],[0,HD,HW,HD]].forEach(function(r){
+    addBox(HW + pb*2 + 0.20, ph, EXT.t + pb*2, hx(HW/2), yb, hz(r[1]), MAT.wallExt, gGF, {cast:false});
+  });
+  [[0,0,0,HD],[HW,0,HW,HD]].forEach(function(r){
+    addBox(EXT.t + pb*2, ph, HD + pb*2, hx(r[0]), yb, hz(HD/2), MAT.wallExt, gGF, {cast:false});
+  });
+  /* the weathering: a thin dark chamfer under the band, which is what actually
+     reads as a shadow at a distance */
+  [[0,0,HW,0],[0,HD,HW,HD]].forEach(function(r){
+    addBox(HW + pb*2 + 0.20, 0.022, EXT.t + pb*2 - 0.02, hx(HW/2), yb - ph/2 - 0.011, hz(r[1]), MAT.accent, gGF, {cast:false});
+  });
+  [[0,0,0,HD],[HW,0,HW,HD]].forEach(function(r){
+    addBox(EXT.t + pb*2 - 0.02, 0.022, HD + pb*2, hx(r[0]), yb - ph/2 - 0.011, hz(HD/2), MAT.accent, gGF, {cast:false});
+  });
+})();
+
 /* Suspended POP ceiling. Without it you look up at the underside of the first-
    floor slab and see the floor tiles of the storey above. */
 [[0.0,0.0,5.0,11.5],[5.0,0.0,6.5,2.60],[5.0,7.36,6.5,11.5],[6.5,0.0,13.55,11.5]].forEach(function(r){
@@ -41,16 +66,16 @@ addBox(11.5, 0.04, 1.80, hx(6.75), GF+CH-0.02, hz(-0.90), MAT.ceiling, gFF, {cas
 })();
 
 /* ---------- exterior walls ---------- */
-hwall(0,0,HW,0,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,openings:[
+hwall(0,0,HW,0,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,trim:-1,openings:[
   opH(0.8,4.4,0.45,2.55), opH(6.2,8.0,0.0,2.50,true), opH(9.6,12.4,0.90,2.45)
 ]});
-hwall(0,HD,HW,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,openings:[
+hwall(0,HD,HW,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,trim:1,openings:[
   opH(1.0,3.6,0.90,2.45), opH(5.6,7.0,0.0,2.45,true), opH(9.2,11.0,1.10,2.35), opH(11.9,12.9,0.0,2.35,true)
 ]});
-hwall(0,0,0,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,openings:[
+hwall(0,0,0,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,trim:-1,openings:[
   opV(1.4,3.4,0.45,2.55), opV(4.6,6.4,0.45,2.55), opV(8.2,10.2,0.90,2.45)
 ]});
-hwall(HW,0,HW,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,openings:[
+hwall(HW,0,HW,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:GF,group:gGF,trim:1,openings:[
   opV(1.2,3.2,0.90,2.45), opV(5.0,5.9,1.60,2.35), opV(7.2,9.0,1.10,2.35)
 ]});
 

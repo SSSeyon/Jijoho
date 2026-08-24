@@ -8,11 +8,124 @@
    have finished adding meshes. */
 fixUV2(scene);
 
-/* The court and the BQ occupy the same ground, so exactly one is up at a
-   time. Start with the BQ, which is what the brief asked for. */
+/* The court and the garden occupy the same ground, so exactly one is up at a
+   time. Start with the garden: it is the default reading of the plot, and the
+   court is the thing you switch on. */
 gSport.visible = false;
-if(gSolar) gSolar.visible = false;
 CTOFF.sport = true;
+
+/* ---------- static geometry merge ----------
+   The model was drawing 1,991 objects to put 93,000 triangles on screen -
+   about fifty triangles per draw call. Nothing here is GPU-bound; it is all
+   per-object overhead, paid once for the beauty pass and again for the shadow
+   pass. That is why switching on a 1024 shadow map used to halve the frame
+   rate, and why the Ultra preset was unusable.
+
+   The cause is the way the model is authored: addBox() reuses one shared unit
+   cube and scales it, so a wall, a step and a table leg are three draw calls
+   sharing a geometry. Cheap to write, expensive to draw. This pass bakes each
+   mesh's world matrix into a copy of its geometry and merges everything that
+   shares a material into one mesh.
+
+   What is deliberately left alone:
+     - transparent materials, because merging them into one object destroys the
+       per-object depth sort they rely on;
+     - anything in a nested Group, which is merged separately into its own
+       object so that group's independent visibility still works.
+   Furniture is merged but bucketed separately, so the Empty toggle still has
+   objects of its own to hide.
+
+   The cost is memory - a shared cube becomes N copies of 24 vertices - and the
+   loss of per-object frustum culling. At this scene size both are free. */
+function mergeStatics(){
+  if(!THREE.BufferGeometryUtils || !THREE.BufferGeometryUtils.mergeBufferGeometries) return null;
+
+  /* Furniture is merged too, but kept in separate buckets from the building, so
+     the Empty toggle still has something to switch off. It works because no
+     individual chair ever moves - only the whole set is ever hidden at once.
+     FURN is rebuilt at the end to hold the merged meshes instead of the 784
+     originals, which is where most of the draw calls actually were. */
+  var isFurn = new Set ? new Set(FURN) : null;
+  function furnish(m){ return isFurn ? isFurn.has(m) : FURN.indexOf(m) >= 0; }
+  var newFurn = [];
+
+  var before = 0, after = 0;
+
+  function mergeDomain(root){
+    var buckets = {};
+
+    (function walk(o){
+      for(var i=0; i<o.children.length; i++){
+        var c = o.children[i];
+        if(c.isGroup){ mergeDomain(c); continue; }
+        if(!c.isMesh){ continue; }
+        before++;
+        var mat = c.material, fu = furnish(c);
+        if(!mat || mat.transparent || Array.isArray(mat) || c.children.length ||
+           !c.geometry || !c.geometry.attributes || !c.geometry.attributes.position){
+          after++;
+          if(fu) newFurn.push(c);
+          continue;
+        }
+        /* Shadow flags are per-object, not per-material, so they have to be in
+           the key or a merge would silently change what casts. Indexed and
+           non-indexed geometry cannot merge together either, and mixing them
+           makes mergeBufferGeometries return null rather than throw. */
+        var key = (fu?"F":"S") + mat.uuid + "|" + (c.castShadow?1:0) + "|" + (c.receiveShadow?1:0) +
+                  "|" + (c.renderOrder||0) + "|" + (c.geometry.index?1:0) +
+                  "|" + Object.keys(c.geometry.attributes).sort().join(",");
+        (buckets[key] || (buckets[key] = {mat:mat, furn:fu, cast:c.castShadow, recv:c.receiveShadow,
+                                          order:c.renderOrder||0, list:[]})).list.push(c);
+      }
+    })(root);
+
+    var keys = Object.keys(buckets), k, b, i;
+    for(k=0; k<keys.length; k++){
+      b = buckets[keys[k]];
+      if(b.list.length < 2){
+        after += b.list.length;
+        if(b.furn) for(i=0; i<b.list.length; i++) newFurn.push(b.list[i]);
+        continue;
+      }
+      var geos = [];
+      for(i=0; i<b.list.length; i++){
+        var m = b.list[i];
+        m.updateWorldMatrix(true, false);
+        var g = m.geometry.clone();
+        g.applyMatrix4(m.matrixWorld);
+        /* uv2 is usually the very same BufferAttribute object as uv; clone()
+           keeps that aliasing, and the merge needs them to be separate arrays. */
+        if(g.attributes.uv && g.attributes.uv2 === g.attributes.uv){
+          g.setAttribute("uv2", g.attributes.uv.clone());
+        }
+        geos.push(g);
+      }
+      var merged = null;
+      try { merged = THREE.BufferGeometryUtils.mergeBufferGeometries(geos, false); }
+      catch(e){ merged = null; }
+      for(i=0; i<geos.length; i++) geos[i].dispose();
+      if(!merged){
+        after += b.list.length;
+        if(b.furn) for(i=0; i<b.list.length; i++) newFurn.push(b.list[i]);
+        continue;
+      }
+
+      for(i=0; i<b.list.length; i++) b.list[i].parent.remove(b.list[i]);
+      var mm = new T.Mesh(merged, b.mat);
+      mm.castShadow = b.cast; mm.receiveShadow = b.recv; mm.renderOrder = b.order;
+      mm.matrixAutoUpdate = false;      /* baked in world space, and static */
+      root.add(mm);
+      after++;
+      if(b.furn) newFurn.push(mm);
+    }
+  }
+
+  [gSite, gGF, gFF, gRoof, gSport, gGarden, gPav].forEach(mergeDomain);
+  FURN.length = 0;
+  for(var n=0; n<newFurn.length; n++) FURN.push(newFurn[n]);
+  return {before:before, after:after, furn:FURN.length};
+}
+var MERGED = mergeStatics();
 
 /* ---------- rooms for the location readout ---------- */
 function Z(name, y, x0,z0,x1,z1){ return {n:name, y:y, x0:Math.min(x0,x1), x1:Math.max(x0,x1), z0:Math.min(z0,z1), z1:Math.max(z0,z1)}; }
@@ -42,32 +155,28 @@ var ZONES = [
   Z("Linen / plant store", FF, hx(8.55),hz(5.0), hx(13.55),hz(6.6)),
   Z("Bedroom 4", FF, hx(8.55),hz(6.6), hx(13.55),hz(11.5)),
   Z("Front balcony", FF, hx(1.0),hz(-1.8), hx(12.5),hz(0)),
-  /* boys quarters */
-  Z("BQ unit A - parlour", BF, bxf(0),bzf(0), bxf(5.0),bzf(3.0)),
-  Z("BQ unit A - bedroom", BF, bxf(1.9),bzf(3.0), bxf(5.0),bzf(6.0)),
-  Z("BQ unit A - kitchenette", BF, bxf(0),bzf(3.0), bxf(1.9),bzf(4.4)),
-  Z("BQ unit A - bathroom", BF, bxf(0),bzf(4.4), bxf(1.9),bzf(6.0)),
-  Z("Indoor games room", BF, bxf(5.0),bzf(0), bxf(8.55),bzf(6.0)),
-  Z("BQ unit B - parlour", BF, bxf(8.55),bzf(0), bxf(13.55),bzf(3.0)),
-  Z("BQ unit B - bedroom", BF, bxf(8.55),bzf(3.0), bxf(11.65),bzf(6.0)),
-  Z("BQ unit B - kitchenette", BF, bxf(11.65),bzf(3.0), bxf(13.55),bzf(4.4)),
-  Z("BQ unit B - bathroom", BF, bxf(11.65),bzf(4.4), bxf(13.55),bzf(6.0)),
+  /* games pavilion */
+  Z("Games pavilion", PVF, PVX0,PVZ0, PVX1,PVZ1),
   /* outdoors */
-  Z("Gazebo", 0.22, -9.1,3.5, -5.6,7.1),
   Z("Driveway / carport", 0, -9.6,-16.7, -1.1,-11.2),
   Z("Front garden", 0, 0.2,-16.7, 9.7,-11.2),
   Z("Rear terrace", 0, -1.3,1.7, 4.9,4.2),
   Z("Rear lawn", 0, -9.7,1.7, 9.7,6.7),
-  Z("BQ forecourt", 0, -9.7,6.6, 9.7,7.8),
   Z("Utility yard", 0, -9.7,15.0, 9.7,16.8),
   Z("West garden walk", 0, -9.7,-11.3, -6.8,7.8),
   Z("East service path", 0, 6.8,-11.3, 9.7,14.7)
 ];
-/* The rear of the plot reads differently depending on which block is up, so
+/* The rear of the plot reads differently depending on which option is up, so
    the zones for each are tagged and filtered the same way the colliders are. */
-ZONES.forEach(function(Zi){
-  if(Zi.n.indexOf("BQ ") === 0 || Zi.n === "Indoor games room" || Zi.n === "BQ forecourt") Zi.t = "bq";
-});
+/* Listed broadest first: each unshift pushes in front of the last, so the
+   general "Rear garden" ends up behind the specific places inside it and the
+   more specific name wins. Same ordering trick as the court zones below. */
+[ Z("Rear garden", 0.012, -9.2,6.7, 9.2,15.0),
+  Z("Garden path", 0, 5.9,6.7, 8.1,15.0),
+  Z("Kitchen garden", 0, -8.3,13.2, 3.2,15.0),
+  Z("Outdoor kitchen", 0, 0.3,6.55, 4.9,9.35),
+  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8)
+].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
 /* unshifted, so the court reads ahead of the rear-lawn zone it overlaps.
    Listed back to front: after the unshifts the key ends up ahead of the court,
    which is what makes the more specific name win. */
@@ -296,7 +405,7 @@ function setMode(m){
     ? "move · look & zoom" : "pan · orbit & zoom";
   fov = FOV0; camera.fov = fov; camera.updateProjectionMatrix();
   if(m==="orbit" && locked) document.exitPointerLock();
-  if(m==="walk"){ gRoof.visible=true; gBQR.visible=(rearBlock==="bq"); gFF.visible=true;
+  if(m==="walk"){ gRoof.visible=true; gFF.visible=true;
     document.getElementById("btnRoof").classList.remove("on");
     document.getElementById("btnFloor").classList.remove("on"); }
 }
@@ -306,34 +415,33 @@ document.getElementById("btnOrbit").onclick = function(){ setMode("orbit"); };
 document.getElementById("btnRoof").onclick = function(){
   var on = !this.classList.contains("on");
   this.classList.toggle("on", on);
-  gRoof.visible = !on; gBQR.visible = !on && (rearBlock==="bq");
+  gRoof.visible = !on;
 };
 document.getElementById("btnFloor").onclick = function(){
   var on = !this.classList.contains("on");
   this.classList.toggle("on", on);
   gFF.visible = !on;
-  if(on){ gRoof.visible=false; gBQR.visible=false; document.getElementById("btnRoof").classList.add("on"); }
+  if(on){ gRoof.visible=false; document.getElementById("btnRoof").classList.add("on"); }
 };
 document.getElementById("btnFurn").onclick = function(){
   var on = !this.classList.contains("on");
   this.classList.toggle("on", on);
   for(var i=0;i<FURN.length;i++) FURN[i].visible = !on;
 };
-/* ---------- BQ or sports court ---------- */
+/* ---------- garden or sports court ---------- */
 /* The two share the rear of the plot, so this is an either/or, not a pair of
    independent switches: turning one on turns the other off, along with its
-   colliders, its floors and its entries in the jump-to list. */
-var rearBlock = "bq";
+   colliders, its floors and its entries in the jump-to list. The games
+   pavilion is outside the switch entirely - it is there in both. */
+var rearBlock = "garden";
 function setRear(which){
   rearBlock = which;
   var sport = (which === "sport");
   gSport.visible = sport;
-  gBQ.visible = !sport;
-  gBQR.visible = !sport && !document.getElementById("btnRoof").classList.contains("on");
-  if(gSolar) gSolar.visible = sport;
+  gGarden.visible = !sport;
   CTOFF.sport = !sport;
-  CTOFF.bq = sport;
-  document.getElementById("btnBQ").classList.toggle("on", !sport);
+  CTOFF.garden = sport;
+  document.getElementById("btnGarden").classList.toggle("on", !sport);
   document.getElementById("btnSport").classList.toggle("on", sport);
   buildGoto();
   /* If you were standing inside whichever block just vanished, step out to the
@@ -342,7 +450,7 @@ function setRear(which){
     player.x = 0.60; player.y = 0; player.z = 5.20; player.yaw = 0;
   }
 }
-document.getElementById("btnBQ").onclick    = function(){ setRear("bq"); };
+document.getElementById("btnGarden").onclick = function(){ setRear("garden"); };
 document.getElementById("btnSport").onclick = function(){ setRear("sport"); };
 
 /* every distinct standard material in the scene, with its authored reflection
@@ -363,37 +471,222 @@ function envDim(f){
   for(var i=0;i<ENVMATS.length;i++) ENVMATS[i].m.envMapIntensity = ENVMATS[i].e * f;
 }
 
-var dusk=false;
-document.getElementById("btnDusk").onclick = function(){
-  dusk = !dusk;
-  this.classList.toggle("on", dusk);
-  if(dusk){
-    sun.position.set(-38, 9, -14); sun.intensity=0.95; sun.color.set(0xffa863);
-    scene.fog.color.set(0x2c3a4e); skyMat.uniforms.top.value.set(0x16233c);
-    skyMat.uniforms.mid.value.set(0x4a5c78); skyMat.uniforms.bot.value.set(0xd88a4e);
-    skyMat.uniforms.sunv.value.set(-0.92, 0.12, -0.34);
-    skyMat.uniforms.sunc.value.set(0xffb173);
-    renderer.toneMappingExposure = 1.14;
-    /* the dusk sky is far too dim to light the scene through the environment map
-       alone, so the fill lights carry it instead */
-    amb.intensity = 0.16; hemi.intensity = 0.30; amb.color.set(0x8ea6c8);
-    hemi.color.set(0x3c4c68); hemi.groundColor.set(0x241d18);
-  } else {
-    sun.position.set(26,42,-20); sun.intensity=1.55; sun.color.set(0xfff2d8);
-    scene.fog.color.set(0xcfe0ea); skyMat.uniforms.top.value.set(0x2f7fc4);
-    skyMat.uniforms.mid.value.set(0x9fc9e6); skyMat.uniforms.bot.value.set(0xe9e2d2);
-    skyMat.uniforms.sunv.value.set(0.5, 0.7, -0.4);
-    skyMat.uniforms.sunc.value.set(0xfff0d0);
-    renderer.toneMappingExposure = 1.02;
-    amb.intensity = 0.17; hemi.intensity = 0.30; amb.color.set(0xffffff);
-    hemi.color.set(0xbfe0ff); hemi.groundColor.set(0x6b6350);
-  }
-  /* The environment map stays the daytime one. Regenerating the PMREM from a
-     dark sky produces a target that renders every lit surface black in r128,
-     so the reflections are dimmed instead of rebuilt - the glazing keeps a
-     slightly optimistic sky in it after dark, which is the cheaper error. */
-  envDim(dusk ? 0.28 : 1.0);
+/* ---------- graphics quality ----------
+   One place where every expensive setting is named and priced. Without this
+   the model has to be built for the weakest machine that might open it, which
+   means nobody sees what it can actually do; with it the phone gets a version
+   that runs and the desktop gets the one worth looking at. Everything here is
+   applied in place - no rebuild, no reload. */
+var QUALITY = {
+  low:   { pr:0.70, shadow:0,    soft:1, glass:false, aniso:2,  post:false, ao:false, dof:false, foliage:0.45 },
+  medium:{ pr:1.00, shadow:1024, soft:2, glass:false, aniso:4,  post:false, ao:false, dof:false, foliage:0.70 },
+  high:  { pr:1.50, shadow:2048, soft:2, glass:true,  aniso:8,  post:true,  ao:false, dof:false, foliage:1.00 },
+  ultra: { pr:2.00, shadow:4096, soft:3, glass:true,  aniso:16, post:true,  ao:true,  dof:true,  foliage:1.00 }
 };
+var QNAME = "high";
+var Q = QUALITY.high;
+/* every distinct texture in the model, collected once, so filtering can be
+   changed across the whole scene without hunting through the material table */
+var ALLTEX = null;
+function collectTex(){
+  if(ALLTEX) return ALLTEX;
+  ALLTEX = []; var seen = [];
+  var slots = ["map","normalMap","roughnessMap","metalnessMap","aoMap","alphaMap","emissiveMap"];
+  scene.traverse(function(o){
+    var ms = o.material; if(!ms) return;
+    if(!ms.length) ms = [ms];
+    for(var i=0;i<ms.length;i++){
+      for(var s=0;s<slots.length;s++){
+        var t = ms[i][slots[s]];
+        if(t && seen.indexOf(t) < 0){ seen.push(t); ALLTEX.push(t); }
+      }
+    }
+  });
+  return ALLTEX;
+}
+function setQuality(name){
+  var q = QUALITY[name]; if(!q) return;
+  QNAME = name; Q = q;
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, q.pr));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  if(q.shadow === 0){
+    renderer.shadowMap.enabled = false;
+    sun.castShadow = false;
+  } else {
+    renderer.shadowMap.enabled = true;
+    sun.castShadow = true;
+    if(sun.shadow.mapSize.x !== q.shadow){
+      /* the depth target is allocated at the old size; it has to be released
+         before three will build a new one */
+      if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map = null; }
+      sun.shadow.mapSize.set(q.shadow, q.shadow);
+    }
+    sun.shadow.radius = q.soft;
+  }
+  renderer.shadowMap.needsUpdate = true;
+
+  setGlass(q.glass, true);
+  applyPost(q);
+  /* The presets change the pixel ratio, so the composer targets have to be
+     resized with the canvas. Without this, switching preset leaves every post
+     pass rendering at the previous resolution until the next window resize. */
+  if(composer) composer.setSize(window.innerWidth, window.innerHeight);
+
+  var tx = collectTex(), a = Math.min(q.aniso, ANISO);
+  for(var i=0;i<tx.length;i++){
+    if(tx[i].anisotropy !== a){ tx[i].anisotropy = a; tx[i].needsUpdate = true; }
+  }
+
+  var sel = document.getElementById("qual");
+  if(sel && sel.value !== name) sel.value = name;
+}
+
+/* ---------- time of day ----------
+   Replaces the old two-state Dusk toggle. Dragging is cheap: the sun, the sky
+   and the fill lights all move on every input event. Rebuilding the reflection
+   probe is not, so that waits for you to let go of the slider. */
+var todT = null;
+function wireTOD(){
+  var sl = document.getElementById("tod");
+  var lb = document.getElementById("todLbl");
+  if(!sl) return;
+  function label(h){
+    var hh = Math.floor(h), mm = Math.round((h-hh)*60);
+    if(mm === 60){ hh++; mm = 0; }
+    return (hh<10?"0":"") + hh + ":" + (mm<10?"0":"") + mm;
+  }
+  function paint(rebuild){
+    var h = parseFloat(sl.value);
+    setSky(h, rebuild);
+    if(lb) lb.textContent = label(h);
+  }
+  sl.addEventListener("input",  function(){ paint(false); });
+  sl.addEventListener("change", function(){ paint(true); });
+  sl.value = DAYH;
+  paint(true);
+}
+
+/* ---------- post-processing ----------
+   Up to now the scene went straight to the canvas, which is why it always
+   looked like a viewport rather than a photograph. This puts a composer in
+   front of it:
+
+     SSAO or Render  ->  Bloom  ->  Bokeh  ->  Grade  ->  SMAA  ->  screen
+
+   Two things about the colour pipeline are worth stating, because getting
+   them wrong is silent and looks merely "a bit off". First, three only
+   applies outputEncoding when it renders to the canvas, so once the scene is
+   rendered into a target it is LINEAR - the grade pass has to do the
+   linear-to-sRGB conversion itself, and it is the only pass allowed to.
+   Second, the canvas MSAA that antialias:true gives us does not apply to
+   render targets, so the composer would lose every antialiased edge if SMAA
+   were not on the end of the chain. */
+
+/* A gentle photographic finish. None of this is dramatic on its own: a slight
+   S-curve, a touch of saturation, corner falloff and a whisper of grain. Taken
+   together they are most of the difference between a render and a screenshot,
+   which is why they belong at the end rather than baked into the materials. */
+var GradeShader = {
+  uniforms: {
+    tDiffuse:{value:null}, vig:{value:0.30}, grain:{value:0.020},
+    sat:{value:1.06}, con:{value:0.16}, uTime:{value:0.0}
+  },
+  vertexShader: [
+    "varying vec2 vUv;",
+    "void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }"
+  ].join("\n"),
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform float vig; uniform float grain;",
+    "uniform float sat; uniform float con; uniform float uTime;",
+    "varying vec2 vUv;",
+    "vec3 lin2srgb(vec3 c){",
+    "  vec3 lo = c * 12.92;",
+    "  vec3 hi = 1.055 * pow(max(c, vec3(0.0)), vec3(0.41666)) - 0.055;",
+    "  return mix(hi, lo, step(c, vec3(0.0031308)));",
+    "}",
+    "void main(){",
+    "  vec3 c = texture2D(tDiffuse, vUv).rgb;",
+    "  c = mix(c, c*c*(3.0-2.0*c), con);",              /* smoothstep as an S-curve */
+    "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));",
+    "  c = mix(vec3(l), c, sat);",
+    "  vec2 q = vUv - 0.5;",
+    "  c *= clamp(1.0 - dot(q,q) * vig, 0.0, 1.0);",
+    "  c = lin2srgb(c);",
+    /* grain after the encoding, so it stays even across the tonal range
+       instead of disappearing in the highlights */
+    "  float n = fract(sin(dot(vUv + fract(uTime), vec2(12.9898, 78.233))) * 43758.5453);",
+    "  c += (n - 0.5) * grain;",
+    "  gl_FragColor = vec4(c, 1.0);",
+    "}"
+  ].join("\n")
+};
+
+var composer=null, pRender=null, pSSAO=null, pBloom=null, pBokeh=null, pGrade=null, pSMAA=null;
+var POSTOK = (typeof THREE.EffectComposer === "function");
+
+function buildComposer(){
+  if(!POSTOK || composer) return;
+  var w = window.innerWidth, h = window.innerHeight;
+  composer = new T.EffectComposer(renderer);
+  composer.setSize(w, h);
+
+  pRender = new T.RenderPass(scene, camera);
+
+  /* SSAO renders the scene itself - beauty, normals and depth - so it stands
+     in for the render pass rather than following it. That is three passes over
+     the model instead of one, which is why it is an Ultra-only setting. What
+     it buys is the darkening in every internal corner and where furniture
+     meets floor: the texture-space AO map cannot know about geometry, so
+     without this everything appears to hover very slightly. */
+  pSSAO = new T.SSAOPass(scene, camera, w, h);
+  /* These three are easy to get silently wrong. kernelRadius is in metres -
+     the reach of the occlusion, so roughly the width of the shadow wanted in a
+     corner. minDistance and maxDistance are NOT metres: they are differences
+     in linear depth normalised across the camera's near-to-far range, and with
+     far = 500 that makes one metre equal 1/500 = 0.002. The three.js defaults
+     assume a scene hundreds of units across; carried over unchanged they
+     reject every real depth difference in a house and the AO buffer comes out
+     pure white, which is exactly what happened on the first attempt. */
+  pSSAO.kernelRadius = 0.90;      /* metres */
+  pSSAO.minDistance  = 0.00003;   /* ~15 mm - under this it is depth noise */
+  pSSAO.maxDistance  = 0.0032;    /* ~1.6 m - past this it is not contact */
+
+  /* Deliberately weak. Bloom's job here is the sun catching a roof edge and
+     the lamps at dusk, not a glow filter over the whole model. */
+  pBloom = new T.UnrealBloomPass(new T.Vector2(w, h), 0.26, 0.62, 0.92);
+
+  /* Depth of field belongs in the dollhouse view and nowhere else: blur in
+     first person fights your ability to see where you are walking. */
+  pBokeh = new T.BokehPass(scene, camera, { focus:30.0, aperture:0.00060, maxblur:0.007, width:w, height:h });
+  pBokeh.enabled = false;
+
+  pGrade = new T.ShaderPass(GradeShader);
+  pSMAA  = new T.SMAAPass(w, h);
+  pSMAA.renderToScreen = true;
+
+  composer.addPass(pRender);
+  composer.addPass(pSSAO);
+  composer.addPass(pBloom);
+  composer.addPass(pBokeh);
+  composer.addPass(pGrade);
+  composer.addPass(pSMAA);
+}
+
+/* Which passes are live for the current preset. Passes are never added or
+   removed after the chain is built - flipping `enabled` is free, rebuilding
+   the composer is not. */
+function applyPost(q){
+  if(!POSTOK) return;
+  if(q.post) buildComposer();
+  if(!composer) return;
+  pRender.enabled = !q.ao;          /* SSAO does its own beauty render */
+  pSSAO.enabled   = !!q.ao;
+  pBloom.enabled  = true;
+  pGrade.enabled  = true;
+  pSMAA.enabled   = true;
+}
 
 /* ---------- teleports ---------- */
 var SPOTS = [
@@ -419,17 +712,19 @@ var SPOTS = [
   ["Front balcony",                   -4.00, FF,   -10.60, 0.15],
   ["Rear terrace",                     3.40, 0,      4.85, 1.467],
   ["Rear lawn (looking at the house)", 0.60, 0,      6.20, 0.300],
-  ["Gazebo",                          -6.60, 0.22,   6.30,-0.900],
-  ["BQ unit A (parlour)",             -4.58, BF,     9.84, 0.262, "bq"],
-  ["BQ unit A (bedroom)",             -2.83, BF,    11.24, 0.524, "bq"],
-  ["Indoor games room",                0.00, BF,     9.34, 0,     "bq"],
-  ["BQ unit B (parlour)",              4.97, BF,     9.64, 0,     "bq"],
-  /* court viewpoints - only listed when the court is the block that is up */
+  ["Games pavilion (at the table)",   -7.60, PVF,    4.50, Math.PI/2],
+  ["Games pavilion (from the door)",  -4.50, PVF,    3.20, 2.60],
+  /* garden viewpoints - only listed when the garden is up */
+  ["Pergola",                         -5.20, 0.10,  10.90, 3.10,  "garden"],
+  ["Outdoor kitchen",                  2.60, 0,      6.75, 0.10,  "garden"],
+  ["Kitchen garden (raised beds)",    -4.60, 0,     13.30, 2.95,  "garden"],
+  ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
+  /* court viewpoints - only listed when the court is up */
   ["Court, from the baseline",        -7.10, 0.12,  10.90, -Math.PI/2, "sport"],
   ["Court, under the hoop",           -5.20, 0.12,  10.90,  Math.PI/2, "sport"],
   ["Court, at the net",                0.60, 0.12,  10.90,  Math.PI/2, "sport"],
   ["Court, from the goal end",         6.40, 0.12,  10.90,  Math.PI/2, "sport"],
-  ["Courtside bench",                 -4.60, 0,      4.85,  Math.PI,   "sport"],
+  ["Courtside bench",                 -0.40, 0,      4.85,  Math.PI,   "sport"],
   ["Court, from the terrace",          5.60, 0,      4.30,  Math.PI,   "sport"],
   ["Utility yard (gen. & tanks)",     -2.30, 0,     15.70, -Math.PI/2]
 ];
@@ -466,6 +761,8 @@ var bob = 0;
 function animate(){
   requestAnimationFrame(animate);
   var dt = Math.min(0.05, clock.getDelta());
+  skyMat.uniforms.uT.value += dt;      /* the cloud deck drifts, very slowly */
+  WIND.value += dt;                    /* one clock for every foliage material */
 
 
   if(mode==="walk"){
@@ -540,8 +837,19 @@ function animate(){
     }
   }
 
-  sun.position.set(camera.position.x + (dusk?-38:26), (dusk?9:42), camera.position.z + (dusk?-14:-20));
-  sun.target.position.set(camera.position.x, 0, camera.position.z);
+  /* The shadow frustum follows what you are looking at rather than sitting on
+     the middle of the plot, so the depth map is spent on the few metres in
+     front of you instead of on the whole street. It follows the FOCUS, not the
+     camera: in dollhouse view the camera sits forty metres off the site, and
+     centring the frustum on it put the entire house outside the map - which is
+     why the orbit view had no cast shadows at all. Clamped to the plot so it
+     can never wander off the model again. */
+  var fx = (mode==="walk") ? player.x : orbit.tx;
+  var fz = (mode==="walk") ? player.z : orbit.tz;
+  fx = Math.max(-13, Math.min(13, fx));
+  fz = Math.max(-19, Math.min(19, fz));
+  sun.position.set(fx + sunOff.x, sunOff.y, fz + sunOff.z);
+  sun.target.position.set(fx, 0, fz);
   sun.target.updateMatrixWorld();
 
   var rn = (mode==="walk") ? zoneAt(player.x, player.z, player.y) : "Dollhouse view";
@@ -552,8 +860,19 @@ function animate(){
   var ang = (mode==="walk") ? player.yaw : (orbit.theta + Math.PI);
   cmp.style.transform = "rotate(" + (ang*180/Math.PI) + "deg)";
 
-  renderer.render(scene, camera);
-  glassWatch(dt);
+  if(composer && Q.post){
+    /* Depth of field has to know what you are looking at, and in the dollhouse
+       that is the orbit pivot - which moves as you zoom. */
+    if(pBokeh){
+      pBokeh.enabled = !!Q.dof && mode === "orbit";
+      if(pBokeh.enabled) pBokeh.uniforms["focus"].value = orbit.dist;
+    }
+    if(pGrade) pGrade.uniforms.uTime.value = performance.now() * 0.001;
+    composer.render(dt);
+  } else {
+    renderer.render(scene, camera);
+  }
+  perfWatch(dt);
 }
 
 /* Refracting glass costs an extra pass over the whole scene every frame. On a
@@ -564,9 +883,9 @@ function animate(){
 /* Refracting glass on or off, in place. `G` flips it by hand: the automatic
    downgrade below is a guess about your hardware, and you are entitled to
    overrule it in either direction. */
-function setGlass(on){
+function setGlass(on, quiet){
   var g = MAT.glass;
-  gw.done = true;                       /* a manual choice ends the watchdog */
+  /* a manual glass choice only ends the glass side of the guessing */
   if(on){
     g.transmission = 0.92; g.transparent = false; g.envMapIntensity = 1.7;
   } else {
@@ -574,34 +893,50 @@ function setGlass(on){
     g.roughness = 0.06; g.envMapIntensity = 2.6;
   }
   g.needsUpdate = true;
+  if(quiet) return;                     /* the quality preset sets this too */
   var el = document.getElementById("where");
   if(el) el.textContent = on ? "refracting glass on" : "refracting glass off";
 }
 var gw = {t:0, n:0, done:false};
-function glassWatch(dt){
-  if(gw.done) return;
+/* The preset chosen at startup is a guess from the user agent, and a user
+   agent cannot tell a three-year-old laptop from a new one. This measures what
+   the machine is actually managing and steps the preset down a level at a time
+   until it holds up. It stops the moment you pick a preset yourself - being
+   overruled by a watchdog after making a deliberate choice is infuriating. */
+var QORDER = ["low", "medium", "high", "ultra"];
+function perfWatch(dt){
+  if(gw.done || gw.user) return;
   /* A backgrounded tab throttles rAF to a crawl, which looks exactly like a
-     slow GPU. Only judge frames drawn while the page is actually on screen,
-     and never on fewer than 40 of them. */
-  if(document.hidden || dt<=0 || dt>0.25){ gw.t=0; gw.n=0; return; }
+     slow GPU. Only judge frames drawn while the page is on screen, and never
+     on fewer than 30 of them. */
+  if(document.hidden || dt <= 0 || dt > 0.25){ gw.t = 0; gw.n = 0; return; }
   gw.t += dt; gw.n++;
-  if(gw.t < 4.0 || gw.n < 40) return;
+  if(gw.t < 3.0 || gw.n < 30) return;
+  var fps = gw.n / gw.t;
+  gw.t = 0; gw.n = 0;
+  var i = QORDER.indexOf(QNAME);
+  if(fps < 20 && i > 0){
+    setQuality(QORDER[i-1]);       /* and measure the new one before settling */
+    return;
+  }
   gw.done = true;
-  if(gw.n/gw.t >= 22) return;
-  var g = MAT.glass;
-  g.transmission = 0;
-  g.transparent  = true;
-  g.opacity      = 0.30;
-  g.roughness    = 0.06;
-  g.envMapIntensity = 2.6;
-  g.needsUpdate  = true;
 }
 
 window.addEventListener("resize", function(){
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  if(composer) composer.setSize(window.innerWidth, window.innerHeight);
 });
+
+/* A first guess at what this machine can carry. A high pixel ratio on a touch
+   screen is a phone, and a phone drawing 2.5x pixels with a 4k shadow map and
+   a refraction pass will not hold 30 fps. Guessing is allowed to be wrong -
+   the picker is right there, and the frame-rate watchdog still runs. */
+var touchy = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+setQuality(touchy ? (window.devicePixelRatio >= 2 ? "medium" : "low") : "high");
+document.getElementById("qual").onchange = function(){ gw.user = true; setQuality(this.value); };
+wireTOD();
 
 setMode("walk");
 document.getElementById("loading").style.display = "none";
@@ -611,6 +946,6 @@ animate();
 window.__J = { scene:scene, camera:camera, renderer:renderer, player:player, orbit:orbit,
   setMode:function(m){ setMode(m); }, zoneAt:zoneAt, floorAt:floorAt, collides:collides,
   COLLIDERS:COLLIDERS, FLOORS:FLOORS,
-  groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gBQ:gBQ,gBQR:gBQR,gSport:gSport},
+  groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden,gPav:gPav,gSport:gSport},
   setRear:setRear, rear:function(){ return rearBlock; }, CTOFF:CTOFF, MAT:MAT, SPOTS:SPOTS,
-  hx:hx, hz:hz, bxf:bxf, bzf:bzf, EYE:EYE };
+  hx:hx, hz:hz, EYE:EYE, MERGED:MERGED };
