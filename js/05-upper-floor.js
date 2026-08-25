@@ -18,19 +18,10 @@ slab(hx(1.0), hz(-1.80), hx(12.5), hz(0.0), FF, SLAB, MAT.paverWarm, gFF, {});
 rail(hx(1.0), hz(-1.80), hx(12.5), hz(-1.80), FF, gFF);
 rail(hx(1.0), hz(-1.80), hx(1.0),  hz(0.0),  FF, gFF);
 rail(hx(12.5),hz(-1.80), hx(12.5), hz(0.0),  FF, gFF);
-/* Porch columns, stone-clad with rendered cap and base bands. The gate
-   pillars have used the same split-face stone since the first version; taking
-   it onto the porch is what ties the entrance to the boundary. */
-[1.45, 4.40, 9.60, 12.10].forEach(function(u){
-  stoneColumn(hx(u), GF, FF-SLAB, hz(-1.45), 0.28, gGF);
-});
-/* balcony columns up to the shading canopy */
-[1.45, 4.40, 9.60, 12.10].forEach(function(u){
-  addBox(0.24, 2.70, 0.24, hx(u), FF+1.35, hz(-1.45), MAT.accent, gFF, {solid:true});
-});
-/* deep shading canopy over the balcony, set below the eaves so the hip roof reads above it */
-addBox(11.9, 0.30, 2.05, hx(6.75), 6.75, hz(-0.9), MAT.wallExt, gRoof, {});
-addBox(12.1, 0.18, 0.16, hx(6.75), 6.99, hz(-1.87), MAT.accent, gRoof, {});
+/* No porch or balcony columns in this option - the plate above is the roof
+   deck itself stepping past the wall line, cantilevered on the floor
+   structure with nothing visible holding its outer edge up. That absence is
+   what reads as "cantilever" rather than "covered porch". */
 /* balcony furniture */
 armchair(hx(5.60), hz(-1.05), FF, 0, gFF);
 armchair(hx(7.90), hz(-1.05), FF, 0, gFF);
@@ -196,9 +187,17 @@ basin(hx(12.9), hz(10.12), FF, 0, gFF, 0.8);
 shower(hx(12.75), hz(10.80), hx(13.45), hz(11.45), FF, gFF);
 downlight(hx(12.5),hz(10.65),FF+CH,gFF);
 
-/* ---------- roof slab + hip roof ---------- */
+/* ---------- roof slab + parapet ---------- */
 slab(hx(0), hz(0), hx(HW), hz(HD), RF, SLAB, MAT.wallInt, gRoof, {walk:false});
-hipRoof(hx(0), hz(0), hx(HW), hz(HD), RF, 2.35, 0.68, MAT.roof, gRoof);
+parapetRoof(hx(0), hz(0), hx(HW), hz(HD), RF, 0.42, MAT.accent, MAT.white, gRoof);
+
+/* ---------- cantilevered roof wing over the balcony ----------
+   The move the whole redesign is named for: the roof deck stepping past the
+   front wall on its own plate, wide enough to cover the balcony below and
+   deep enough to still be shading it at midday, with nothing under its
+   leading edge. */
+addBox(12.2, 0.30, 2.10, hx(6.75), RF-0.15, hz(-1.05), MAT.wallExt, gRoof, {});
+addBox(12.4, 0.07, 0.15, hx(6.75), RF-0.015, hz(-2.10), MAT.accent, gRoof, {});
 
 /* ============================================================
    GAMES PAVILION  -  5.70 x 3.55 m, west side, always present
@@ -614,21 +613,16 @@ function netPanel(ax,az,bx,bz,y0,y1,mat,group,tile){
 
   /* ---------- solar array ----------
      The panels used to live on the BQ roof; with that block gone for good they
-     are on the rear slope of the main hip roof in both options - bigger,
-     higher, and nothing shades it. Inside gRoof rather than gSport so that
-     "Roof off" takes them away with the roof they are bolted to. */
+     sit flat on the main roof deck in both options, tucked behind the parapet
+     so they stay out of sight from the ground. Inside gRoof rather than
+     gSport so that "Roof off" takes them away with the roof they sit on. */
   (function(){
     gSolar = new THREE.Group();
     gRoof.add(gSolar);
-    var pitch = Math.atan2(2.35, (HD+1.36)/2);
-    var ridgeZ = hz(HD/2);
     var pv = M(0x1a2740,{r:0.25,m:0.4});
+    var py = RF + 0.09;
     for(var i=0;i<6;i++){
-      var off = 3.70;
-      var pz  = ridgeZ + off;
-      var py  = RF + 2.35 - (off/((HD+1.36)/2))*2.35 + 0.055;
-      var p = addBox(1.72, 0.05, 1.02, hx(1.90 + i*1.82), py, pz, pv, gSolar, {});
-      p.rotation.x = -pitch;
+      addBox(1.72, 0.05, 1.02, hx(1.90 + i*1.82), py, hz(HD/2), pv, gSolar, {});
     }
   })();
 

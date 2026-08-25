@@ -1421,6 +1421,26 @@ function hipRoof(x0,z0,x1,z1,baseY,height,over,mat,group){
   return m;
 }
 
+/* ---------- flat roof with parapet ----------
+   The cantilevered-stack option's roofline: a dark parapet flush with the
+   wall line, capped in a light coping, with no eave overhang of its own. Any
+   projection the design wants - the balcony wing being the one that matters
+   here - is built as its own cantilevered plate rather than a uniform eave,
+   because a contemporary flat roof reads through a couple of confident
+   projections, not one overhang running the whole way round. */
+function parapetRoof(x0,z0,x1,z1,baseY,h,mat,copeMat,group){
+  var w=Math.abs(x1-x0), d=Math.abs(z1-z0), cx=(x0+x1)/2, cz=(z0+z1)/2;
+  var t=0.15, ct=t+0.06;
+  addBox(w+t, h, t, cx, baseY+h/2, z0-t/2, mat, group, {cast:false});
+  addBox(w+t, h, t, cx, baseY+h/2, z1+t/2, mat, group, {cast:false});
+  addBox(t, h, d+t, x0-t/2, baseY+h/2, cz, mat, group, {cast:false});
+  addBox(t, h, d+t, x1+t/2, baseY+h/2, cz, mat, group, {cast:false});
+  addBox(w+ct, 0.05, ct, cx, baseY+h+0.025, z0-t/2, copeMat, group, {cast:false});
+  addBox(w+ct, 0.05, ct, cx, baseY+h+0.025, z1+t/2, copeMat, group, {cast:false});
+  addBox(ct, 0.05, d+ct, x0-t/2, baseY+h+0.025, cz, copeMat, group, {cast:false});
+  addBox(ct, 0.05, d+ct, x1+t/2, baseY+h+0.025, cz, copeMat, group, {cast:false});
+}
+
 /* ---------- balustrade ---------- */
 /* ---------- fluted charcoal panels ----------
    The one detail that most separates the reference elevation from a plain
