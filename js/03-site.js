@@ -532,25 +532,78 @@ function hedgeRun(x0,z0,x1,z1,h){
     plant("bush", cx, cz, top*(0.94 + ((i*37)%6)/40), null, body - top*0.42);
   }
 }
+/* ---------- flower bed ----------
+   Rebuilt on the same bush model the hedges use, so a bed reads as the same
+   planting as the rest of the compound instead of the alpha-card clumps it was
+   made of. Four things do the work:
+     - a kerb in two courses, a body and a capping that oversails it, so the
+       edge is a built thing rather than four thin boxes standing in the soil
+     - the soil set down below that capping, which is what a filled bed looks
+       like from standing height; the old one was flush and read as a painted
+       rectangle
+     - the planting graded, tallest along the spine and dropping toward the
+       kerb, so the mass mounds; and graded only on axes deep enough to have
+       more than one rank, so a 650 mm strip stays an even run
+     - the flower heads carried ON the plants in small clusters, not floating
+       between them, and mostly one colour to a bed
+   Layout is seeded off the bed's own corners. The old version dealt itself a
+   new arrangement from Math.random() on every reload, so the garden was never
+   twice the same and nothing about it could be checked against a screenshot. */
 function flowerBed(x0,z0,x1,z1){
   var w=Math.abs(x1-x0), d=Math.abs(z1-z0), cx=(x0+x1)/2, cz=(z0+z1)/2;
-  addBox(w,0.30,d,cx,0.15,cz,MAT.soil,(PGRP||gSite),{cast:false});
-  addBox(w+0.12,0.34,0.12,cx,0.17,cz-d/2,MAT.planter,(PGRP||gSite),{});
-  addBox(w+0.12,0.34,0.12,cx,0.17,cz+d/2,MAT.planter,(PGRP||gSite),{});
-  addBox(0.12,0.34,d,cx-w/2,0.17,cz,MAT.planter,(PGRP||gSite),{});
-  addBox(0.12,0.34,d,cx+w/2,0.17,cz,MAT.planter,(PGRP||gSite),{});
-  var cols=[MAT.bloom1,MAT.bloom2,MAT.bloom3,MAT.leaf2];
-  var n=Math.max(6,Math.round(w*d*3.0));
-  for(var i=0;i<n;i++){
-    var px=cx+(Math.random()-0.5)*(w-0.35);
-    var pz=cz+(Math.random()-0.5)*(d-0.35);
-    canopy(px, 0.40+Math.random()*0.12, pz, 0.20+Math.random()*0.07, 0.17+Math.random()*0.06,
-           3, MAT.foliageLo, (PGRP||gSite), i*29+7);
-    /* the bloom stays a small solid: a flower head at this size is a blob of
-       colour, and a cut-out card would only alias */
-    addSphere(0.075+Math.random()*0.055, px+0.06, 0.56+Math.random()*0.14, pz, cols[i%4], (PGRP||gSite));
+  var G = (PGRP||gSite);
+  var r = PRNG(Math.round((x0*137.7 + z0*911.3 + w*57.1 + d*23.9)*16) + 7);
+
+  /* ---- kerb ---- */
+  var KB=0.14, kerbH=0.30, capH=0.07, capO=0.035;
+  [[w+KB*2, KB, cx, cz-d/2-KB/2],
+   [w+KB*2, KB, cx, cz+d/2+KB/2],
+   [KB, d, cx-w/2-KB/2, cz],
+   [KB, d, cx+w/2+KB/2, cz]].forEach(function(q){
+    addBox(q[0], kerbH, q[1], q[2], kerbH/2, q[3], MAT.planter, G, {});
+    addBox(q[0]+capO*2, capH, q[1]+capO*2, q[2], kerbH+capH/2, q[3], MAT.stone, G, {});
+  });
+
+  /* soil sits ~110 mm down inside the kerb, not level with the top of it */
+  var soil = kerbH - 0.04;
+  addBox(w, soil, d, cx, soil/2, cz, MAT.soil, G, {cast:false});
+
+  /* ---- planting ---- */
+  var SP=0.50;                                   /* a 0.45 m bush is ~0.55 wide */
+  var nx=Math.max(1,Math.round(w/SP)), nz=Math.max(1,Math.round(d/SP));
+  var sx=w/nx, sz=d/nz;
+  /* one colour carries the bed and a second appears in about a fifth of the
+     plants. Three at once, which is what the old bed did, reads as confetti. */
+  var cols=[MAT.bloom1,MAT.bloom2,MAT.bloom3];
+  var mi=Math.floor(r()*3), main=cols[mi], alt=cols[(mi+1+Math.floor(r()*2))%3];
+
+  for(var ix=0; ix<nx; ix++) for(var iz=0; iz<nz; iz++){
+    var px = cx - w/2 + (ix+0.5)*sx + (r()-0.5)*sx*0.34;
+    var pz = cz - d/2 + (iz+0.5)*sz + (r()-0.5)*sz*0.34;
+    /* 0 on the spine, 1 at the kerb - but only on an axis with ranks to grade */
+    var u = Math.max(nx>1 ? Math.abs(px-cx)/(w/2) : 0,
+                     nz>1 ? Math.abs(pz-cz)/(d/2) : 0);
+    var h = 0.50 * (1 - 0.42*u*u) * (0.90 + r()*0.22);
+    /* set into the soil rather than balanced on it */
+    plant("bush", px, pz, h, G, soil - h*0.10);
+
+    /* Flower heads: 50-85 mm across, several to a plant, sitting DOWN in the
+       upper half of the foliage. The first attempt put two or three 150 mm
+       balls on top of the crown and they read as fruit hanging over the bush,
+       which is exactly what these beds looked like before. A flower head is
+       small and there are a lot of them; that is the whole difference. */
+    if(r() < 0.75){
+      var nb = 3 + Math.floor(r()*3);
+      var bm = r()<0.80 ? main : alt;
+      for(var b=0;b<nb;b++){
+        var a=r()*Math.PI*2, rr=h*(0.10 + r()*0.28);
+        addSphere(0.026 + r()*0.016,
+                  px+Math.cos(a)*rr, soil + h*(0.55 + r()*0.25), pz+Math.sin(a)*rr,
+                  bm, G, {seg:7});
+      }
+    }
   }
-  addCollider(cx-w/2,cx+w/2,cz-d/2,cz+d/2,0,0.5);
+  addCollider(cx-w/2-KB, cx+w/2+KB, cz-d/2-KB, cz+d/2+KB, 0, 0.55);
 }
 function potPlant(x,z,y,g,s){
   s=s||1;

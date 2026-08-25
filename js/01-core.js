@@ -1261,7 +1261,11 @@ function addCyl(r1,r2,h,x,y,z,mat,group,seg,o){
 }
 function addSphere(r,x,y,z,mat,group,o){
   o=o||{};
-  var m = new T.Mesh(new T.SphereGeometry(r,18,13), mat);
+  /* 18x13 is right for a cushion you stand next to. It is 468 triangles for a
+     flower head 50 mm across, so anything that places a lot of small spheres
+     should pass o.seg and buy a coarser one. */
+  var sg = o.seg || 18;
+  var m = new T.Mesh(new T.SphereGeometry(r, sg, Math.max(3, Math.round(sg*0.72))), mat);
   m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true;
   (group||gSite).add(m);
   if(o.furn) FURN.push(m);

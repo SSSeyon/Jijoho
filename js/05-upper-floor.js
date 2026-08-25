@@ -491,7 +491,7 @@ CTAG = "garden";
       addBox(2.04, 0.10, 0.90, bx, 0.47, bz, MAT.soil, gGarden, {cast:false});
       for(var i=0;i<9;i++){
         var px = bx - 0.85 + (i%3)*0.85, pz = bz - 0.28 + Math.floor(i/3)*0.28;
-        addSphere(0.13, px, 0.60, pz, (i%2)?MAT.hedge:MAT.leaf2, gGarden);
+        addSphere(0.13, px, 0.60, pz, (i%2)?MAT.hedge:MAT.leaf2, gGarden, {seg:8});
       }
     });
     /* three fruit trees, spaced so they will not shade the beds at 4 pm */
