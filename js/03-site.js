@@ -43,7 +43,7 @@ surf(X0,Z0,X1,Z1,MAT.grass,0.005);
 
 /* driveway + carport apron - three bays 6.50 m deep, cars reversed in (54 sqm) */
 surf(-9.475,-16.60,-1.15,-10.00, MAT.paver, 0.02);
-[-6.50,-3.75].forEach(function(x){ addBox(0.09,0.02,6.1,x,0.04,-13.35,MAT.white,gSite,{cast:false}); });
+[-6.32,-3.81].forEach(function(x){ addBox(0.09,0.02,6.1,x,0.04,-13.35,MAT.white,gSite,{cast:false}); });
 
 /* entrance walkway, 1.2 m wide, pedestrian gate straight to the porch (8.5 sqm) */
 surf(-1.05,-16.60,0.15,-9.44, MAT.paverWarm, 0.02);
@@ -156,22 +156,53 @@ addBox(0.46,0.30,0.04, -1.30, 1.85, Z0-0.30, MAT.accent, gSite, {});
 /* rear service gate in the boundary wall (utility yard) */
 addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gSite, {});
 
-/* ---------- carport ---------- */
-/* One clean rectangle now, 8.25 x 6.50 m. The old L-shaped plan with a deeper
-   west bay was a workaround for a front yard that was simply too short; with
-   the house moved back the whole apron is deep enough for the pickup and the
-   canopy can be the simple slab it should always have been. */
+/* ---------- carport ----------
+   Now a cantilever off the boundary wall rather than a table on five legs.
+
+   The five posts it used to stand on included three along the house side, and
+   those three were the problem: they stood directly in the path a car takes
+   swinging out of its bay towards the gate. Taking them out is not just tidier,
+   it is what makes the manoeuvre in updateCars() honest.
+
+   So the canopy is carried entirely from the front. The two posts that remain
+   are hard against the boundary wall at cz0, where they act as the wall's own
+   piers, and the deck runs 6.50 m back off them into the compound with nothing
+   underneath it.
+
+   That is a real 6.5 m cantilever, which is a serious piece of engineering: it
+   wants a steel frame with the beams tailed back into the wall and a proper
+   counterweight, not the flat concrete slab this is drawn as. Structurally the
+   honest way to build it is tapered steel cantilever beams at 2.75 m centres
+   off a reinforced pier in the wall - deeper at the wall, thinner at the tip -
+   which is what the taper below is standing in for. It is drawn thicker at the
+   root and thinner at the free end for exactly that reason. */
 (function(){
   var cx0=-9.40, cx1=-1.15, cz0=-16.50, cz1=-10.00;
-  var cy=3.05;
-  addBox(cx1-cx0+0.5, 0.16, cz1-cz0+0.5, (cx0+cx1)/2, cy, (cz0+cz1)/2, MAT.accent, gSite, {});
-  addBox(cx1-cx0+0.3, 0.10, cz1-cz0+0.3, (cx0+cx1)/2, cy+0.11, (cz0+cz1)/2, MAT.fascia, gSite, {});
-  [[cx0+0.2,cz0+0.2],[cx1-0.2,cz0+0.2],[cx0+0.2,cz1-0.2],[cx1-0.2,cz1-0.2],
-   [-5.28,cz1-0.2]].forEach(function(p){
-    addBox(0.26,cy,0.26,p[0],cy/2,p[1],MAT.accent,gSite,{solid:true});
+  var cy=3.05, w=cx1-cx0, d=cz1-cz0;
+
+  /* three tapered beams, root to tip. Each is a box tilted a fraction of a
+     degree so the underside falls away from the wall - the taper is what stops
+     a 6.5 m overhang reading as a floating slab. */
+  [cx0+0.55, (cx0+cx1)/2, cx1-0.55].forEach(function(bx){
+    var b = addBox(0.22, 0.44, d+0.30, bx, cy-0.20, (cz0+cz1)/2, MAT.accent, gSite, {});
+    b.rotation.x = -0.019;                    /* ~35 mm of fall over 6.5 m */
   });
-  [[-7.95,-15.4],[-5.28,-15.4],[-2.60,-15.4],[-5.28,-11.4]].forEach(function(p){
-    var m=addCyl(0.09,0.09,0.04,p[0],cy-0.10,p[1],MAT.lamp,gSite,12); m.castShadow=false;
+  /* the deck itself, thin because the beams carry it */
+  addBox(w+0.5, 0.09, d+0.5, (cx0+cx1)/2, cy+0.06, (cz0+cz1)/2, MAT.accent, gSite, {});
+  addBox(w+0.3, 0.07, d+0.3, (cx0+cx1)/2, cy+0.14, (cz0+cz1)/2, MAT.fascia, gSite, {});
+  /* a deeper fascia at the free end - the tip of a cantilever is where the eye
+     looks for reassurance, and a blade edge there looks wrong */
+  addBox(w+0.5, 0.26, 0.10, (cx0+cx1)/2, cy-0.03, cz1+0.25, MAT.fascia, gSite, {});
+
+  /* the two piers, in the plane of the boundary wall */
+  [cx0+0.2, cx1-0.2].forEach(function(px){
+    addBox(0.30,cy,0.30,px,cy/2,cz0+0.15,MAT.accent,gSite,{solid:true});
+  });
+
+  /* lights under the deck, one over each bay plus one at the open end so you
+     are not reversing into a dark hole */
+  [[-7.76,-15.4],[-5.07,-15.4],[-2.58,-15.4],[-5.07,-11.0]].forEach(function(p){
+    var m=addCyl(0.09,0.09,0.04,p[0],cy-0.44,p[1],MAT.lamp,gSite,12); m.castShadow=false;
   });
 })();
 
@@ -196,10 +227,24 @@ var VEHICLES = [];                       /* populated as the models arrive */
 var gCars = new T.Group(); gCars.userData.noMerge = true; gSite.add(gCars);
 
 /* bay centres and the real length each vehicle is normalised to */
+/* Bay centres, re-spaced after the headlight-glow fix.
+
+   Stripping the glow meshes changed these numbers, because the truck had been
+   scaled off its light beam rather than its body and was coming out 24% under
+   size. At its true length the F-150 measures 2.48 m across the mirrors, and
+   the three vehicles together take 6.65 m of the 8.25 m apron.
+
+   The old centres were evenly spaced at 2.67 m, which was fine for a truck
+   that was secretly too small and left only 210 mm between the real one and
+   the west edge of the apron. These centres divide the 1.60 m of slack into
+   four equal 400 mm gaps instead - two between vehicles and one at each end.
+   400 mm is not generous. It is enough to walk down and enough to open a door
+   part way, and it is what a three-car bay on a 19.55 m frontage actually
+   gives you. Two vehicles here would be comfortable; three is deliberate. */
 var CAR_SPECS = [
-  { file:"truck.glb",     x:-7.95, len:5.89, name:"Ford F-150" },
-  { file:"suv.glb",       x:-5.28, len:4.78, name:"SUV" },
-  { file:"car-hatch.glb", x:-2.60, len:4.34, name:"Hyundai i30 N" }
+  { file:"truck.glb",     x:-7.76, len:5.89, name:"Ford F-150" },
+  { file:"suv.glb",       x:-5.07, len:4.78, name:"SUV" },
+  { file:"car-hatch.glb", x:-2.58, len:4.34, name:"Hyundai i30 N" }
 ];
 /* Parked nose-to-gate. PARK_NOSE is where the front bumper sits; the car is
    placed so its own nose lands there whatever its length. */
@@ -215,9 +260,26 @@ function normaliseVehicle(root, targetLen){
      real shadow, and - because it is wider and longer than the car itself -
      it silently poisons the bounding box the scaling is measured from. The
      SUV's was 2.50 m wide against a body of 1.77 m. */
+  /* Strip the baked light "glows" for the same reasons, plus one worse one.
+
+     Two of the three models carry meshes named lights_*_glows_*: flat fans of
+     geometry projecting out of the headlights and tail lights to fake a beam.
+     They are authored for an unlit renderer, so under this scene's PBR
+     materials they get no emission and render as solid black wedges hanging
+     off the front of the car. That is the black projection you can see from
+     the headlights.
+
+     The scaling damage is the bigger problem. The truck's beams run 6.20 m
+     nose to tail against a body of 4.80 m, so "scale until the long axis is
+     5.89 m" was sizing the BEAM to 5.89 m and leaving the actual F-150 at
+     4.50 m - a quarter under size. The hatchback was 21% under for the same
+     reason. Both come out right once the glows are gone, which also means the
+     carport clearances measured off them are only now true.
+
+     The lens glass itself is a separate mesh (glasses_*) and stays. */
   var kill = [];
   root.traverse(function(o){
-    if(o.isMesh && /shadow/i.test(o.name || "")) kill.push(o);
+    if(o.isMesh && /shadow|glow/i.test(o.name || "")) kill.push(o);
   });
   for(var i=0;i<kill.length;i++) if(kill[i].parent) kill[i].parent.remove(kill[i]);
 
@@ -302,6 +364,9 @@ MODELS.load("palm.glb", function(gltf){
   var b = new T.Box3().setFromObject(PALM_SRC);
   PALM_SRC.userData.unitH = Math.max(b.max.y - b.min.y, 1e-6);
   PALM_SRC.userData.baseY = b.min.y;
+  /* clone(true) deep-copies userData, so every palm placed from this
+     prototype carries the flag and folds into the second merge pass */
+  PALM_SRC.userData.flatten = true;
   PALM_SRC.traverse(function(o){
     if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; }
   });
@@ -315,10 +380,12 @@ function placePalm(p){
   m.position.set(p.x, -PALM_SRC.userData.baseY * k, p.z);
   m.rotation.y = p.rot;
   m.rotation.z = p.lean;
-  var g = new T.Group();
-  g.userData.noMerge = true;
-  g.add(m);
-  (p.grp || gSite).add(g);
+  /* Added straight into the site group, not into a noMerge wrapper. The
+     wrapper was there because the palms arrive after the first merge pass and
+     merging them then would have been merging a moving target; there is a
+     second pass now that runs once every model is in, so they can and should
+     be folded in with everything else. */
+  (p.grp || gSite).add(m);
 }
 function palm(x,z,h){
   h = h || 6.2;
@@ -332,41 +399,137 @@ function palm(x,z,h){
   if(PALM_SRC) placePalm(p); else PALM_QUEUE.push(p);
   addCollider(x-0.28, x+0.28, z-0.28, z+0.28, 0, 2.5);
 }
-/* broadleaf: a trunk, three limbs and a canopy of intersecting leaf cards */
-function tree(x,z,s){
-  s=s||1;
-  addCyl(0.15*s,0.28*s,2.4*s,x,1.20*s,z,MAT.trunk,(PGRP||gSite),12);
-  [[0.5,0.7,1.9],[-0.6,0.5,2.1],[0.1,-0.7,2.0]].forEach(function(b){
-    var m=addCyl(0.07*s,0.11*s,1.1*s, x+b[0]*0.45*s, b[2]*s, z+b[1]*0.45*s, MAT.trunk, (PGRP||gSite), 8);
-    m.rotation.z = -b[0]*0.45; m.rotation.x = b[1]*0.45;
+/* ---------- broadleaf trees and bushes, from downloaded models ----------
+   The alpha-card canopies these replace were a good trick and looked fine at
+   distance, but they were still clusters of intersecting quads: walk up to one
+   and the illusion falls apart, because there is no branch structure behind
+   the leaves. These are real meshes with bark and boughs.
+
+   Two prototypes come out of trees.glb - the file contains two different
+   trees, one tall and open and one shorter and rounder - and one out of
+   bush.glb. Everything is cloned from those three, so the whole planting
+   scheme costs three imports no matter how many plants are placed.
+
+   Note these are NOT wrapped in noMerge groups the way the palms are. Clones
+   of one prototype share geometry layout and material, so mergeStatics() folds
+   every bush in the compound into a single draw call and each tree species
+   into two. That is the difference between roughly 90 extra draw calls and
+   about six. The palms stay unmerged only because they are placed from a
+   queue that can still be filling when the merge runs. */
+var PLANT_SRC = {};              /* name -> prepared prototype Group */
+var PLANT_QUEUE = [];            /* placements waiting for their model */
+
+function preparePlant(node){
+  /* Lift the node out of its file's transform stack, then measure it so every
+     later clone can be scaled to a height in metres rather than to whatever
+     unit the author happened to model in. */
+  node.position.set(0,0,0);
+  var wrap = new T.Group();
+  wrap.add(node);
+  wrap.updateMatrixWorld(true);
+  node.traverse(function(o){
+    if(!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    var m = o.material;
+    if(m){
+      /* Leaf cards arrive as alpha-blended in some exports, which both sorts
+         badly against itself and blocks the merge. Alpha-test instead: it is
+         what foliage wants anyway, and it keeps the material opaque. */
+      if(m.transparent){ m.transparent = false; m.alphaTest = Math.max(m.alphaTest||0, 0.45); }
+      m.side = T.DoubleSide;
+    }
   });
-  var seed = Math.floor(Math.abs(Math.sin(x*12.9898+z*78.233))*43758.5453);
-  /* Two overlapping canopies rather than one: a big mass, and a smaller one
-     offset and turned, which breaks the ellipsoid silhouette that a single
-     card cluster still has when you see it against the sky. */
-  canopy(x, 3.05*s, z, 1.85*s, 1.30*s, 9, MAT.foliage,  (PGRP||gSite), seed);
-  canopy(x + 0.42*s, 3.65*s, z - 0.30*s, 1.15*s, 0.86*s, 6, MAT.foliage2, (PGRP||gSite), seed+37);
-  addCollider(x-0.35*s,x+0.35*s,z-0.35*s,z+0.35*s,0,2.4*s);
+  var b = new T.Box3().setFromObject(wrap);
+  wrap.userData.flatten = true;
+  wrap.userData.h  = Math.max(b.max.y - b.min.y, 1e-6);
+  wrap.userData.y0 = b.min.y;
+  wrap.userData.cx = (b.min.x + b.max.x)/2;
+  wrap.userData.cz = (b.min.z + b.max.z)/2;
+  wrap.userData.rad = Math.max(b.max.x-b.min.x, b.max.z-b.min.z)/2;
+  return wrap;
+}
+MODELS.load("trees.glb", function(gltf){
+  gltf.scene.updateMatrixWorld(true);
+  ["tree4","tree6"].forEach(function(nm){
+    var n = gltf.scene.getObjectByName(nm);
+    if(n) PLANT_SRC[nm] = preparePlant(n.clone(true));
+  });
+  flushPlants();
+});
+MODELS.load("bush.glb", function(gltf){
+  gltf.scene.updateMatrixWorld(true);
+  PLANT_SRC.bush = preparePlant(gltf.scene.clone(true));
+  flushPlants();
+});
+function flushPlants(){
+  var left = [];
+  for(var i=0;i<PLANT_QUEUE.length;i++){
+    if(PLANT_SRC[PLANT_QUEUE[i].k]) placePlant(PLANT_QUEUE[i]); else left.push(PLANT_QUEUE[i]);
+  }
+  PLANT_QUEUE = left;
+}
+function placePlant(p){
+  var src = PLANT_SRC[p.k];
+  var u = src.userData;
+  var k = p.h / u.h;
+  var m = src.clone(true);
+  m.scale.setScalar(k);
+  m.position.set(p.x - u.cx*k, (p.y||0) - u.y0*k, p.z - u.cz*k);
+  m.rotation.y = p.rot;
+  (p.grp || gSite).add(m);
+}
+function plant(kind, x, z, h, grp, y){
+  /* one hash, reused for species pick and heading, so a plant at a given spot
+     always comes out the same way round however often the page is reloaded */
+  var seed = Math.abs(Math.sin(x*12.9898 + z*78.233) * 43758.5453);
+  var p = { k:kind, x:x, z:z, h:h, y:y||0, rot:(seed % 1)*Math.PI*2, grp:grp || (PGRP||gSite) };
+  if(PLANT_SRC[kind]) placePlant(p); else PLANT_QUEUE.push(p);
+  return seed;
+}
+function tree(x,z,s){
+  s = s||1;
+  var seed = Math.abs(Math.sin(x*4.117 + z*9.733) * 2381.19);
+  /* alternate the two species so a row of trees is not a row of one tree */
+  var kind = ((seed*13) % 1) < 0.5 ? "tree4" : "tree6";
+  plant(kind, x, z, 5.2*s);
+  addCollider(x-0.32*s, x+0.32*s, z-0.32*s, z+0.32*s, 0, 2.4*s);
 }
 function shrub(x,z,s){
-  s=s||1;
-  var seed = Math.floor(Math.abs(Math.sin(x*31.7+z*17.3))*9781);
-  canopy(x, 0.42*s, z, 0.48*s, 0.40*s, 5, MAT.foliageLo, (PGRP||gSite), seed);
+  s = s||1;
+  plant("bush", x, z, 0.86*s);
 }
+/* ---------- hedge ----------
+   The clipped body stays a solid box, because a hedge really is a box and it
+   is what stops you walking through it. What has changed is the surface: the
+   alpha cards along the top have become real bushes, packed tightly enough
+   along the run to close up into a continuous mass, with the box shrunk to sit
+   just inside them so it never shows through. */
 function hedgeRun(x0,z0,x1,z1,h){
-  h=h||0.85;
-  var horiz=Math.abs(z1-z0)<1e-6;
-  var len=horiz?Math.abs(x1-x0):Math.abs(z1-z0);
-  /* The clipped body stays a box - a hedge really is a box, and it is what
-     stops you walking through it. Only the top and the two long faces get
-     cards, which is where the eye reads the leaf texture and the soft edge. */
-  addBox(horiz?len:0.52, h, horiz?0.52:len, (x0+x1)/2, h/2, (z0+z1)/2, MAT.hedge, (PGRP||gSite), {solid:true});
-  var n=Math.max(2,Math.round(len/0.62));
+  h = h||0.85;
+  var horiz = Math.abs(z1-z0)<1e-6;
+  var len = horiz?Math.abs(x1-x0):Math.abs(z1-z0);
+  /* The box carries almost the full height. The bushes are NOT scaled to the
+     hedge height - that was the first attempt and it was wrong twice over: a
+     0.90 m tall bush is 1.11 m WIDE, so a 0.52 m hedge came out bulging more
+     than a metre across, and at that size they cost a fortune in triangles.
+     They are placed at their own natural size instead, straddling the top of
+     the box, which is where the eye reads the soft edge and the leaf texture.
+     Everything below that line is a clipped face and a box is a perfectly good
+     clipped face. */
+  var body = h*0.80;
+  addBox(horiz?len:0.44, body, horiz?0.44:len, (x0+x1)/2, body/2, (z0+z1)/2,
+         MAT.hedge, (PGRP||gSite), {solid:true});
+  /* Spacing matters more than it looks. At 0.40 m the two 24 m boundary runs
+     alone came to 121 bushes and the bush mesh reached 56,000 triangles - more
+     than a third of the whole model - for a hedge you mostly see edge on. */
+  var top = h*0.55;                     /* bush height: about a real one */
+  var n = Math.max(2, Math.round(len/0.78));
   for(var i=0;i<n;i++){
-    var f=(i+0.5)/n;
+    var f = (i+0.5)/n;
     var cx = horiz?(x0+(x1-x0)*f):(x0+x1)/2;
     var cz = horiz?(z0+z1)/2:(z0+(z1-z0)*f);
-    canopy(cx, h-0.05, cz, 0.36, 0.26, 4, MAT.foliageHi, (PGRP||gSite), i*13+1);
+    /* a little height jitter, because a hedge clipped by hand is never flat */
+    plant("bush", cx, cz, top*(0.94 + ((i*37)%6)/40), null, body - top*0.42);
   }
 }
 function flowerBed(x0,z0,x1,z1){
@@ -441,10 +604,36 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
 
 /* ---------- utility yard along the rear wall ---------- */
 (function(){
-  /* generator house, backed onto the rear wall */
+  /* ---------- generator house ----------
+     This is the small thing with a pitched roof standing behind the games
+     tent. It is the genset enclosure - a 2.60 x 1.40 m block against the rear
+     wall housing the standby generator, which on this axis is not an optional
+     extra: mains supply is intermittent and everything in the house that
+     matters, the ACs included, is on it.
+
+     It read as an anonymous shed before, which is why it was not obvious what
+     it was. It now has the three things that make a generator house legible at
+     a glance: a full-height louvred intake, an exhaust stack up past the roof
+     line, and an acoustic lining you can see inside the vent. */
   addBox(2.60,2.35,1.40, -4.90, 1.175, 15.80, MAT.wallExt, gSite, {solid:true});
   hipRoof(-6.20,15.10,-3.60,16.50, 2.35, 0.50, 0.28, MAT.roof, gSite);
-  addBox(1.10,0.55,0.06, -4.90, 1.35, 15.09, MAT.steel, gSite, {});
+  /* louvred intake across most of the front face */
+  addBox(1.70,1.35,0.05, -4.90, 1.05, 15.08, MAT.black, gSite, {});
+  for(var lv=0; lv<9; lv++){
+    var b = addBox(1.62, 0.10, 0.05, -4.90, 0.48 + lv*0.145, 15.05, MAT.grille, gSite, {cast:false});
+    b.rotation.x = 0.40;
+  }
+  /* discharge louvre on the east return, so air actually crosses the set */
+  addBox(0.05,0.85,0.80, -3.62, 1.30, 15.80, MAT.grille, gSite, {});
+  /* exhaust stack, out of the back and up clear of the roof */
+  addCyl(0.075,0.075,2.35, -5.95, 2.10, 16.20, MAT.steel, gSite, 10);
+  addCyl(0.10,0.10,0.14, -5.95, 3.32, 16.20, MAT.black, gSite, 10);
+  addBox(0.30,0.06,0.06, -5.78, 1.95, 16.20, MAT.steel, gSite, {cast:false});
+  /* access door on the west end */
+  addBox(0.05,1.95,0.80, -6.18, 0.98, 15.80, MAT.gate, gSite, {});
+  /* changeover panel on the wall beside it */
+  addBox(0.42,0.55,0.14, -5.60, 1.45, 15.03, MAT.accent, gSite, {});
+  extLight(-4.90, 15.02, 2.42, 2, gSite);
   /* The overhead tanks used to stand here on a 3.2 m steel tower. They are on
      the roof now - see part 5 - which is both the better place for them and
      one less structure cluttering a 1.4 m service strip. */
@@ -457,4 +646,42 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
   addBox(0.03,0.03,1.2,-1.40,1.95,15.90,MAT.white,gSite,{cast:false});
 })();
 
-/* ---------- the solar array is added with the court, on the main roof ---------- */
+/* ---------- exterior wall lighting ----------
+   Up-and-down bulkheads at 2.10 m, which is the height they go at: high enough
+   not to be walked into, low enough that the downward throw actually lands on
+   the path you are walking. Spaced about 6 m, which is roughly where the pools
+   of light from two of them meet at ground level.
+
+   The runs are: the perimeter wall on all four sides, the two side walks
+   between the house and the boundary, and the utility yard. The porch, the
+   balcony soffit and the garden get theirs with the structures they belong to.
+
+   All of it is on the same emissive material as the interior lamps, so it
+   comes up together as the sun goes down. */
+(function(){
+  var Y = 2.10;
+  /* front wall, either side of the gate opening */
+  [-9.30, -2.35, 1.60, 5.20, 8.80].forEach(function(x){
+    extLight(x, Z0+0.13, Y, 2, gSite);
+  });
+  /* the two side walls, facing in */
+  [-11.60, -5.20, 1.20, 7.60, 13.90].forEach(function(z){
+    extLight(X0+0.13, z, Y, 1, gSite);
+    extLight(X1-0.13, z, Y, 3, gSite);
+  });
+  /* rear wall */
+  [-6.40, -1.20, 4.60, 8.60].forEach(function(x){
+    extLight(x, Z1-0.13, Y, 0, gSite);
+  });
+  /* the house's own flanks, lighting the side walks from the other side */
+  [-4.20, 0.60, 5.40].forEach(function(z){
+    extLight(hx(0)-0.14, z, Y+0.20, 3, gSite);
+    extLight(hx(HW)+0.14, z, Y+0.20, 1, gSite);
+  });
+  /* over the two exterior doors */
+  extLight(4.80, hz(HD)+0.16, Y+0.35, 2, gSite);
+  /* and one on each carport pier, aimed down the driveway */
+  [-9.20, -1.35].forEach(function(x){ extLight(x, -16.20, Y, 2, gSite); });
+})();
+
+/* ---------- the solar array now sits on the main roof, in part 5 ---------- */

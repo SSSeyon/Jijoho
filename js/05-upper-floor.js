@@ -52,6 +52,13 @@ diningSet(hx(9.90), hz(-1.25), FF, 4, 0, gFF);
 potPlant(hx(1.20), hz(-1.95), FF, gFF, 1.15);
 potPlant(hx(6.75), hz(-2.00), FF, gFF, 1.25);
 potPlant(hx(12.40),hz(-1.95), FF, gFF, 1.15);
+/* balcony lighting: bulkheads on the wall behind, downlights in the soffit
+   over the open edge, so the terrace is lit from both sides and the roof wing
+   above it reads at night */
+[1.60, 5.60, 8.20, 12.10].forEach(function(u){
+  extLight(hx(u), hz(-0.14), FF+2.05, 2, gFF);
+});
+[2.2, 5.4, 8.6, 11.8].forEach(function(u){ downlight(hx(u), hz(-1.85), FF+CH, gFF); });
 
 /* ---------- fluted charcoal accents ----------
    Placed only where the wall is solid on BOTH floors, so each panel runs the
@@ -127,13 +134,20 @@ hwall(8.3,9.2,HW,9.2, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
 /* --- family room  (u 0..6.5, v 0..2.6) ---
    Sits directly behind the balcony doors, so in use the two read as one
    17 + 30 m2 room with a glass wall in the middle of it. */
-rugMat(hx(3.10), hz(1.35), FF, 3.6, 2.0, gFF);
-sofa(hx(3.00), hz(0.55), FF, 2.6, 0, gFF);
-armchair(hx(5.55), hz(1.60), FF, 1, gFF);
-coffeeTable(hx(3.10), hz(1.45), FF, 1.2, 0.65, gFF);
-tvUnit(hx(1.10), hz(2.32), FF, 2.0, 2, gFF);
-ceilingFan(hx(3.10), hz(1.35), FF+CH, gFF);
+/* This room is only 2.41 m deep inside, and it was carrying a 2.6 m sofa, an
+   armchair, a 1.2 m coffee table AND a TV unit across that depth. Measured
+   front to back the gaps came out at 145 mm between the sofa and the table and
+   335 mm between the table and the TV - not a room, a corridor with furniture
+   in it. The armchair has gone, the table is a small round one, and the two
+   pieces that have to face each other now have 1.13 m between them. */
+rugMat(hx(3.10), hz(1.30), FF, 3.8, 1.9, gFF);
+sofa(hx(3.05), hz(0.58), FF, 2.60, 0, gFF);
+coffeeTable(hx(3.10), hz(1.56), FF, 0.80, 0.80, gFF);
+tvUnit(hx(3.05), hz(2.32), FF, 1.90, 2, gFF);
+potPlant(hx(5.85), hz(1.90), FF, gFF, 1.0);
 [[1.3,0.7],[4.6,0.7],[1.3,2.1],[4.6,2.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+wallLight(hx(0.20), hz(1.30), FF+1.95, 1, gFF);
+wallLight(hx(6.30), hz(1.30), FF+1.95, 3, gFF);
 ac(hx(5.90), hz(0.22), FF+2.55, 0, gFF);
 
 /* --- study / library  (u 0..5.0, v 2.6..7.0) ---
@@ -171,26 +185,34 @@ rail(hx(5.0), hz(7.36), hx(6.5), hz(7.36), FF, gFF);
    area went: 8.30 m wide, running the full width of the west side and out
    over the rear cantilever, with the bed floating off the party wall rather
    than pushed into a corner. */
+/* bed() draws its own pair of bedside tables. The two extra ones that used to
+   be placed here stood in exactly the same spots, so every bed in the house
+   had four - two of them inside the other two. Same duplication in bedrooms 2
+   and 3; removed in all three. */
 rugMat(hx(4.05), hz(12.10), FF, 4.6, 3.4, gFF);
-bed(hx(4.05), hz(11.70), FF, 2.00, 2.20, 0, gFF);
-fsolid(0.55,0.58,0.45, hx(2.70), FF+0.29, hz(10.62), MAT.woodDark, gFF);
-fsolid(0.55,0.58,0.45, hx(5.40), FF+0.29, hz(10.62), MAT.woodDark, gFF);
-tvUnit(hx(4.05), hz(13.60), FF, 2.2, 0, gFF);
-armchair(hx(1.05), hz(13.10), FF, 3, gFF);
-armchair(hx(7.40), hz(12.90), FF, 1, gFF);
-fsolid(0.5,0.45,0.5, hx(1.05), FF+0.23, hz(12.20), MAT.wood, gFF);
-ceilingFan(hx(4.05), hz(12.10), FF+CH, gFF);
+bed(hx(4.05), hz(11.70), FF, 2.00, 2.10, 0, gFF);
+tvUnit(hx(4.05), hz(13.62), FF, 2.0, 0, gFF);
+/* one reading chair by the window, not a pair flanking the bed */
+armchair(hx(7.30), hz(12.80), FF, 1, gFF);
+fsolid(0.44,0.42,0.44, hx(7.30), FF+0.21, hz(11.80), MAT.woodPale, gFF);
 [[1.6,10.9],[6.4,10.9],[1.6,13.2],[6.4,13.2],[4.05,12.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+wallLight(hx(0.20), hz(12.30), FF+1.95, 1, gFF);
 ac(hx(6.90), hz(10.42), FF+2.55, 0, gFF);
 artwork(hx(4.05), hz(10.45), FF+1.95, 1.5, 1.0, 0, gFF);
+picLight(hx(4.05), hz(10.52), FF+2.62, 1.4, 0, gFF);
 
 /* --- master bathroom  (u 0..2.8, v 7.0..10.2) --- */
 addBox(2.80,0.02,3.20, hx(1.40), FF+0.011, hz(8.60), MAT.tileWet, gFF, {cast:false});
-basin(hx(1.30), hz(7.25), FF, 0, gFF, 1.60);
+/* 2.80 x 3.20 m carrying a basin, a WC, a bath and a shower. That is a lot,
+   and the 1.60 m vanity was the piece with the least claim on the space - a
+   1.15 m single bowl leaves the same 600 mm of usable worktop and returns
+   450 mm to the floor between it and the shower. */
+basin(hx(1.05), hz(7.25), FF, 0, gFF, 1.15);
 wc(hx(0.42), hz(9.70), FF, 2, gFF);
-bathtub(hx(1.65), hz(9.60), FF, 1.70, 0.78, gFF);
-shower(hx(2.00), hz(7.55), hx(2.72), hz(8.55), FF, gFF);
+bathtub(hx(1.62), hz(9.62), FF, 1.62, 0.75, gFF);
+shower(hx(2.02), hz(7.60), hx(2.72), hz(8.60), FF, gFF);
 downlight(hx(0.9),hz(7.8),FF+CH,gFF); downlight(hx(2.1),hz(9.4),FF+CH,gFF);
+picLight(hx(1.05), hz(7.12), FF+2.00, 0.9, 0, gFF);
 
 /* --- master walk-in closet  (u 2.8..5.0, v 7.0..10.2) --- */
 wardrobe(hx(3.95), hz(7.20), FF, 2.0, 0, gFF);
@@ -200,14 +222,12 @@ fsolid(1.0,0.55,0.55, hx(3.95), FF+0.28, hz(9.20), MAT.wood, gFF);
 downlight(hx(3.9),hz(8.6),FF+CH,gFF);
 
 /* --- bedroom 2  (u 8.3..13.55, v 9.2..13.9) --- */
-rugMat(hx(10.90), hz(11.90), FF, 3.2, 2.8, gFF);
-bed(hx(10.90), hz(11.60), FF, 1.60, 2.10, 0, gFF, MAT.fabric2);
-fsolid(0.48,0.55,0.42, hx(9.85), FF+0.28, hz(10.35), MAT.woodDark, gFF);
-fsolid(0.48,0.55,0.42, hx(11.95),FF+0.28, hz(10.35), MAT.woodDark, gFF);
-desk(hx(13.00), hz(12.70), FF, 1.3, 1, gFF);
-tvUnit(hx(10.90), hz(13.62), FF, 1.6, 0, gFF);
-ceilingFan(hx(10.90), hz(11.90), FF+CH, gFF);
+rugMat(hx(10.80), hz(11.90), FF, 3.2, 2.8, gFF);
+bed(hx(10.80), hz(11.55), FF, 1.60, 2.00, 0, gFF, MAT.fabric2);
+desk(hx(13.05), hz(12.80), FF, 1.2, 1, gFF);
+tvUnit(hx(10.80), hz(13.62), FF, 1.6, 0, gFF);
 downlight(hx(9.4),hz(10.6),FF+CH,gFF); downlight(hx(12.6),hz(13.0),FF+CH,gFF);
+wallLight(hx(8.50), hz(12.40), FF+1.95, 1, gFF);
 ac(hx(12.60), hz(9.42), FF+2.55, 0, gFF);
 /* bedroom 2 en-suite (u 8.3..10.8, v 6.9..9.2) */
 addBox(2.50,0.02,2.30, hx(9.55), FF+0.011, hz(8.05), MAT.tileWet, gFF, {cast:false});
@@ -222,14 +242,12 @@ downlight(hx(12.2),hz(8.2),FF+CH,gFF);
 
 /* --- bedroom 3  (u 8.3..13.55, v 0..4.6) ---
    The second-biggest bedroom, and the other one that opens onto the balcony. */
-rugMat(hx(10.90), hz(2.40), FF, 3.2, 2.8, gFF);
-bed(hx(10.90), hz(2.75), FF, 1.60, 2.10, 2, gFF, MAT.fabric2);
-fsolid(0.48,0.55,0.42, hx(9.85), FF+0.28, hz(4.10), MAT.woodDark, gFF);
-fsolid(0.48,0.55,0.42, hx(11.95),FF+0.28, hz(4.10), MAT.woodDark, gFF);
-desk(hx(13.00), hz(1.60), FF, 1.3, 1, gFF);
-wardrobe(hx(9.30), hz(1.30), FF, 2.0, 3, gFF);
-ceilingFan(hx(10.90), hz(2.40), FF+CH, gFF);
+rugMat(hx(10.90), hz(2.55), FF, 3.2, 2.8, gFF);
+bed(hx(10.90), hz(2.70), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
+desk(hx(13.05), hz(1.55), FF, 1.2, 1, gFF);
+wardrobe(hx(9.25), hz(1.30), FF, 2.0, 3, gFF);
 downlight(hx(9.4),hz(1.2),FF+CH,gFF); downlight(hx(12.6),hz(3.6),FF+CH,gFF);
+wallLight(hx(8.50), hz(3.60), FF+1.95, 1, gFF);
 ac(hx(12.60), hz(4.38), FF+2.55, 2, gFF);
 /* bedroom 3 en-suite (u 10.8..13.55, v 4.6..6.9) */
 addBox(2.75,0.02,2.30, hx(12.18), FF+0.011, hz(5.75), MAT.tileWet, gFF, {cast:false});
@@ -346,12 +364,10 @@ CTAG = "garden";
     for(i=0;i<=n;i++){
       addBox(hw*2+0.60, 0.11, 0.09, gx, 2.86, gz-hd + (hd*2)*(i/n), MAT.woodDark, gGarden, {});
     }
-    /* a climber over the top */
-    for(i=0;i<16;i++){
-      var a = i*2.399;
-      addSphere(0.26+((i*31)%7)/22, gx+Math.cos(a)*hw*0.85, 2.99+((i*17)%5)/26,
-                gz+Math.sin(a)*hd*0.85, (i%3)?MAT.leaf:MAT.leaf2, gGarden);
-    }
+    /* The climber that used to sprawl over the rafters is gone. A pergola
+       reads best as the shadow it throws, and sixteen foliage blobs on top
+       were both hiding the rafters that make that shadow and reading as
+       something growing out of the roof rather than up the posts. */
     sofa(gx, gz-hd+0.62, 0.10, 1.9, 0, gGarden, MAT.fabric2);
     armchair(gx-1.25, gz+0.90, 0.10, 1, gGarden);
     armchair(gx+1.25, gz+0.90, 0.10, 3, gGarden);
@@ -515,217 +531,26 @@ CTAG = "garden";
   });   /* planting() */
 })();
 CTAG = null;
-
 /* ============================================================
-   SPORTS COURT  -  the alternative to the garden, on the same ground
+   ROOF-MOUNTED SOLAR
    ------------------------------------------------------------
-   Only one of the two can exist: the court needs the whole rear of the
-   plot, which is exactly the ground the garden is laid out on. Toggled
-   in part 6.
+   The sports court that used to occupy the rear of the plot has been taken
+   out entirely - the garden is now the only thing back there, so there is no
+   longer an either/or to toggle and no "sport" collision tag to filter. The
+   court took its netting, its floodlights, its benches and its equipment
+   locker with it.
 
-   The playing surface is 16.20 x 8.00 m of acrylic over concrete, marked
-   for three games:
-     badminton / pickleball  13.40 x 6.10 m, full size, net across the middle
-     basketball half court   hoop on the west baseline, key and clipped arc
-     kickabout               a 3.0 x 2.0 m goal on the east baseline
-
-   Run-off is 1.40 m at the ends and 0.95 m at the sides. A club would want
-   1.50 m minimum at the sides; this plot does not have it, and nothing that
-   keeps the four-bedroom footprint would.
+   The one thing worth keeping from that block is the PV array, which never
+   had anything to do with the court in the first place: it sits flat on the
+   main roof deck behind the parapet, out of sight from the ground. It lives
+   in gRoof, so "Roof off" takes it away with the roof it stands on.
    ============================================================ */
-CTAG = "sport";
-
-/* An alpha-cut grid on a flat quad: you see the court through it, it still
-   reads as a barrier, and it costs two triangles instead of a few thousand
-   cylinders. `tile` is the size in metres of one square of mesh. */
-function netPanel(ax,az,bx,bz,y0,y1,mat,group,tile){
-  var w = Math.sqrt((bx-ax)*(bx-ax)+(bz-az)*(bz-az)), h = y1-y0;
-  if(w<0.01 || h<0.01) return null;
-  var g = new THREE.PlaneGeometry(w, h);
-  var uv = g.attributes.uv;
-  for(var i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*w/tile, uv.getY(i)*h/tile);
-  uv.needsUpdate = true;
-  g.setAttribute("uv2", uv);
-  var m = new THREE.Mesh(g, mat);
-  m.position.set((ax+bx)/2, (y0+y1)/2, (az+bz)/2);
-  m.rotation.y = Math.atan2(-(bz-az), bx-ax);
-  m.castShadow = false; m.receiveShadow = false;
-  (group||gSite).add(m);
-  return m;
-}
-
 (function(){
-  var CX = -0.30, CZ = 10.90;          /* court centre */
-  var HWx = 8.10, HWz = 4.00;          /* half extents of the paved surface */
-  var CY = 0.12;                       /* finished court level */
-  var x0 = CX-HWx, x1 = CX+HWx, z0 = CZ-HWz, z1 = CZ+HWz;
-
-  /* ---------- surface ---------- */
-  /* 150 mm concrete raft with a thickened edge, then the coloured coats */
-  addBox(HWx*2+0.30, 0.30, HWz*2+0.30, CX, CY-0.15, CZ, MAT.stone, gSport, {cast:false});
-  addBox(HWx*2, 0.05, HWz*2, CX, CY-0.025, CZ, MAT.courtOut, gSport, {cast:false});
-  addFloor(x0, x1, z0, z1, CY);
-  /* in-bounds rectangle in the darker coat */
-  addBox(13.40, 0.05, 6.10, CX, CY-0.018, CZ, MAT.courtIn, gSport, {cast:false});
-  /* basketball key, shaded a third colour the way a painted court is */
-  addBox(5.80, 0.05, 4.90, CX-HWx+2.90, CY-0.012, CZ, MAT.courtKey, gSport, {cast:false});
-
-  /* ---------- line marking ---------- */
-  function mark(ax,az,bx,bz,w){
-    var dx=bx-ax, dz=bz-az, len=Math.sqrt(dx*dx+dz*dz);
-    if(len < 0.01) return;
-    var m = addBox(len, 0.014, w||0.05, (ax+bx)/2, CY+0.004, (az+bz)/2,
-                   MAT.courtLine, gSport, {cast:false});
-    m.rotation.y = Math.atan2(-dz, dx);
+  gSolar = new THREE.Group();
+  gRoof.add(gSolar);
+  var pv = M(0x1a2740,{r:0.25,m:0.4});
+  var py = RF + 0.09;
+  for(var i=0;i<6;i++){
+    addBox(1.72, 0.05, 1.02, hx(1.90 + i*1.82), py, hz(HD/2), pv, gSolar, {});
   }
-  function rect(ax,az,bx,bz,w){
-    mark(ax,az,bx,az,w); mark(ax,bz,bx,bz,w);
-    mark(ax,az,ax,bz,w); mark(bx,az,bx,bz,w);
-  }
-  function arcline(cx,cz,r,a0,a1,w){
-    var n = Math.max(6, Math.round(Math.abs(a1-a0)*14));
-    for(var i=0;i<n;i++){
-      var t0=a0+(a1-a0)*i/n, t1=a0+(a1-a0)*(i+1)/n;
-      mark(cx+Math.cos(t0)*r, cz+Math.sin(t0)*r,
-           cx+Math.cos(t1)*r, cz+Math.sin(t1)*r, w);
-    }
-  }
-
-  /* badminton: doubles boundary, singles sidelines, service lines, centre line */
-  rect(CX-6.70, CZ-3.05, CX+6.70, CZ+3.05, 0.05);
-  mark(CX-6.70, CZ-2.59, CX+6.70, CZ-2.59, 0.04);
-  mark(CX-6.70, CZ+2.59, CX+6.70, CZ+2.59, 0.04);
-  [-1.98, 1.98, -5.94, 5.94].forEach(function(d){
-    mark(CX+d, CZ-3.05, CX+d, CZ+3.05, 0.04);
-  });
-  mark(CX-6.70, CZ, CX-1.98, CZ, 0.04);
-  mark(CX+1.98, CZ, CX+6.70, CZ, 0.04);
-
-  /* basketball: key, free-throw circle, three-point arc off the west baseline */
-  var BL  = CX-HWx;                        /* baseline */
-  var BSK = BL + 0.58;                     /* rim centre, 0.58 m in from the edge */
-  rect(BL, CZ-2.45, BL+5.80, CZ+2.45, 0.05);
-  arcline(BL+5.80, CZ, 1.80, -Math.PI/2, Math.PI/2, 0.05);
-  (function(){
-    /* corner-three straights out to where the 6.75 m arc meets them, then the arc */
-    var cz = 3.90, r = 6.75;
-    var ax = Math.sqrt(r*r - cz*cz);       /* 5.51 m from the basket */
-    mark(BL, CZ-cz, BSK+ax, CZ-cz, 0.05);
-    mark(BL, CZ+cz, BSK+ax, CZ+cz, 0.05);
-    var th = Math.acos(ax/r);
-    arcline(BSK, CZ, r, -th, th, 0.05);
-  })();
-
-  /* ---------- badminton net ---------- */
-  [-3.05, 3.05].forEach(function(d){
-    addBox(0.09, 1.60, 0.09, CX, CY+0.80, CZ+d, MAT.steel, gSport, {solid:true});
-  });
-  netPanel(CX, CZ-3.05, CX, CZ+3.05, CY+0.76, CY+1.55, MAT.netFine, gSport, 0.30);
-  /* vertical cords at the posts and the centre, which is what your eye reads */
-  [-3.02, -0.01, 3.02].forEach(function(d){
-    addBox(0.05, 0.83, 0.05, CX, CY+1.16, CZ+d, MAT.white, gSport, {cast:false});
-  });
-  addBox(0.11, 0.075, 6.10, CX, CY+1.585, CZ, MAT.white, gSport, {cast:false});
-
-  /* ---------- basketball hoop ---------- */
-  (function(){
-    var px = BL-0.55;                      /* post stands off the court */
-    addBox(0.26,4.15,0.26, px, 2.07, CZ, MAT.black, gSport, {solid:true});
-    addBox(0.55,0.55,0.55, px, 0.14, CZ, MAT.stone, gSport, {});
-    /* cranked arm out to the board */
-    addBox(1.05,0.16,0.16, px+0.52, 3.72, CZ, MAT.black, gSport, {});
-    var bx = px+1.02;
-    addBox(0.07,1.05,1.80, bx, 3.42, CZ, MAT.backboard, gSport, {});
-    addBox(0.02,0.45,0.59, bx+0.045, 3.13, CZ, MAT.hoopRim, gSport, {cast:false});
-    /* rim + net */
-    addCyl(0.2286,0.2286,0.03, bx+0.42, 3.05, CZ, MAT.hoopRim, gSport, 20);
-    netPanel(bx+0.20, CZ, bx+0.64, CZ, 2.62, 3.05, MAT.netWhite, gSport, 0.11);
-    netPanel(bx+0.42, CZ-0.22, bx+0.42, CZ+0.22, 2.62, 3.05, MAT.netWhite, gSport, 0.11);
-  })();
-
-  /* ---------- kickabout goal on the east baseline ---------- */
-  (function(){
-    var gx = CX+7.55, gw = 1.50, gh = 2.00;
-    [-gw, gw].forEach(function(d){
-      addBox(0.10,gh,0.10, gx, CY+gh/2, CZ+d, MAT.white, gSport, {solid:true});
-    });
-    addBox(0.10,0.10,gw*2, gx, CY+gh, CZ, MAT.white, gSport, {});
-    netPanel(gx, CZ-gw, gx, CZ+gw, CY, CY+gh, MAT.netting, gSport, 0.16);
-    netPanel(gx, CZ-gw, gx+0.75, CZ-gw, CY, CY+gh, MAT.netting, gSport, 0.16);
-    netPanel(gx, CZ+gw, gx+0.75, CZ+gw, CY, CY+gh, MAT.netting, gSport, 0.16);
-  })();
-
-  /* ---------- ball-stop netting ---------- */
-  /* 4 m on three sides. Only 2.6 m on the house side, so the court does not
-     read as a cage from the terrace and the rear elevation stays visible. */
-  (function(){
-    var nx0 = x0-0.35, nx1 = x1+0.35, nz0 = z0-0.35, nz1 = z1+0.35;
-    function run(ax,az,bx,bz,h){
-      var len = Math.sqrt((bx-ax)*(bx-ax)+(bz-az)*(bz-az));
-      var n = Math.max(1, Math.round(len/4.1));
-      for(var i=0;i<=n;i++){
-        var f=i/n, px=ax+(bx-ax)*f, pz=az+(bz-az)*f;
-        addBox(0.11,h,0.11, px, h/2, pz, MAT.steel, gSport, {solid:true});
-      }
-      netPanel(ax,az,bx,bz, 0.10, h, MAT.netting, gSport, 0.80);
-      var m = addBox(len,0.06,0.06,(ax+bx)/2, h, (az+bz)/2, MAT.steel, gSport, {cast:false});
-      m.rotation.y = Math.atan2(-(bz-az), bx-ax);
-    }
-    /* These used to stop short of the games pavilion, which stood off the
-       south-west corner and was present in both options. The pavilion is gone
-       - it is a tent in the garden now, and the garden is the thing this court
-       replaces - so the netting finally runs the full way round. */
-    run(nx0,nz1,nx1,nz1,3.0);          /* rear - the 2.4 m boundary wall is behind it */
-    run(nx0,nz0,nx0,nz1,4.0);          /* west */
-    run(nx1,nz0,nx1,nz1,4.0);          /* east */
-    run(nx0,nz0,nx1,nz0,2.6);          /* house side */
-  })();
-
-  /* ---------- floodlights ---------- */
-  /* The south-west mast is pulled 1 m north of the corner: at the corner
-     proper it would stand inside the games pavilion roof. */
-  [[x0-0.35, z1+0.35],[x1+0.35, z1+0.35],[x0-0.35, z0+0.65],[x1+0.35, z0-0.35]].forEach(function(p){
-    addCyl(0.09,0.12,6.0, p[0], 3.0, p[1], MAT.steel, gSport, 12);
-    var ox = (p[0] < CX ? 0.34 : -0.34), oz = (p[1] < CZ ? 0.20 : -0.20);
-    var head = addBox(0.62,0.30,0.40, p[0]+ox, 5.95, p[1]+oz, MAT.black, gSport, {});
-    head.rotation.x = 0.42 * (p[1] < CZ ? -1 : 1);
-    addBox(0.54,0.06,0.32, p[0]+ox*1.3, 5.86, p[1]+oz*1.3, MAT.lamp, gSport, {cast:false});
-  });
-
-  /* ---------- solar array ----------
-     The panels used to live on the BQ roof; with that block gone for good they
-     sit flat on the main roof deck in both options, tucked behind the parapet
-     so they stay out of sight from the ground. Inside gRoof rather than
-     gSport so that "Roof off" takes them away with the roof they sit on. */
-  (function(){
-    gSolar = new THREE.Group();
-    gRoof.add(gSolar);
-    var pv = M(0x1a2740,{r:0.25,m:0.4});
-    var py = RF + 0.09;
-    for(var i=0;i<6;i++){
-      addBox(1.72, 0.05, 1.02, hx(1.90 + i*1.82), py, hz(HD/2), pv, gSolar, {});
-    }
-  })();
-
-  /* ---------- courtside ---------- */
-  /* benches east of the pavilion, which occupies the west end of this strip */
-  /* Pushed out to the flanks. They used to sit at x -0.40 and 4.60, which is
-     exactly where the rear terrace and its dining table now are - and the
-     terrace is present in both options, so they would have been standing in
-     each other in court mode. */
-  [-3.90, 6.90].forEach(function(bx){
-    addBox(1.90,0.09,0.42, bx, 0.50, z0-1.15, MAT.wood, gSport, {solid:true});
-    addBox(1.90,0.09,0.40, bx, 0.86, z0-1.42, MAT.wood, gSport, {cast:false});
-    [-0.82,0.82].forEach(function(d){
-      addBox(0.09,0.46,0.40, bx+d, 0.24, z0-1.15, MAT.black, gSport, {});
-      addBox(0.09,0.42,0.09, bx+d, 0.68, z0-1.42, MAT.black, gSport, {});
-    });
-  });
-  /* equipment locker */
-  addBox(1.30,1.55,0.62, x1-1.10, 0.775, z0-1.30, MAT.accent, gSport, {solid:true});
-  addBox(1.38,0.09,0.70, x1-1.10, 1.58, z0-1.30, MAT.black, gSport, {});
-  /* a couple of balls left out */
-  addSphere(0.122, CX+2.20, CY+0.122, CZ-2.10, MAT.hoopRim, gSport, {});
-  addSphere(0.110, CX-5.40, CY+0.110, CZ+2.60, MAT.white, gSport, {});
 })();
-CTAG = null;

@@ -8,11 +8,8 @@
    have finished adding meshes. */
 fixUV2(scene);
 
-/* The court and the garden occupy the same ground, so exactly one is up at a
-   time. Start with the garden: it is the default reading of the plot, and the
-   court is the thing you switch on. */
-gSport.visible = false;
-CTOFF.sport = true;
+/* The sports court is gone. The garden is unconditional now, so there is no
+   longer a "sport" tag to switch off here and no either/or to seed. */
 
 /* ---------- static geometry merge ----------
    The model was drawing 1,991 objects to put 93,000 triangles on screen -
@@ -54,31 +51,55 @@ function mergeStatics(){
   function mergeDomain(root){
     var buckets = {};
 
+    /* Sort one mesh into a bucket. Pulled out of the walk because the walk now
+       reaches meshes by two different routes. */
+    function bucket(c){
+      before++;
+      var mat = c.material, fu = furnish(c);
+      if(!mat || mat.transparent || Array.isArray(mat) || c.children.length ||
+         !c.geometry || !c.geometry.attributes || !c.geometry.attributes.position){
+        after++;
+        if(fu) newFurn.push(c);
+        return;
+      }
+      /* Shadow flags are per-object, not per-material, so they have to be in
+         the key or a merge would silently change what casts. Indexed and
+         non-indexed geometry cannot merge together either, and mixing them
+         makes mergeBufferGeometries return null rather than throw. */
+      var key = (fu?"F":"S") + mat.uuid + "|" + (c.castShadow?1:0) + "|" + (c.receiveShadow?1:0) +
+                "|" + (c.renderOrder||0) + "|" + (c.geometry.index?1:0) +
+                "|" + Object.keys(c.geometry.attributes).sort().join(",");
+      (buckets[key] || (buckets[key] = {mat:mat, furn:fu, cast:c.castShadow, recv:c.receiveShadow,
+                                        order:c.renderOrder||0, list:[]})).list.push(c);
+    }
+
     (function walk(o){
       for(var i=0; i<o.children.length; i++){
         var c = o.children[i];
-        /* Imported .glb models and anything that moves at run time opt out of
-           the merge: merging bakes world transforms and freezes the mesh, which
-           is exactly wrong for a car that has to drive out of the gate. */
-        if(c.isGroup){ if(!c.userData.noMerge) mergeDomain(c); continue; }
-        if(!c.isMesh){ continue; }
-        before++;
-        var mat = c.material, fu = furnish(c);
-        if(!mat || mat.transparent || Array.isArray(mat) || c.children.length ||
-           !c.geometry || !c.geometry.attributes || !c.geometry.attributes.position){
-          after++;
-          if(fu) newFurn.push(c);
-          continue;
+        /* Three cases, not two:
+             noMerge  - skipped entirely. Imported models that move at run time
+                        opt out this way: merging bakes the world matrix and
+                        freezes the mesh, which is exactly wrong for a car that
+                        has to drive out of the gate.
+             flatten  - every mesh anywhere underneath it goes into THIS bucket
+                        set, so it merges with its siblings. Imported plants
+                        arrive as one container per plant, and recursing into
+                        each separately gave every bush a bucket of one - and a
+                        bucket of one never merges. Ninety bushes, ninety draw
+                        calls. traverse() rather than a children loop because
+                        a .glb nests plain Object3D nodes between the container
+                        and the meshes, and those are neither Group nor Mesh:
+                        an isGroup/isMesh walk steps straight over them and
+                        finds nothing at all.
+             otherwise - merged as its own domain, so it keeps independent
+                        visibility (the solar array works this way) */
+        if(c.isGroup){
+          if(c.userData.noMerge){ continue; }
+          if(c.userData.flatten){ c.traverse(function(o2){ if(o2.isMesh) bucket(o2); }); continue; }
+          mergeDomain(c); continue;
         }
-        /* Shadow flags are per-object, not per-material, so they have to be in
-           the key or a merge would silently change what casts. Indexed and
-           non-indexed geometry cannot merge together either, and mixing them
-           makes mergeBufferGeometries return null rather than throw. */
-        var key = (fu?"F":"S") + mat.uuid + "|" + (c.castShadow?1:0) + "|" + (c.receiveShadow?1:0) +
-                  "|" + (c.renderOrder||0) + "|" + (c.geometry.index?1:0) +
-                  "|" + Object.keys(c.geometry.attributes).sort().join(",");
-        (buckets[key] || (buckets[key] = {mat:mat, furn:fu, cast:c.castShadow, recv:c.receiveShadow,
-                                          order:c.renderOrder||0, list:[]})).list.push(c);
+        if(!c.isMesh){ walk(c); continue; }
+        bucket(c);
       }
     })(root);
 
@@ -123,12 +144,38 @@ function mergeStatics(){
     }
   }
 
-  [gSite, gGF, gFF, gRoof, gSport, gGarden].forEach(mergeDomain);
+  [gSite, gGF, gFF, gRoof, gGarden].forEach(mergeDomain);
   FURN.length = 0;
   for(var n=0; n<newFurn.length; n++) FURN.push(newFurn[n]);
   return {before:before, after:after, furn:FURN.length};
 }
 var MERGED = mergeStatics();
+
+/* ---------- second pass, once the downloaded models have landed ----------
+   mergeStatics() runs the moment this file is parsed, and at that point the
+   trees, bushes and palms do not exist yet: they are cloned in from .glb files
+   that are still downloading. Everything placed by that async path therefore
+   missed the merge and went to the GPU one draw call per plant - about 90 of
+   them for the hedges alone, which took the scene from 552 calls to 683.
+
+   So the merge runs a second time when the loader reports everything in.
+   It is safe to re-merge an already-merged group: a merged mesh has its world
+   matrix baked and sits at the identity, so folding it into a bigger merge is
+   a no-op on its geometry. Groups marked noMerge - the cars, the gate leaves -
+   are skipped on both passes, so nothing that has to move gets frozen. */
+if(typeof MODELS !== "undefined" && MODELS.whenReady){
+  var reMerged = false;                 /* whenReady can fire more than once */
+  MODELS.whenReady(function(){
+    if(reMerged) return;
+    reMerged = true;
+    /* one frame later, so any placement queued from inside the last load
+       callback has been flushed before we bake */
+    requestAnimationFrame(function(){
+      var m2 = mergeStatics();
+      if(m2){ MERGED = {before:MERGED.before + m2.before, after:m2.after, furn:m2.furn}; }
+    });
+  });
+}
 
 /* ---------- rooms for the location readout ---------- */
 function Z(name, y, x0,z0,x1,z1){ return {n:name, y:y, x0:Math.min(x0,x1), x1:Math.max(x0,x1), z0:Math.min(z0,z1), z1:Math.max(z0,z1)}; }
@@ -183,13 +230,7 @@ var ZONES = [
   Z("Outdoor kitchen", 0, 0.3,6.55, 4.9,9.35),
   Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8)
 ].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
-/* unshifted, so the court reads ahead of the rear-lawn zone it overlaps.
-   Listed back to front: after the unshifts the key ends up ahead of the court,
-   which is what makes the more specific name win. */
-[ Z("Courtside", 0, -8.75,4.60, 7.90,6.90),
-  Z("Sports court", 0.12, -8.40,6.90, 7.80,14.90),
-  Z("Basketball key", 0.12, -8.40,8.45, -2.60,13.35)
-].forEach(function(Zi){ Zi.t = "sport"; ZONES.unshift(Zi); });
+/* The Courtside / Sports court / Basketball key zones went with the court. */
 
 function zoneAt(x,z,y){
   var best=null;
@@ -246,7 +287,7 @@ var mode = "walk";
 var locked = false;
 var canvas = renderer.domElement;
 var touchMove = {active:false, id:-1, ox:0, oy:0, dx:0, dy:0};
-var touchLook = {active:false, id:-1, lx:0, ly:0};
+var touchLook = {active:false, id:-1, lx:0, ly:0, lastTap:0, tapX:0, tapY:0};
 var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints>0;
 
 document.addEventListener("keydown", function(e){
@@ -260,19 +301,134 @@ document.addEventListener("keydown", function(e){
 });
 document.addEventListener("keyup", function(e){ keys[e.code]=false; });
 
-canvas.addEventListener("click", function(){
-  if(mode==="walk" && !isTouch && !locked) canvas.requestPointerLock();
+/* ============================================================
+   WALK MODE NAVIGATION  -  drag to look, double-click to go
+   ------------------------------------------------------------
+   Walk mode used to capture the pointer the moment you clicked: the cursor
+   vanished, the mouse drove the view continuously, and Escape was the only way
+   out. That is how a first-person game works, and it is not how anyone expects
+   to look round a building.
+
+   It now works the way Street View does:
+     - press and drag anywhere on the view to look around;
+     - double-click a point on the ground to walk there;
+     - WASD and the on-screen pad still work for fine positioning;
+     - pointer lock is still available, on Shift+click, for anyone who
+       actually wants the game-style controls. It is opt-in now, not the
+       default, and it was the default that made this awkward.
+
+   The double-click target is found by raycasting into the scene and then
+   testing the hit point against the same collision model the walk uses. Three
+   things are checked: the surface has to be near-horizontal, so a click on a
+   wall does not put you inside it; the destination has to be clear of every
+   collider, so you cannot land inside the kitchen island; and it has to be on
+   the same storey you are standing on, so you cannot click the landing through
+   a stairwell and arrive upstairs. If the exact point is occupied the search
+   spirals outward and takes the nearest legal standing spot instead, which is
+   what stops a click on the arm of a sofa doing nothing at all.
+
+   What it deliberately does NOT do is check that a walkable route exists. If
+   you can see a patch of lawn through a window you can click it and you will
+   be standing on it, without going round by the door. That is how Street View
+   behaves and it is the right trade for a walkthrough: the alternative is
+   pathfinding, which is a lot of machinery to stop somebody looking at their
+   own garden.
+   ============================================================ */
+var pick = { ray: new T.Raycaster(), v: new T.Vector2() };
+/* the glide: a target the camera eases towards rather than snapping to, so
+   you keep your bearings on arrival */
+var glide = { on:false, x:0, z:0, y:0, t:0 };
+
+/* Find a standing point at or near (x,z). Returns {x,z,y} or null.
+   The spiral is deliberately coarse - 0.35 m steps out to 2.1 m - because the
+   point of it is "near enough", not "exactly there". */
+function standNear(x, z, y){
+  var r, a, tx, tz, fy;
+  for(r=0; r<=2.1; r+=0.35){
+    var n = r < 0.01 ? 1 : Math.max(6, Math.round(r*10));
+    for(a=0; a<n; a++){
+      var th = (a/n)*Math.PI*2;
+      tx = x + Math.cos(th)*r; tz = z + Math.sin(th)*r;
+      fy = floorAt(tx, tz, y + 0.9);
+      if(Math.abs(fy - y) > 1.2) continue;      /* a different storey */
+      if(!collides(tx, tz, fy)) return {x:tx, z:tz, y:fy};
+    }
+  }
+  return null;
+}
+
+function goToScreen(cx, cy){
+  var r = canvas.getBoundingClientRect();
+  pick.v.x =  ((cx - r.left)/r.width )*2 - 1;
+  pick.v.y = -((cy - r.top )/r.height)*2 + 1;
+  pick.ray.setFromCamera(pick.v, camera);
+  var hits = pick.ray.intersectObjects(scene.children, true);
+  var i, h;
+  for(i=0;i<hits.length;i++){
+    h = hits[i];
+    if(!h.face) continue;
+    /* only near-horizontal faces are floor: a click on a wall should not
+       teleport you into it */
+    var nrm = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+    if(nrm.y < 0.55) continue;
+    var s = standNear(h.point.x, h.point.z, h.point.y);
+    if(!s) continue;
+    glide.on = true; glide.x = s.x; glide.z = s.z; glide.y = s.y; glide.t = 0;
+    return true;
+  }
+  return false;
+}
+
+/* look-drag state for walk mode */
+var look = { down:false, lx:0, ly:0 };
+canvas.addEventListener("mousedown", function(e){
+  if(mode!=="walk" || e.button!==0) return;
+  if(e.shiftKey && !isTouch){ canvas.requestPointerLock(); return; }
+  look.down = true; look.lx = e.clientX; look.ly = e.clientY;
+  dismissHint();
 });
-document.addEventListener("pointerlockchange", function(){
-  locked = (document.pointerLockElement === canvas);
-  document.getElementById("hint").style.display = (locked||mode==="orbit"||isTouch) ? "none" : "block";
+/* The hint used to disappear when pointer lock engaged. There is no lock to
+   engage now, so it goes on the first thing you do with the view instead. */
+var hintGone = false;
+function dismissHint(){
+  if(hintGone) return;
+  hintGone = true;
+  var h = document.getElementById("hint");
+  h.style.transition = "opacity .5s"; h.style.opacity = "0";
+  setTimeout(function(){ h.style.display = "none"; }, 520);
+}
+window.addEventListener("mouseup", function(){
+  look.down = false;
+  canvas.style.cursor = (mode==="walk" && !locked) ? "grab" : "";
 });
-document.addEventListener("mousemove", function(e){
-  if(mode==="walk" && locked){
+window.addEventListener("mousemove", function(e){
+  if(mode!=="walk") return;
+  if(locked){
     player.yaw   -= e.movementX*0.0022;
     player.pitch -= e.movementY*0.0022;
     player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
+    return;
   }
+  if(!look.down) return;
+  var dx = e.clientX - look.lx, dy = e.clientY - look.ly;
+  look.lx = e.clientX; look.ly = e.clientY;
+  /* dragging right turns you left, the way dragging a photo does - this is
+     the opposite sign to a mouse-look, and it is the sign Street View uses */
+  player.yaw   += dx*0.0040;
+  player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch + dy*0.0034));
+  canvas.style.cursor = "grabbing";
+});
+canvas.addEventListener("dblclick", function(e){
+  if(mode!=="walk" || locked) return;
+  e.preventDefault();
+  goToScreen(e.clientX, e.clientY);
+});
+document.addEventListener("pointerlockchange", function(){
+  locked = (document.pointerLockElement === canvas);
+  /* the crosshair belongs to mouse-look and nothing else: with a free cursor
+     you aim with the cursor, and a second reticle in the middle is just noise */
+  document.getElementById("cross").style.display = locked ? "block" : "none";
+  if(locked) dismissHint();
 });
 
 /* orbit state */
@@ -315,6 +471,17 @@ canvas.addEventListener("touchstart", function(e){
         st.style.left=(t.clientX-60)+"px"; st.style.top=(t.clientY-60)+"px";
       } else if(!touchLook.active){
         touchLook.active=true; touchLook.id=t.identifier; touchLook.lx=t.clientX; touchLook.ly=t.clientY;
+        /* double-tap to walk there, the touch equivalent of the double-click.
+           300 ms and 40 px is the usual window; anything longer and a slow
+           two-finger fumble starts registering as a tap-tap. */
+        var now = Date.now();
+        if(now - touchLook.lastTap < 300 &&
+           Math.abs(t.clientX-touchLook.tapX) < 40 && Math.abs(t.clientY-touchLook.tapY) < 40){
+          goToScreen(t.clientX, t.clientY);
+          touchLook.lastTap = 0;
+        } else {
+          touchLook.lastTap = now; touchLook.tapX = t.clientX; touchLook.tapY = t.clientY;
+        }
       }
     } else {
       if(!touchLook.active){ touchLook.active=true; touchLook.id=t.identifier; touchLook.lx=t.clientX; touchLook.ly=t.clientY; }
@@ -336,8 +503,9 @@ canvas.addEventListener("touchmove", function(e){
       var dx=t.clientX-touchLook.lx, dy=t.clientY-touchLook.ly;
       touchLook.lx=t.clientX; touchLook.ly=t.clientY;
       if(mode==="walk"){
-        player.yaw -= dx*0.006;
-        player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch - dy*0.006));
+        /* same sign as the mouse drag: the view follows your finger */
+        player.yaw += dx*0.006;
+        player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch + dy*0.006));
       } else {
         orbit.theta -= dx*0.008;
         orbit.phi = Math.max(0.12, Math.min(1.50, orbit.phi - dy*0.006));
@@ -404,8 +572,9 @@ function setMode(m){
   mode = m;
   document.getElementById("btnWalk").classList.toggle("on", m==="walk");
   document.getElementById("btnOrbit").classList.toggle("on", m==="orbit");
-  document.getElementById("hint").style.display = (m==="walk" && !locked && !isTouch) ? "block" : "none";
-  document.getElementById("cross").style.display = (m==="walk" && !isTouch) ? "block" : "none";
+  document.getElementById("hint").style.display = (m==="walk" && !hintGone && !isTouch) ? "block" : "none";
+  document.getElementById("cross").style.display = (m==="walk" && locked) ? "block" : "none";
+  canvas.style.cursor = (m==="walk" && !locked) ? "grab" : "";
   document.getElementById("mobileHelp").style.display = (isTouch) ? "block" : "none";
   document.getElementById("navLbl").textContent = (m==="walk")
     ? "move · look & zoom" : "pan · orbit & zoom";
@@ -435,29 +604,12 @@ document.getElementById("btnFurn").onclick = function(){
   for(var i=0;i<FURN.length;i++) FURN[i].visible = !on;
 };
 /* ---------- garden or sports court ---------- */
-/* The two share the rear of the plot, so this is an either/or, not a pair of
-   independent switches: turning one on turns the other off, along with its
-   colliders, its floors and its entries in the jump-to list. The games
-   pavilion is outside the switch entirely - it is there in both. */
+/* setRear() and the Garden / Sports court switch have gone with the court.
+   The rear of the plot is the garden, always, so there is nothing left to
+   choose between. The stub stays only because the debug handle at the bottom
+   of this file exports it. */
 var rearBlock = "garden";
-function setRear(which){
-  rearBlock = which;
-  var sport = (which === "sport");
-  gSport.visible = sport;
-  gGarden.visible = !sport;
-  CTOFF.sport = !sport;
-  CTOFF.garden = sport;
-  document.getElementById("btnGarden").classList.toggle("on", !sport);
-  document.getElementById("btnSport").classList.toggle("on", sport);
-  buildGoto();
-  /* If you were standing inside whichever block just vanished, step out to the
-     lawn rather than being left floating in the replacement. */
-  if(player.z > 6.4 && player.z < 15.2 && player.x > -8.8 && player.x < 8.2){
-    player.x = 0.60; player.y = 0; player.z = 5.20; player.yaw = 0;
-  }
-}
-document.getElementById("btnGarden").onclick = function(){ setRear("garden"); };
-document.getElementById("btnSport").onclick = function(){ setRear("sport"); };
+function setRear(){ /* nothing to switch any more */ }
 
 /* every distinct standard material in the scene, with its authored reflection
    strength, so the whole model's specular can be dimmed in one pass */
@@ -731,14 +883,12 @@ var SPOTS = [
   ["Outdoor kitchen",                  3.56, 0,      7.86, 0.10,  "garden"],
   ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
   ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
-  /* court viewpoints - only listed when the court is up */
-  ["Court, from the baseline",         6.28, 0.12,   7.64, 0,          "sport"],
-  ["Court, under the hoop",           -5.20, 0.12,  10.90,  Math.PI/2, "sport"],
-  ["Court, at the net",                0.60, 0.12,  10.90,  Math.PI/2, "sport"],
-  ["Court, from the goal end",         6.40, 0.12,  10.90,  Math.PI/2, "sport"],
-  ["Courtside bench",                 -2.40, 0,      6.10,  0,         "sport"],
-  ["Court, from the terrace",         -2.00, 0.12,   7.98,  0,         "sport"],
-  ["Utility yard (gen. & tanks)",     -2.30, 0,     15.70, -Math.PI/2]
+  /* the six court viewpoints went out with the court */
+  /* No extra driveway spot: "Driveway & carport" at (-4.16, -10.40) already
+     stands clear of all three bays, and the obvious alternative in front of
+     the cars is inside the F-150, whose tail sits at z = -10.36 now that it
+     is scaled to its real 5.89 m. */
+  ["Utility yard / generator",        -2.30, 0,     15.70, -Math.PI/2]
 ];
 function buildGoto(){
   var sel = document.getElementById("goto");
@@ -964,6 +1114,34 @@ function animate(){
     var vx = (-sinY*fwd + cosY*strafe) * speed * dt;
     var vz = (-cosY*fwd - sinY*strafe) * speed * dt;
 
+    /* a double-click destination overrides the keys until it is reached or
+       you take the controls back by pressing a key yourself */
+    if(glide.on){
+      if(len > 0.05){ glide.on = false; }
+      else {
+        var gdx = glide.x - player.x, gdz = glide.z - player.z;
+        var gd  = Math.hypot(gdx, gdz);
+        if(gd < 0.10){
+          player.x = glide.x; player.z = glide.z; glide.on = false;
+        } else {
+          /* ease out: fast at the start, settling as it arrives, capped so a
+             long walk across the compound does not become a teleport */
+          var step = Math.min(gd, Math.max(1.6, gd*2.2) * dt);
+          var nx = player.x + gdx/gd*step, nz = player.z + gdz/gd*step;
+          var g1 = tryMove(nx, player.z, player.y);
+          if(g1!==null){ player.x = nx; player.y = g1; }
+          var g2 = tryMove(player.x, nz, player.y);
+          if(g2!==null){ player.z = nz; player.y = g2; }
+          if(g1===null && g2===null) glide.on = false;   /* wedged; give up */
+          /* turn to face the way you are travelling, shortest way round */
+          var want = Math.atan2(-gdx, -gdz);
+          var dyaw = ((want - player.yaw + Math.PI*3) % (Math.PI*2)) - Math.PI;
+          player.yaw += dyaw * Math.min(1, dt*3.2);
+          bob += dt*4.4;
+        }
+      }
+    }
+
     if(vx!==0){ var ry = tryMove(player.x+vx, player.z, player.y);
                 if(ry!==null){ player.x += vx; player.y = ry; } }
     if(vz!==0){ var rz = tryMove(player.x, player.z+vz, player.y);
@@ -1121,6 +1299,6 @@ animate();
 window.__J = { scene:scene, camera:camera, renderer:renderer, player:player, orbit:orbit,
   setMode:function(m){ setMode(m); }, zoneAt:zoneAt, floorAt:floorAt, collides:collides,
   COLLIDERS:COLLIDERS, FLOORS:FLOORS,
-  groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden,gSport:gSport},
+  groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden},
   setRear:setRear, rear:function(){ return rearBlock; }, CTOFF:CTOFF, MAT:MAT, SPOTS:SPOTS,
   hx:hx, hz:hz, EYE:EYE, MERGED:MERGED };

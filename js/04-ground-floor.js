@@ -129,25 +129,42 @@ var RISERS = 18, STEPS = 17, RISE = (FF-GF)/RISERS, TREAD = 0.28, SW0 = 5.0, SW1
 /* ============================================================
    GROUND FLOOR FURNITURE
    ============================================================ */
-/* --- living room --- */
-rugMat(hx(2.6), hz(3.5), GF, 3.4, 2.6, gGF);
-sofa(hx(1.05), hz(3.4), GF, 2.6, 3, gGF);
-armchair(hx(2.6), hz(1.75), GF, 0, gGF);
-armchair(hx(2.6), hz(5.1), GF, 2, gGF);
-coffeeTable(hx(2.7), hz(3.5), GF, 1.15, 0.65, gGF);
-tvUnit(hx(4.55), hz(3.5), GF, 2.0, 1, gGF);
-potPlant(hx(0.55), hz(6.4), GF, gGF, 1.15);
+/* --- living room  (u 0..5.0, v 0..7.0  =  32.8 m2 clear) ---
+   One long sofa against the west wall facing the TV, one armchair, and the
+   round low table between them. The second armchair has gone: two of them
+   plus the sofa made a three-sided enclosure around a 1.15 m table in a room
+   only 4.81 m wide, and the gap left to walk between the seating and the TV
+   was under 700 mm. */
+rugMat(hx(2.45), hz(3.5), GF, 3.2, 2.8, gGF);
+sofa(hx(1.00), hz(3.40), GF, 2.40, 3, gGF);
+armchair(hx(2.75), hz(1.65), GF, 0, gGF);
+coffeeTable(hx(2.55), hz(3.50), GF, 0.95, 0.95, gGF);
+tvUnit(hx(4.60), hz(3.50), GF, 1.90, 1, gGF);
+potPlant(hx(0.62), hz(6.35), GF, gGF, 1.15);
 artwork(hx(4.86), hz(1.6), GF+1.65, 1.2, 0.85, 1, gGF);
-ceilingFan(hx(2.5), hz(3.5), GF+CH, gGF);
+picLight(hx(4.80), hz(1.6), GF+2.42, 1.1, 1, gGF);
+ac(hx(2.50), hz(0.20), GF+2.55, 0, gGF);
+/* uplighters on the two long walls - the fittings that actually light a room
+   like this, washing the wall and leaving the ceiling plane clean */
+[2.10, 5.30].forEach(function(v){
+  wallLight(hx(0.20), hz(v), GF+1.95, 1, gGF);
+});
 [[1.4,1.6],[3.8,1.6],[1.4,5.4],[3.8,5.4]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),GF+CH,gGF); });
 
-/* --- dining --- */
-rugMat(hx(2.5), hz(9.3), GF, 3.2, 2.2, gGF);
-diningSet(hx(2.5), hz(9.3), GF, 8, 1, gGF);
-pendant(hx(2.5), hz(9.3), GF+CH, gGF, 1.05);
-fsolid(1.60,0.85,0.45, hx(0.85), GF+0.42, hz(9.3), MAT.wood, gGF);
-addBox(0.90,0.90,0.04, hx(0.62), GF+1.75, hz(9.3), MAT.steel, gGF, {});
-potPlant(hx(4.4), hz(11.0), GF, gGF, 1.0);
+/* --- dining  (u 0..5.0, v 7.0..11.5  =  21.1 m2 clear) ---
+   A round six-seat table on a single pedestal, not the eight-seat oval that
+   was here. The oval was 2.40 m long with chairs pulled out either side, and
+   its west chairs stood inside the sideboard: 1.42..1.88 against a sideboard
+   ending at 1.65. Round also means no corner to walk into on the way through
+   to the rear lobby, which is the route everyone actually takes. */
+rugMat(hx(2.55), hz(9.20), GF, 2.9, 2.9, gGF);
+diningSet(hx(2.55), hz(9.20), GF, 6, 1, gGF);
+pendant(hx(2.55), hz(9.20), GF+CH, gGF, 1.15);
+/* sideboard against the west wall, now clear of the chairs by 300 mm */
+fsolid(0.42,0.78,1.50, hx(0.34), GF+0.39, hz(9.20), MAT.joinery, gGF);
+addBox(0.04,0.90,0.90, hx(0.14), GF+1.78, hz(9.20), MAT.steel, gGF, {});
+wallLight(hx(0.20), hz(10.70), GF+1.95, 1, gGF);
+potPlant(hx(4.45), hz(10.95), GF, gGF, 1.0);
 
 /* --- foyer --- */
 rugMat(hx(6.75), hz(1.2), GF, 1.6, 2.2, gGF, MAT.fabric2);
@@ -164,14 +181,17 @@ downlight(hx(7.5), hz(2.4), GF+CH, gGF);
    office and half spare bed is not much good as either when somebody is
    actually staying. Headboard against the east wall so the window and the
    door both stay clear, and the powder room next door serves it. */
-rugMat(hx(11.30), hz(2.30), GF, 3.4, 2.8, gGF);
-bed(hx(12.30), hz(2.30), GF, 1.60, 2.10, 1, gGF, MAT.linen);
-fsolid(0.48,0.55,0.42, hx(12.95), GF+0.28, hz(1.05), MAT.woodDark, gGF);
-fsolid(0.48,0.55,0.42, hx(12.95), GF+0.28, hz(3.55), MAT.woodDark, gGF);
-wardrobe(hx(10.20), hz(4.35), GF, 2.4, 2, gGF);
-armchair(hx(9.35), hz(1.35), GF, 1, gGF);
-fsolid(0.5,0.45,0.5, hx(9.35), GF+0.23, hz(2.25), MAT.wood, gGF);
-artwork(hx(11.30), hz(4.48), GF+1.70, 1.1, 0.8, 2, gGF);
+rugMat(hx(11.40), hz(2.30), GF, 3.2, 2.6, gGF);
+bed(hx(12.25), hz(2.30), GF, 1.60, 2.00, 1, gGF, MAT.linen);
+/* The wardrobe used to run to v = 4.66 against an inner wall face at 4.525,
+   so 135 mm of it stood inside the wall. It is 600 mm deep now, set to its
+   own face, and 2.00 m wide rather than 2.40 - which also opens the gap
+   between it and the foot of the bed from 0.94 m to a usable 1.25 m. */
+wardrobe(hx(10.30), hz(4.22), GF, 2.00, 2, gGF);
+armchair(hx(9.28), hz(1.30), GF, 1, gGF);
+fsolid(0.44,0.42,0.44, hx(9.28), GF+0.21, hz(2.15), MAT.woodPale, gGF);
+artwork(hx(11.30), hz(4.44), GF+1.70, 1.1, 0.8, 2, gGF);
+wallLight(hx(8.72), hz(3.30), GF+1.95, 1, gGF);
 downlight(hx(10.2),hz(1.6),GF+CH,gGF); downlight(hx(12.3),hz(3.4),GF+CH,gGF);
 ac(hx(11.0), hz(0.20), GF+2.55, 0, gGF);
 
@@ -218,4 +238,11 @@ potPlant(hx(2.2), hz(-1.05), GF, gGF, 1.35);
 potPlant(hx(11.4), hz(-1.05), GF, gGF, 1.35);
 armchair(hx(3.9), hz(-0.95), GF, 0, gGF);
 armchair(hx(9.9), hz(-0.95), GF, 0, gGF);
-addBox(0.55,0.55,0.55, hx(4.9), GF+0.28, hz(-0.95), MAT.wood, gGF, {});
+addBox(0.55,0.55,0.55, hx(4.9), GF+0.28, hz(-0.95), MAT.woodPale, gGF, {});
+/* bulkheads on the front wall: one either side of the entrance doors, then
+   one at each end of the porch so the whole 12.35 m of it is lit */
+[1.20, 5.40, 8.80, 12.20].forEach(function(u){
+  extLight(hx(u), hz(0.14), GF+2.05, 2, gGF);
+});
+/* and three in the porch soffit, over the steps */
+[3.0, 6.75, 10.5].forEach(function(u){ downlight(hx(u), hz(-1.60), GF+CH, gGF); });

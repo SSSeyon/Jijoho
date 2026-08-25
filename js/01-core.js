@@ -228,13 +228,13 @@ var gSite = new T.Group();
 var gGF   = new T.Group();
 var gFF   = new T.Group();
 var gRoof = new T.Group();
-/* The rear of the plot is either a sports court or a landscaped garden. One or
-   the other: the court needs the whole of it, which is exactly the ground the
-   garden wants. The games pavilion sits outside both and is always there. */
-var gSport  = new T.Group();
+/* The rear of the plot is a landscaped garden, full stop. It used to be an
+   either/or with a sports court that occupied exactly the same ground; the
+   court has been taken out, so gGarden is now unconditional and there is no
+   "sport" collision tag left to filter. */
 var gGarden = new T.Group();
-var gSolar = null;               /* PV on the main roof, only in court mode */
-[gSite,gGF,gFF,gRoof,gSport,gGarden].forEach(function(g){ scene.add(g); });
+var gSolar = null;               /* PV on the main roof deck */
+[gSite,gGF,gFF,gRoof,gGarden].forEach(function(g){ scene.add(g); });
 var FURN = [];   // furniture meshes, for the furniture toggle
 
 /* ============================================================
@@ -609,38 +609,6 @@ function texScrub(seed, base){
   return [A.c,B.c];
 }
 
-/* --- acrylic sports surface: cushioned coat over concrete, sand-filled --- */
-function texCourt(seed, base){
-  var N=512, A=cv(N), B=cv(N), r=PRNG(seed);
-  A.x.fillStyle=base; A.x.fillRect(0,0,N,N);
-  B.x.fillStyle="#808080"; B.x.fillRect(0,0,N,N);
-  /* broad tonal drift from the squeegee passes */
-  for(var i=0;i<40;i++) radial(A.x, r()*N, r()*N, 60+r()*110, "rgba(255,255,255,0.030)", N);
-  /* the silica sand in the top coat */
-  for(var k=0;k<30000;k++){
-    var x=r()*N, y=r()*N, s=0.5+r()*1.1;
-    A.x.fillStyle = r()<0.5 ? "rgba(255,255,255,0.055)" : "rgba(0,0,0,0.075)";
-    A.x.beginPath(); A.x.arc(x,y,s,0,6.2832); A.x.fill();
-    B.x.fillStyle = "rgba(255,255,255,0.11)";
-    B.x.beginPath(); B.x.arc(x,y,s,0,6.2832); B.x.fill();
-  }
-  grain(A.x,N,7); grain(B.x,N,26);
-  return [A.c,B.c];
-}
-
-/* --- ball-stop netting: an alpha grid, so it screens without blocking --- */
-function texNetting(){
-  var N=128, c=document.createElement("canvas"); c.width=c.height=N;
-  var x=c.getContext("2d");
-  x.clearRect(0,0,N,N);
-  x.strokeStyle="rgba(30,38,33,0.80)"; x.lineWidth=1.5;
-  for(var i=0;i<8;i++){
-    var p=(i+0.5)*N/8;
-    x.beginPath(); x.moveTo(p,0); x.lineTo(p,N); x.stroke();
-    x.beginPath(); x.moveTo(0,p); x.lineTo(N,p); x.stroke();
-  }
-  return c;
-}
 
 /* --- fine sanded render for internal walls --- */
 function texRenderFine(seed, base){
@@ -773,18 +741,24 @@ reg("woodDark",  texWood(89, "#5a3a20", "34,18,8"),         1.6, 0.020);
 reg("tileF",     texFloorTile(97, "#e3ded6", 0.12),         2.4, 0.006, {ns:0.30, ng:5.0, ao:0.62, rv:0.30});
 reg("tileWet",   texFloorTile(101,"#d3dade", 0.10),         1.8, 0.006, {ns:0.30, ng:5.0, ao:0.62, rv:0.30});
 reg("board",     texBoard(103,[146,100,60]),                2.2, 0.014);
-reg("fabric",    texWeave(107,"#57646f", true),             0.8, 0.020);
-reg("fabric2",   texWeave(109,"#8a7c6a", true),             0.8, 0.020);
+/* Pale ash for the loft scheme. Much lower contrast than the board above and
+   a lot less red in it: the reference's timber is almost bleached, and the
+   moment the grain gets strong the same furniture reads as pine. */
+reg("ash",       texBoard(211,[214,196,166]),               3.6, 0.006, {ns:0.30, ao:0.16, rv:0.10});
+/* Upholstery. The old fabric was a cold slate blue and fabric2 a muddy khaki,
+   which is what made every seat in the house read as office furniture. Both
+   are now within a shade of the walls, as in the reference. */
+reg("fabric",    texWeave(107,"#cfc7bb", true),             0.8, 0.020);
+reg("fabric2",   texWeave(109,"#c3bcb1", true),             0.8, 0.020);
 reg("linen",     texWeave(113,"#eee8dd", false),            0.7, 0.014);
-reg("rug",       texWeave(127,"#74879a", true),             1.1, 0.030);
+/* the rug was a mid blue-grey; the reference's is a flat greige weave */
+reg("rug",       texWeave(127,"#c6bfb4", true),             1.1, 0.030);
 reg("leaf",      texLeaf(131,"#356b28"),                    1.1, 0.045);
 reg("hedge",     texLeaf(137,"#2c5722"),                    0.9, 0.045);
 reg("soil",      texSoil(139),                              0.9, 0.040);
 reg("asphalt",   texAsphalt(149),                           3.6, 0.020);
 reg("ripple",    texRipple(151),                            1.4, 0.006);
 reg("scrub",     texScrub(167, "#5c6b40"),                  3.2, 0.020, {ns:0.55, ao:0.25, rv:0.10});
-reg("courtIn",   texCourt(157, "#2d6b52"),                  2.0, 0.004, {ns:0.55, ao:0.30, rv:0.34});
-reg("courtOut",  texCourt(163, "#a2543c"),                  2.0, 0.004, {ns:0.55, ao:0.30, rv:0.34});
 
 /* ---------- materials ---------- */
 function M(hex, o){
@@ -881,48 +855,28 @@ var MAT = {
   bloom1    : M(0xd2564f, {r:0.86, env:0.6}),
   bloom2    : M(0xe0a63c, {r:0.86, env:0.6}),
   bloom3    : M(0xb96ba8, {r:0.86, env:0.6}),
-  /* sports court */
-  courtIn   : M(0xffffff, {r:0.58, m:0.02, t:"courtIn",  env:1.0}),
-  courtOut  : M(0xffffff, {r:0.58, m:0.02, t:"courtOut", env:1.0}),
-  courtLine : M(0xf4f5f2, {r:0.50, env:1.0}),
-  courtKey  : M(0xffffff, {r:0.58, m:0.02, t:"courtIn", tint:0xbcd8c8, tile:2.0, env:1.0}),
-  backboard : M(0xf7f8f6, {r:0.22, m:0.05, env:1.9}),
-  hoopRim   : M(0xd8532c, {r:0.35, m:0.55, env:1.8})
+
+  /* ---- interior scheme, taken from the loft reference ----
+     The whole room in that model sits inside about one and a half stops of
+     value: warm off-white plaster, a pale warm floor, and upholstery a shade
+     or two darker than the walls. Nothing is white and nothing is dark. The
+     only saturated things in the entire space are one dusty mauve cushion and
+     the green of a plant, which is why the accents below are so muted - the
+     restraint IS the style, and a single bright object undoes it. */
+  woodPale  : M(0xffffff, {r:0.46, t:"ash", tile:2.4, env:0.9}),
+  terrazzo  : M(0xffffff, {r:0.62, t:"stone", tint:0xe8e2d6, tile:0.55, env:0.9}),
+  cushion   : M(0xa89099, {r:0.92, env:0.4}),      /* the dusty mauve */
+  plaster   : M(0xffffff, {r:0.94, t:"plasterIn", tint:0xf4efe6, tile:1.4, env:0.5}),
+  /* Flat-slab handleless joinery: sideboards, casework, wardrobe carcasses.
+     A matte painted panel, not a timber one - putting wood grain on a 1.5 m
+     sideboard at furniture scale was turning it into a stack of planks. */
+  joinery   : M(0xffffff, {r:0.72, t:"plasterIn", tint:0xeae4d9, tile:2.8, env:0.8}),
+  grille    : M(0xe8e6e0, {r:0.72, env:0.7}),
+  led       : M(0x7fe0a8, {r:0.4, emis:0x3fd08a, ei:1.6})
 };
-/* Ball-stop netting and the badminton net. Both are alpha-cut grids on flat
-   quads: you see the court through them, they still read as a barrier, and
-   they cost two triangles each instead of a few thousand cylinders. */
-var NETTEX = (function(){
-  var t = new T.CanvasTexture(texNetting());
-  t.wrapS = t.wrapT = T.RepeatWrapping;
-  t.anisotropy = ANISO;
-  t.encoding = T.sRGBEncoding;
-  return t;
-})();
-MAT.netting = new T.MeshStandardMaterial({
-  map:NETTEX, transparent:true, alphaTest:0.28, side:T.DoubleSide,
-  roughness:0.92, metalness:0.0, color:0xffffff, depthWrite:false, alphaToCoverage:true
-});
-MAT.netting.userData.tile = 0.80;
-/* The badminton and basketball nets are much finer than the ball-stop mesh, so
-   they run at ~110 mm squares with a low alpha cut - at 60 mm the cords fell
-   below a pixel at any distance and alphaTest erased the net entirely. */
-MAT.netWhite = new T.MeshStandardMaterial({
-  map:NETTEX, transparent:true, alphaTest:0.10, side:T.DoubleSide,
-  roughness:0.85, metalness:0.0, color:0xf2f2ee, depthWrite:false
-});
-MAT.netWhite.color.convertSRGBToLinear();
-MAT.netWhite.userData.tile = 0.11;
-/* The badminton net is 6.1 m of 19 mm mesh. Drawn as an alpha grid it needs
-   ~300 repeats of the tile, and by the second mip level the cords and the holes
-   have averaged into a flat translucent haze - the net simply disappears. So it
-   is drawn the way it actually reads from three metres away: one dark
-   translucent panel, with the white tape and the posts carrying the detail. */
-MAT.netFine = new T.MeshStandardMaterial({
-  color:0x2f3630, transparent:true, opacity:0.46, side:T.DoubleSide,
-  roughness:0.88, metalness:0.0, depthWrite:false
-});
-MAT.netFine.color.convertSRGBToLinear();
+/* The ball-stop netting, the badminton net and the basketball net all went out
+   with the sports court. NETTEX, MAT.netting, MAT.netWhite and MAT.netFine
+   went with them - nothing else in the model used a net. */
 
 /* ============================================================
    FOLIAGE  -  alpha-cut cards instead of clusters of spheres

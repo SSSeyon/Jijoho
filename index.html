@@ -21,10 +21,6 @@
     <button class="b on" id="btnWalk">Walk</button>
     <button class="b" id="btnOrbit">Dollhouse</button>
   </div>
-  <div class="grp">
-    <button class="b on" id="btnGarden">Garden</button>
-    <button class="b" id="btnSport">Sports court</button>
-  </div>
   <button class="b" id="btnRoof">Roof off</button>
   <button class="b" id="btnFloor">Upper floor off</button>
   <button class="b" id="btnFurn">Empty</button>
@@ -46,15 +42,15 @@
 
 <div id="cross"></div>
 <div id="hint">
-  <b>Click to start walking</b><br>
+  <b>Drag to look &nbsp;&middot;&nbsp; double-click the floor to walk there</b><br>
   <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> move &nbsp;&middot;&nbsp;
-  mouse to look &nbsp;&middot;&nbsp; <span class="k">Shift</span> run<br>
-  <span class="k">V</span> dollhouse &nbsp;&middot;&nbsp; <span class="k">R</span> roof &nbsp;&middot;&nbsp; <span class="k">G</span> glass quality &nbsp;&middot;&nbsp;<br>or use the buttons at the bottom right &nbsp;&middot;&nbsp;
-  <span class="k">Esc</span> release cursor
+  <span class="k">Shift</span> run &nbsp;&middot;&nbsp; <span class="k">V</span> dollhouse &nbsp;&middot;&nbsp;
+  <span class="k">R</span> roof &nbsp;&middot;&nbsp; <span class="k">G</span> glass<br>
+  <span class="k">Shift</span>+click for game-style mouse-look &nbsp;&middot;&nbsp; <span class="k">Esc</span> to leave it
 </div>
 
 <div id="stick"><div id="knob"></div></div>
-<div id="mobileHelp">Left half: joystick &middot; right half: drag to look</div>
+<div id="mobileHelp">Left half: joystick &middot; right half: drag to look &middot; double-tap to walk there</div>
 
 <div id="navLbl">move &nbsp;&middot;&nbsp; look &amp; zoom</div>
 <div id="nav">
@@ -88,7 +84,7 @@
   <div class="doc">
     <h1>Jijoho Residence</h1>
     <div class="sub">
-      Four-bedroom duplex with a landscaped rear garden or sports court, and a games tent in the garden.<br>
+      Four-bedroom duplex with a landscaped rear garden and a games tent on the lawn.<br>
       Plot 19.55&nbsp;m &times; 33.52&nbsp;m &mdash; 655.1&nbsp;m&sup2; &middot; 6.418988&deg;N, 2.893992&deg;E (Badagry axis, Lagos State).
     </div>
 
@@ -123,44 +119,148 @@
       coverage back to about 33&nbsp;%.
     </div>
 
-    <h2>The rear of the plot: garden <i>or</i> sports court</h2>
+    <h2>The rear of the plot: the garden</h2>
     <div class="note">
-      Use the <b>Garden / Sports court</b> switch in the top bar. It is either/or, not a pair of options: the
-      court needs the entire rear of the plot, which is exactly the ground the garden is laid out on. The games
-      tent is <i>inside</i> the switch: it stands on the garden lawn, so choosing the court takes the tent away
-      with it. The old pavilion survived both options because it was a building on its own foundation; a tent in
-      the middle of a badminton court is not a thing you can have.
+      The sports court has been removed. The rear of the plot is a garden and nothing else, which means the
+      Garden / Sports court switch is gone from the top bar along with the court's slab, netting, floodlights,
+      benches and equipment locker &mdash; and the games tent is now simply there, rather than being something
+      the court could take away. The one thing kept from that block is the PV array, which never belonged to
+      the court in the first place and sits flat on the main roof deck behind the parapet.
+      <br><br>
+      <b>What this frees up.</b> Roughly 130&nbsp;m&sup2; of concrete raft and acrylic surfacing, and with it
+      &#8358;8.5&ndash;15&nbsp;m of build cost and the annual upkeep of an acrylic surface. The ground goes to
+      lawn, planting and the kitchen garden. If you ever want the court back it is the same rectangle, so
+      nothing here forecloses it.
+    </div>
+
+    <h2>Getting around</h2>
+    <div class="note">
+      Walk mode used to grab the pointer as soon as you clicked: the cursor vanished, the mouse drove the view
+      continuously and Escape was the only way out. That is how a first-person game works and it is not how
+      anyone expects to look round a building. It now works the way Street View does &mdash; <b>press and drag
+      anywhere to look</b>, <b>double-click the floor to walk there</b> (double-tap on a phone). WASD and the
+      on-screen pad still work for fine positioning, and the old game-style mouse-look is still available on
+      Shift+click for anyone who wants it.
+      <br><br>
+      The double-click target is raycast into the scene and then tested against the same collision model the
+      walking uses: the surface has to be near-horizontal, the destination has to be clear of every collider, and
+      it has to be on the storey you are already standing on. If the exact point is occupied the search spirals
+      outward to the nearest legal standing spot, which is what stops a click on the arm of a sofa doing nothing
+      at all. The camera then eases to the target rather than snapping, so you keep your bearings on arrival.
+      <br><br>
+      It does <i>not</i> check that a walkable route exists. If you can see a patch of lawn through a window you
+      can click it and you will be standing on it, without going round by the door &mdash; same as Street View.
+      That is the right trade here; the alternative is pathfinding, which is a lot of machinery to stop somebody
+      looking at their own garden.
+    </div>
+
+    <h2>The carport</h2>
+    <div class="note">
+      The canopy is now a cantilever off the boundary wall rather than a table on five posts. Three of those
+      five stood along the house side, directly in the path a car takes swinging out of its bay towards the
+      gate; taking them out is what makes the drive-out manoeuvre honest rather than decorative.
+      <br><br>
+      <b>Be clear about what that asks for structurally.</b> The deck now runs 6.50&nbsp;m off the wall with
+      nothing underneath its free end. A flat concrete slab will not do that. It wants tapered steel cantilever
+      beams at about 2.75&nbsp;m centres &mdash; deep at the root, thin at the tip &mdash; tailed back into a
+      reinforced pier built into the boundary wall, with the wall and its foundation designed for the
+      overturning moment. That is a real engineering item and a real cost line, not a detail. Price it with a
+      structural engineer before it goes on a drawing; the taper you can see in the model is standing in for it,
+      not specifying it.
+    </div>
+
+    <h2>Interior scheme</h2>
+    <div class="note">
+      The interiors are modelled on the loft reference you sent: warm off-white plaster, a pale floor, and
+      upholstery a shade or two darker than the walls, with the whole room sitting inside about a stop and a half
+      of value. The only saturated things in the reference space are one dusty-mauve cushion and the green of a
+      plant &mdash; the restraint <i>is</i> the style, and one bright object undoes it.
     </div>
     <div class="kv">
-      <div>Court slab</div><div>16.20 &times; 8.00 m &mdash; 129.6 m&sup2;</div>
-      <div>Badminton / pickleball</div><div>13.40 &times; 6.10 m, full size</div>
-      <div>Run-off, ends</div><div>1.40 m</div>
-      <div>Run-off, sides</div><div>0.95 m</div>
-      <div>Basketball</div><div>half court, one hoop, 4.90 m key</div>
-      <div>Kickabout goal</div><div>3.00 &times; 2.00 m</div>
-      <div>Ball-stop netting</div><div>4.0 m, three sides; 2.6 m house side</div>
-      <div>Floodlights</div><div>4 &times; 6 m poles</div>
+      <div>Seating</div><div>low modular, no visible legs, thin flat backs at 0.62&nbsp;m</div>
+      <div>Dining</div><div>round on a single fat pedestal for six or fewer; oval above that</div>
+      <div>Chairs</div><div>tubular cantilever sled, no back legs</div>
+      <div>Tables</div><div>pale ash tops on chunky terrazzo bases; coffee tables at 0.32&nbsp;m</div>
+      <div>Joinery</div><div>flat-slab handleless, matte, painted rather than timber</div>
+      <div>Beds</div><div>low platform base, soft upholstered headboard</div>
+      <div>Accent</div><div>one muted mauve cushion per sofa, and nothing else</div>
+    </div>
+
+    <h2>Room dimensions</h2>
+    <div class="note">
+      You were right that the furniture was crowding the rooms, and it was worse than it looked. Measuring the
+      clear floor &mdash; the fraction of each room where a body of 280&nbsp;mm radius can actually stand, using
+      the model's own collision data &mdash; found the master bedroom at 35&nbsp;%, bedroom&nbsp;2 at 37&nbsp;%,
+      bedroom&nbsp;3 at 32&nbsp;% and the family room at 27&nbsp;%. A well-furnished room runs 50&ndash;60&nbsp;%.
+    </div>
+    <div class="kv">
+      <div>Living room</div><div>48 % &rarr; <b>63 %</b> clear</div>
+      <div>Master bedroom</div><div>35 % &rarr; <b>62 %</b></div>
+      <div>Bedroom 2</div><div>37 % &rarr; <b>61 %</b></div>
+      <div>Bedroom 3</div><div>32 % &rarr; <b>52 %</b></div>
+      <div>Guest bedroom</div><div>33 % &rarr; <b>52 %</b></div>
+      <div>Family room</div><div>27 % &rarr; <b>45 %</b></div>
+      <div>Dining room</div><div>38 % &rarr; <b>43 %</b></div>
+      <div>Master bathroom</div><div>27 % &rarr; <b>33 %</b></div>
     </div>
     <div class="note">
-      <b>What will not fit, at any price.</b> Tennis needs 36&nbsp;&times;&nbsp;18&nbsp;m of run-off-inclusive
-      space; the whole plot is 33.5&nbsp;m long, so it does not fit even on bare land. Five-a-side needs
-      25&nbsp;&times;&nbsp;15&nbsp;m and volleyball 24&nbsp;&times;&nbsp;15&nbsp;m &mdash; both out. A full
-      basketball court is 28&nbsp;&times;&nbsp;15&nbsp;m. What does fit is one multi-use hard court, which is
-      what is drawn: full-size badminton and pickleball, a residential basketball half court, and a goal for a
-      kickabout. A club would want 1.50&nbsp;m of side run-off; this has 0.95&nbsp;m, and nothing that keeps the
-      four-bedroom footprint would give more.
+      Three of those were outright errors rather than matters of taste, and they are worth naming:
+      <ul>
+        <li><b>Every bed in the house had four bedside tables.</b> The bed itself draws a pair, and a second pair
+          was being placed on top of them at the same coordinates.</li>
+        <li><b>The guest room wardrobe stood 135&nbsp;mm inside the wall.</b> It ran to v&nbsp;=&nbsp;4.66 against
+          an inner wall face at 4.525. It is 600&nbsp;mm deep now and set to its own face, which also opens the
+          gap to the foot of the bed from 0.94&nbsp;m to 1.25&nbsp;m.</li>
+        <li><b>The dining chairs stood inside the sideboard.</b> The eight-seat oval put its west chairs at
+          x&nbsp;1.42&ndash;1.88 against a sideboard ending at 1.65. The table is a round six-seater now and the
+          sideboard is against the wall, 300&nbsp;mm clear.</li>
+      </ul>
+      The family room was the worst of the rest: only 2.41&nbsp;m deep inside, and carrying a 2.6&nbsp;m sofa, an
+      armchair, a 1.2&nbsp;m coffee table and a TV unit across that depth. Front to back the gaps came out at
+      145&nbsp;mm between sofa and table and 335&nbsp;mm between table and TV. The armchair has gone and the two
+      pieces that have to face each other now have 1.13&nbsp;m between them.
       <br><br>
-      <b>Cost, order of magnitude.</b> Concrete raft and acrylic surfacing &asymp;&nbsp;&#8358;5&ndash;8&nbsp;m;
-      hoop, goal, netting and poles &asymp;&nbsp;&#8358;2&ndash;4&nbsp;m; floodlighting
-      &asymp;&nbsp;&#8358;1.5&ndash;3&nbsp;m &mdash; call it <b>&#8358;8.5&ndash;15&nbsp;m</b> against
-      <b>&#8358;7&ndash;12&nbsp;m</b> for the garden as drawn, so the two options cost about the same. The real
-      difference is character and upkeep: acrylic and netting against planting that needs a gardener. Get a local
-      contractor to price both before deciding; these are planning figures, not a quotation.
+      The kitchen sits at 29&nbsp;% and the storage rooms lower still. That is correct &mdash; a kitchen is mostly
+      counter and a walk-in is mostly wardrobe.
+    </div>
+
+    <h2>Lighting</h2>
+    <div class="note">
+      Every room now has wall lighting as well as ceiling lighting, and so does the outside of the building and
+      the boundary wall.
+    </div>
+    <div class="kv">
+      <div>Interior, walls</div><div>plaster uplighters at 1.95&nbsp;m; linear picture lights over artwork</div>
+      <div>Interior, ceiling</div><div>recessed downlights; pendants over dining, island and stairwell</div>
+      <div>Exterior, walls</div><div>up-and-down bulkheads at 2.10&nbsp;m, spaced &asymp;&nbsp;6&nbsp;m</div>
+      <div>Exterior runs</div><div>all four boundary walls, both side walks, porch, balcony, carport piers</div>
+      <div>Soffits</div><div>downlights in the porch and balcony soffits</div>
+    </div>
+    <div class="note">
+      The uplighter is the fitting that actually suits these rooms: it washes the wall above it and leaves the
+      ceiling plane clean, which is the whole point of a flat POP ceiling. Everything is on one emissive
+      material, so drag the time-of-day slider down and the interior and exterior lamps come up together.
+    </div>
+
+    <h2>Cooling</h2>
+    <div class="note">
+      The ceiling fans have gone. Every habitable room has a wall-mounted split AC instead &mdash; a 1.0&nbsp;m
+      indoor unit at 2.55&nbsp;m with a return grille and a tilted discharge louvre. Four rooms previously
+      carried a fan <i>and</i> a split unit fighting each other across a 3.0&nbsp;m ceiling; the living room had
+      only the fan and now has a unit of its own.
       <br><br>
-      <b>The utility yard moved.</b> The generator house, tank stand and drying line used to sit 3&nbsp;m out from
-      the rear wall, in the middle of the only ground wide enough for a court. They are now pulled hard against the
-      wall in a 1.4&nbsp;m service strip, and the soakaway covers have gone to the east side. That change applies
-      in both modes.
+      <b>The honest trade.</b> A fan costs almost nothing to run and keeps working when the mains do not. Splits
+      do neither &mdash; on this compound they run off the standby generator, which is why the genset enclosure
+      matters more than it looks. Budget roughly &#8358;450&ndash;900k per room installed for a 1.5&nbsp;hp
+      inverter split, plus the load on the generator: eight units at about 1.1&nbsp;kW each is nearly
+      9&nbsp;kW before anything else in the house is switched on.
+    </div>
+    <div class="note">
+      <b>The utility yard.</b> The generator house, the changeover panel and the drying line sit hard against
+      the rear wall in a 1.4&nbsp;m service strip, and the soakaway covers are on the east side. The genset
+      enclosure is the small pitched-roof structure standing behind the games tent &mdash; it now reads as one,
+      with a full-height louvred intake, a discharge louvre on the return, an exhaust stack up past the roof
+      line and an access door on the west end.
     </div>
 
     <h2>Accommodation</h2>
@@ -225,9 +325,8 @@
     <b>What you give up is real, so it is worth being plain about it.</b> A tent has no walls, no security and no
     lockable store, so nothing lives out there permanently &mdash; the bats and the net come out of the house each
     time. It is not usable in heavy rain with wind behind it. The dartboard has gone entirely: there is no wall to
-    hang it on. And because it stands on the garden lawn it is <i>inside</i> the garden/court switch, so choosing
-    the sports court removes it &mdash; where the old pavilion, being a building on its own foundation, survived
-    both options.
+    hang it on. It is also the only structure in the garden with no foundation, so it is the first thing to come down
+    in a serious storm.
     <br><br>
     <b>What you gain</b> is about 20&nbsp;m&sup2; of ground handed back to the garden, the saving above, and a
     table-tennis run-off that is no longer boxed in by walls: 1.23&nbsp;m under the canopy, but you can stand well
@@ -240,7 +339,7 @@
     instead of a 4.9&nbsp;m band trapped between the house and a second building. That single change is what makes
     the &ldquo;a lot of space&rdquo; in your brief actually true.</p>
     <div class="kv">
-      <div>Rear garden / court ground</div><div>19.5 &times; 8.3 m &mdash; &asymp; 162 m&sup2;</div>
+      <div>Rear garden ground</div><div>19.5 &times; 8.3 m &mdash; &asymp; 162 m&sup2;</div>
       <div>Front garden</div><div>&asymp; 30 m&sup2;</div>
       <div>West flank</div><div>&asymp; 40 m&sup2;</div>
       <div>Rear terrace (paved)</div><div>6.0 &times; 2.4 m</div>
@@ -264,12 +363,7 @@
       <li><b>Planting</b> &mdash; deep kerbed beds on three sides, clipped hedging, four coconut palms and eight shrubs, with a stone birdbath where the two paths meet.</li>
     </ul>
 
-    <h3>The sports court option</h3>
-    <p style="color:#9fb0bd;font-size:12.2px">Same ground, laid out as the multi-use hard court specified above:
-    full-size badminton and pickleball, a basketball half court and a kickabout goal, with ball-stop netting and
-    four floodlights. Choosing it means giving up the garden entirely &mdash; not part of it.</p>
-
-    <h3>In both options</h3>
+    <h3>Also at the rear</h3>
     <ul>
       <li><b>Games tent</b> &mdash; the table tennis under a 5.20 &times; 3.60&nbsp;m canvas on the garden lawn, plus the 16.9&nbsp;m&sup2; upstairs family room and the 22.0&nbsp;m&sup2; library indoors.</li>
       <li><b>Rear terrace, 6.0&nbsp;m &times; 2.4&nbsp;m</b> &mdash; paved, tight against the kitchen and rear lobby,
@@ -298,10 +392,11 @@
       36.2&nbsp;% to <b>26.9&nbsp;%</b>, and total hard surface from 55.8&nbsp;% to about <b>47&nbsp;%</b>.
     </div>
     <div class="note">
-      <b>On the sports brief.</b> A regulation tennis court needs 648&nbsp;m&sup2; and a regulation basketball court
-      420&nbsp;m&sup2; &mdash; both larger than the entire open compound, so neither was ever possible here. What the
-      rear will now take, with the BQ gone, is the full multi-use hard court drawn in the court option: that was
-      previously only achievable by <i>not</i> building the BQ, and is now simply available.
+      <b>On the sports brief.</b> Worth recording why nothing was built for it. A regulation tennis court needs
+      648&nbsp;m&sup2; and a regulation basketball court 420&nbsp;m&sup2; &mdash; both larger than the entire open
+      compound, so neither was ever possible here. A multi-use hard court for badminton, a basketball half court
+      and a kickabout goal WOULD have fitted the rear, and was drawn at one point; it has been taken out in favour
+      of the garden. The ground is still there if you change your mind.
     </div>
 
     <h2>Site strategy</h2>
@@ -391,9 +486,29 @@
       <li><b>Sky</b> &mdash; <i>Kloofendal 48d Partly Cloudy (Pure Sky)</i> HDRI, Poly Haven, CC0. This is what
         every reflection in the glass, the cars and the polished floors is actually reflecting.</li>
       <li><b>Coconut palm</b> &mdash; low-poly model, 1,412 triangles, cloned fourteen times.</li>
+      <li><b>Broadleaf trees</b> &mdash; two species from one file, cloned for the fruit trees. These replaced
+        the alpha-card canopies, which read well at distance but had no branch structure behind the leaves.</li>
+      <li><b>Bush</b> &mdash; 320 triangles, cloned about ninety times for the shrubs and the tops of the
+        hedges. The hedge bodies stay as clipped boxes; only the top edge, where the eye reads the soft
+        silhouette, is real foliage.</li>
       <li><b>Vehicles</b> &mdash; a Ford F-150, a generic low-poly SUV (mk2design, CC&nbsp;BY) and a Hyundai
         i30&nbsp;N, each scaled so its length matches the real vehicle's published length.</li>
     </ul>
+    <div class="note">
+      <b>A correction worth recording.</b> Two of the three vehicle models shipped flat fans of geometry
+      projecting from the headlights and tail lights to fake a beam. Authored for an unlit renderer, they came
+      through this scene's materials as solid black wedges hanging off the front of each car &mdash; the black
+      projections you could see from the lights. They have been stripped.
+      <br><br>
+      The visible artefact was the smaller half of the problem. Those beams ran <i>past the bodywork</i>: the
+      truck's measured 6.20&nbsp;m nose to tail against a body of 4.80&nbsp;m. Since each model is scaled by
+      matching its longest axis to the real vehicle's published length, the scaling had been sizing the
+      <i>beam</i> to 5.89&nbsp;m and leaving the actual F-150 at about 4.50&nbsp;m &mdash; a quarter under size.
+      The hatchback was 21&nbsp;% under for the same reason. Both are correct now, which means the driveway
+      clearances quoted on this page are only true as of this revision: at its real width of 2.48&nbsp;m across
+      the mirrors the truck takes noticeably more of the apron than the undersized one did, and the three bays
+      have been re-spaced to give four equal 400&nbsp;mm gaps rather than the old even 2.67&nbsp;m centres.
+    </div>
     <p style="color:#9fb0bd;font-size:12.2px">The vehicle and plant models are third-party work under Creative
     Commons terms. If this drawing is ever put to any use beyond your own, check each model's licence on its
     source page first &mdash; some are CC&nbsp;BY (credit required, commercial use fine) and some are
