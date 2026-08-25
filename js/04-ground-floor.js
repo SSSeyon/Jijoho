@@ -157,11 +157,21 @@ potPlant(hx(5.25), hz(0.55), GF, gGF, 1.2);
 pendant(hx(6.75), hz(1.3), GF+CH, gGF, 1.3);
 downlight(hx(7.5), hz(2.4), GF+CH, gGF);
 
-/* --- study / guest room --- */
-desk(hx(12.0), hz(1.9), GF, 1.5, 3, gGF);
-bookshelf(hx(10.0), hz(0.35), GF, 2.2, 0, gGF);
-sofa(hx(9.6), hz(3.9), GF, 1.9, 2, gGF);
-rugMat(hx(11.0), hz(2.8), GF, 2.4, 1.8, gGF, MAT.fabric2);
+/* --- guest bedroom  (u 8.55..13.55, v 0..4.6  =  23.0 m2) ---
+   A guest room and nothing else now. The desk, the bookshelf and the sofa
+   that made this a dual-purpose study have gone upstairs into the library,
+   which is where a study belongs once there is one - a room that is half
+   office and half spare bed is not much good as either when somebody is
+   actually staying. Headboard against the east wall so the window and the
+   door both stay clear, and the powder room next door serves it. */
+rugMat(hx(11.30), hz(2.30), GF, 3.4, 2.8, gGF);
+bed(hx(12.30), hz(2.30), GF, 1.60, 2.10, 1, gGF, MAT.linen);
+fsolid(0.48,0.55,0.42, hx(12.95), GF+0.28, hz(1.05), MAT.woodDark, gGF);
+fsolid(0.48,0.55,0.42, hx(12.95), GF+0.28, hz(3.55), MAT.woodDark, gGF);
+wardrobe(hx(10.20), hz(4.35), GF, 2.4, 2, gGF);
+armchair(hx(9.35), hz(1.35), GF, 1, gGF);
+fsolid(0.5,0.45,0.5, hx(9.35), GF+0.23, hz(2.25), MAT.wood, gGF);
+artwork(hx(11.30), hz(4.48), GF+1.70, 1.1, 0.8, 2, gGF);
 downlight(hx(10.2),hz(1.6),GF+CH,gGF); downlight(hx(12.3),hz(3.4),GF+CH,gGF);
 ac(hx(11.0), hz(0.20), GF+2.55, 0, gGF);
 

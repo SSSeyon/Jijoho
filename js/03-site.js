@@ -41,9 +41,14 @@ function surf(x0,z0,x1,z1,mat,y,g){
 /* lawn base over the whole plot; everything below is cut out of it */
 surf(X0,Z0,X1,Z1,MAT.grass,0.005);
 
-/* driveway + carport apron - 7.6 x 5.2 m, cars nose-in   (39 sqm) */
-surf(-9.475,-16.60,-1.90,-11.40, MAT.paver, 0.02);
-[-6.75,-4.15].forEach(function(x){ addBox(0.09,0.02,4.6,x,0.04,-13.9,MAT.white,gSite,{cast:false}); });
+/* driveway + carport apron - three bays, cars reversed in   (48 sqm) */
+surf(-9.475,-16.60,-1.15,-11.40, MAT.paver, 0.02);
+/* The west bay runs 1.65 m deeper than the other two. A full-size pickup is
+   5.89 m long and will not stand in the 4.90 m the other two bays have; there
+   is room for it here only because the house wall stops at x = -6.775, so
+   this strip is open ground the whole way to the front setback line. */
+surf(-9.475,-11.40,-6.50,-9.90, MAT.paver, 0.02);
+[-6.50,-3.75].forEach(function(x){ addBox(0.09,0.02,4.6,x,0.04,-13.9,MAT.white,gSite,{cast:false}); });
 
 /* entrance walkway, 1.2 m wide, pedestrian gate straight to the porch (8.5 sqm) */
 surf(-1.05,-16.60,0.15,-11.56, MAT.paverWarm, 0.02);
@@ -53,7 +58,7 @@ surf(-1.05,-12.30, 2.30,-11.56, MAT.paverWarm, 0.02);
 surf( 7.95,-11.40, 9.05,14.20, MAT.paver, 0.02);
 
 /* west side: stepping stones set into the lawn instead of a slab path (3 sqm) */
-for(var sz=-10.60; sz<=3.20; sz+=0.78){
+for(var sz=-9.60; sz<=3.20; sz+=0.78){
   addBox(0.55,0.07,0.55, -7.90, 0.015, sz, MAT.paverWarm, gSite, {cast:false});
 }
 
@@ -134,43 +139,105 @@ addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gSite, {});
 
 /* ---------- carport ---------- */
 (function(){
-  var cx0=-9.30, cx1=-2.30, cz0=-16.30, cz1=-11.50;
+  var cx0=-9.40, cx1=-1.15, cz0=-16.50, cz1=-11.60;
   var cy=3.05;
+  /* main canopy, three bays wide */
   addBox(cx1-cx0+0.5, 0.16, cz1-cz0+0.5, (cx0+cx1)/2, cy, (cz0+cz1)/2, MAT.accent, gSite, {});
   addBox(cx1-cx0+0.3, 0.10, cz1-cz0+0.3, (cx0+cx1)/2, cy+0.11, (cz0+cz1)/2, MAT.fascia, gSite, {});
-  [[cx0+0.2,cz0+0.2],[cx1-0.2,cz0+0.2],[cx0+0.2,cz1-0.2],[cx1-0.2,cz1-0.2]].forEach(function(p){
+  /* the west bay's extension, deep enough to cover the pickup */
+  var ex0=-9.40, ex1=-6.50, ez0=-11.60, ez1=-9.95;
+  addBox(ex1-ex0+0.5, 0.16, ez1-ez0+0.30, (ex0+ex1)/2, cy, (ez0+ez1)/2, MAT.accent, gSite, {});
+  addBox(ex1-ex0+0.3, 0.10, ez1-ez0+0.20, (ex0+ex1)/2, cy+0.11, (ez0+ez1)/2, MAT.fascia, gSite, {});
+  [[cx0+0.2,cz0+0.2],[cx1-0.2,cz0+0.2],[cx1-0.2,cz1-0.2],[-3.75,cz1-0.2],
+   [ex0+0.2,ez1-0.2],[ex1-0.2,ez1-0.2]].forEach(function(p){
     addBox(0.26,cy,0.26,p[0],cy/2,p[1],MAT.accent,gSite,{solid:true});
   });
-  [[-7.6,-15.0],[-4.0,-15.0],[-7.6,-12.6],[-4.0,-12.6]].forEach(function(p){
+  [[-7.95,-15.2],[-5.13,-15.2],[-2.45,-15.2],[-7.95,-11.0]].forEach(function(p){
     var m=addCyl(0.09,0.09,0.04,p[0],cy-0.10,p[1],MAT.lamp,gSite,12); m.castShadow=false;
   });
 })();
 
-/* ---------- cars ---------- */
-function car(cx,cz,y,mat,facing){
-  var g=new T.Group(); gSite.add(g);
-  var b=function(w,h,d,x,yy,z,m){ var q=new T.Mesh(BOXG,m); q.scale.set(w,h,d); q.position.set(x,yy,z); q.castShadow=true; q.receiveShadow=true; g.add(q); };
-  b(1.92,0.62,4.42, cx, y+0.78, cz, mat);
-  b(1.80,0.24,4.30, cx, y+1.10, cz, mat);
-  b(1.74,0.62,2.45, cx, y+1.40, cz, MAT.carGlass);
-  b(1.80,0.14,2.30, cx, y+1.72, cz-0.05, mat);
-  b(1.86,0.20,0.30, cx, y+0.62, cz-2.20, MAT.black);
-  b(1.86,0.20,0.30, cx, y+0.62, cz+2.20, MAT.black);
-  b(0.70,0.16,0.06, cx-0.55, y+0.92, cz-2.22, MAT.white);
-  b(0.70,0.16,0.06, cx+0.55, y+0.92, cz-2.22, MAT.white);
-  b(0.62,0.14,0.06, cx-0.60, y+0.98, cz+2.22, MAT.bloom1);
-  b(0.62,0.14,0.06, cx+0.60, y+0.98, cz+2.22, MAT.bloom1);
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(s){
-    var w=new T.Mesh(new T.CylinderGeometry(0.36,0.36,0.24,20), MAT.tyre);
-    w.rotation.z=Math.PI/2; w.position.set(cx+s[0]*0.90, y+0.36, cz+s[1]*1.45);
-    w.castShadow=true; g.add(w);
-    var r=new T.Mesh(new T.CylinderGeometry(0.20,0.20,0.26,14), MAT.steel);
-    r.rotation.z=Math.PI/2; r.position.set(cx+s[0]*0.91, y+0.36, cz+s[1]*1.45); g.add(r);
+/* ---------- vehicles ----------
+   Three different silhouettes instead of one box repeated: a mid-size SUV, a
+   low electric saloon and a full-size pickup, each built to the real
+   vehicle's published length, width, height, wheelbase and ride height.
+
+   These are massing studies at true size, not licensed models - no badge,
+   grille or body pressing is reproduced, and nothing here would be mistaken
+   for a manufacturer's own asset. What the drawing actually needs from them
+   is the proportion: the pickup really is a metre longer than the SUV and
+   the saloon really is 300 mm lower, and that difference is the whole reason
+   the carport had to be redesigned around them. */
+function wheelPair(g, cx, y, cz, halfTrack, r, w){
+  [-1,1].forEach(function(s){
+    var t=new T.Mesh(new T.CylinderGeometry(r,r,w,20), MAT.tyre);
+    t.rotation.z=Math.PI/2; t.position.set(cx+s*halfTrack, y+r, cz);
+    t.castShadow=true; g.add(t);
+    var h=new T.Mesh(new T.CylinderGeometry(r*0.58,r*0.58,w+0.02,14), MAT.steel);
+    h.rotation.z=Math.PI/2; h.position.set(cx+s*(halfTrack+0.012), y+r, cz); g.add(h);
   });
-  addCollider(cx-1.0,cx+1.0,cz-2.3,cz+2.3,0,1.9);
 }
-car(-6.75,-13.85,0,MAT.carBody);
-car(-4.15,-13.85,0,MAT.carBody2);
+/* Cars are drawn reversed in - nose to the gate - which is both how most
+   people park on a Lagos driveway and what puts the front of each vehicle
+   where you actually see it from the street view. */
+function vehicle(cx,cz,y,kind,mat){
+  var g=new T.Group(); gSite.add(g);
+  var b=function(w,h,d,x,yy,z,m){
+    var q=new T.Mesh(BOXG,m); q.scale.set(w,h,d); q.position.set(x,yy,z);
+    q.castShadow=true; q.receiveShadow=true; g.add(q); return q;
+  };
+  var L,W,gr,rw,hw;
+  if(kind==="suv"){
+    /* Ford Edge: 4.78 x 1.93 x 1.75 m, 2.85 m wheelbase */
+    L=4.78; W=1.93; gr=0.19; rw=0.36; hw=1.425;
+    b(W,      0.74, L,      cx, y+gr+0.37, cz, mat);
+    b(W-0.06, 0.30, L-0.34, cx, y+gr+1.04, cz, mat);
+    b(W-0.17, 0.60, L*0.48, cx, y+gr+1.30, cz-0.12, MAT.carGlass);
+    b(W-0.11, 0.13, L*0.44, cx, y+gr+1.62, cz-0.14, mat);
+    b(0.07,   0.05, L*0.32, cx-W/2+0.25, y+gr+1.71, cz-0.14, MAT.black);
+    b(0.07,   0.05, L*0.32, cx+W/2-0.25, y+gr+1.71, cz-0.14, MAT.black);
+  } else if(kind==="sedan"){
+    /* BYD Seal: 4.80 x 1.88 x 1.46 m, 2.92 m wheelbase, fastback tail */
+    L=4.80; W=1.88; gr=0.14; rw=0.34; hw=1.46;
+    b(W,      0.56, L,      cx, y+gr+0.28, cz, mat);
+    b(W-0.05, 0.24, L-0.62, cx, y+gr+0.66, cz+0.06, mat);
+    b(W-0.19, 0.46, L*0.40, cx, y+gr+0.96, cz+0.14, MAT.carGlass);
+    b(W-0.26, 0.08, L*0.26, cx, y+gr+1.20, cz+0.06, mat);
+    /* the fastback: a raked pane running off the back of the roof, which is
+       the one line that tells this apart from any other saloon */
+    var fb=b(W-0.24, 0.05, L*0.30, cx, y+gr+1.08, cz+1.02, MAT.carGlass);
+    fb.rotation.x = 0.40;
+  } else {
+    /* Ford F-150 SuperCrew: 5.89 x 2.03 x 1.99 m, 3.68 m wheelbase */
+    L=5.89; W=2.03; gr=0.26; rw=0.40; hw=1.84;
+    b(W,      0.80, L,    cx, y+gr+0.40, cz, mat);
+    b(W-0.04, 0.48, 2.10, cx, y+gr+1.04, cz-1.08, mat);
+    b(W-0.15, 0.58, 1.76, cx, y+gr+1.46, cz-1.05, MAT.carGlass);
+    b(W-0.06, 0.13, 1.84, cx, y+gr+1.81, cz-1.05, mat);
+    /* the open cargo box - four sides and a floor, so it reads as a load bed
+       you could actually put something in rather than a filled-in tail */
+    b(W,      0.09, 1.98, cx, y+gr+0.84, cz+1.22, mat);
+    b(0.09,   0.54, 1.98, cx-W/2+0.05, y+gr+1.13, cz+1.22, mat);
+    b(0.09,   0.54, 1.98, cx+W/2-0.05, y+gr+1.13, cz+1.22, mat);
+    b(W,      0.54, 0.09, cx, y+gr+1.13, cz+2.17, mat);
+    b(W-0.10, 0.60, 0.09, cx, y+gr+1.16, cz+0.24, mat);
+  }
+  /* lamps: heads at -z, tails at +z */
+  b(0.62,0.15,0.06, cx-W*0.28, y+gr+0.62, cz-L/2+0.02, MAT.white);
+  b(0.62,0.15,0.06, cx+W*0.28, y+gr+0.62, cz-L/2+0.02, MAT.white);
+  b(0.56,0.13,0.06, cx-W*0.30, y+gr+0.68, cz+L/2-0.02, MAT.bloom1);
+  b(0.56,0.13,0.06, cx+W*0.30, y+gr+0.68, cz+L/2-0.02, MAT.bloom1);
+  b(W-0.05,0.20,0.16, cx, y+gr+0.28, cz-L/2+0.05, MAT.black);
+  b(W-0.05,0.20,0.16, cx, y+gr+0.28, cz+L/2-0.05, MAT.black);
+  wheelPair(g, cx, y, cz-hw, W/2-0.11, rw, 0.26);
+  wheelPair(g, cx, y, cz+hw, W/2-0.11, rw, 0.26);
+  addCollider(cx-W/2-0.05, cx+W/2+0.05, cz-L/2, cz+L/2, 0, y+gr+1.5);
+}
+var CAR_PEARL = M(0xdfe3e6, {r:0.15, m:0.72, env:2.6});
+/* the deep bay takes the pickup; the two standard bays take the other two */
+vehicle(-7.95, -13.55, 0, "pickup", MAT.carBody2);
+vehicle(-5.13, -14.10, 0, "suv",    MAT.carBody);
+vehicle(-2.45, -14.10, 0, "sedan",  CAR_PEARL);
 
 /* ---------- planting ---------- */
 /* palm fronds are drooping strips of quads rather than flat planks, which is
@@ -290,7 +357,7 @@ flowerBed(1.40,-16.35,4.60,-15.70);
    well in plan but stands in the 1.2 m walkway once you are actually on it */
 [-15.90,-14.60,-13.30,-12.00].forEach(function(z){ shrub(-1.62,z,0.85); });
 hedgeRun(0.60,-11.30,7.40,-11.30,0.7);
-tree(9.00,-12.90,0.80);
+palm(9.00,-12.90,5.2);
 shrub(2.10,-12.20); shrub(3.40,-15.10); shrub(5.30,-12.60);
 
 /* water feature, tucked into the corner clear of the lawn */
@@ -309,8 +376,8 @@ hedgeRun( 9.35,-10.60, 9.35,13.60,0.9);
 [-6.0,-1.0,4.0,9.0].forEach(function(z){ potPlant(-9.50,z,0,gSite,1.05); });
 
 /* ---------- rear garden: one clear lawn, everything on the perimeter ---------- */
-tree(-8.90,0.60,0.75);
-tree(-8.85,12.40,0.70);
+palm(-8.90,0.60,6.4);
+palm(-8.85,12.40,5.8);
 
 shrub(7.30,2.40); shrub(7.30,5.60); shrub(-8.60,9.40);
 

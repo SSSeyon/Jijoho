@@ -1,42 +1,64 @@
 "use strict";
 /* ============================================================
    PART 5  -  DUPLEX FIRST FLOOR, BALCONY, ROOF
+
+   The upper floor is deliberately bigger than the ground floor. It runs
+   2.40 m further north than the ground floor's rear wall and 2.40 m further
+   south than its front wall, so it reads as a wide plate resting on a
+   narrower base - and both overhangs earn their keep rather than being
+   shape for its own sake. The front one roofs the balcony; the rear one
+   roofs the terrace outside the kitchen.
+
+        v = -2.40  ......  balcony, open, covered by the roof wing
+        v =  0.00  ......  ground-floor front wall line
+        v = 11.50  ......  ground-floor rear wall line
+        v = 13.90  ......  upper floor rear edge (2.40 m cantilever)
    ============================================================ */
+var UV1 = 13.90;      /* upper floor rear edge */
+var UB  = -2.40;      /* balcony front edge    */
 
 /* ---------- first-floor slab (hole at the stairwell) ----------
    The slab itself is rendered concrete, because its edge is visible from the
    garden as a band across the elevation; the tiled finish is a separate thin
    plate laid on top of it. */
-[[0.0,0.0,5.0,11.5],[5.0,0.0,6.5,2.60],[5.0,7.36,6.5,11.5],[6.5,0.0,13.55,11.5]].forEach(function(r){
+[[0.0,0.0,5.0,UV1],[5.0,0.0,6.5,2.60],[5.0,7.36,6.5,UV1],[6.5,0.0,13.55,UV1]].forEach(function(r){
   slab(hx(r[0]), hz(r[1]), hx(r[2]), hz(r[3]), FF, SLAB, MAT.wallExt, gFF, {});
   addBox(r[2]-r[0]-0.02, 0.03, r[3]-r[1]-0.02,
          hx((r[0]+r[2])/2), FF-0.010, hz((r[1]+r[3])/2), MAT.tileF, gFF, {cast:false});
 });
+/* The rear cantilever's soffit. A 2.40 m projection is a real piece of
+   engineering - it wants a downstand edge beam and top steel carried well
+   back into the slab - so it is drawn with a visible beam rather than as a
+   wafer of concrete floating in mid-air. */
+addBox(HW+0.24, 0.46, 0.34, hx(HW/2), FF-SLAB-0.08, hz(UV1)-0.17, MAT.wallExt, gFF, {});
 
-/* ---------- balcony ---------- */
-slab(hx(1.0), hz(-1.80), hx(12.5), hz(0.0), FF, SLAB, MAT.paverWarm, gFF, {});
-rail(hx(1.0), hz(-1.80), hx(12.5), hz(-1.80), FF, gFF);
-rail(hx(1.0), hz(-1.80), hx(1.0),  hz(0.0),  FF, gFF);
-rail(hx(12.5),hz(-1.80), hx(12.5), hz(0.0),  FF, gFF);
-/* No porch or balcony columns in this option - the plate above is the roof
-   deck itself stepping past the wall line, cantilevered on the floor
-   structure with nothing visible holding its outer edge up. That absence is
-   what reads as "cantilever" rather than "covered porch". */
-/* balcony furniture */
-armchair(hx(5.60), hz(-1.05), FF, 0, gFF);
-armchair(hx(7.90), hz(-1.05), FF, 0, gFF);
-addBox(0.5,0.45,0.5, hx(6.75), FF+0.23, hz(-1.05), MAT.wood, gFF, {});
-potPlant(hx(1.7), hz(-1.15), FF, gFF, 1.1);
-potPlant(hx(11.8), hz(-1.15), FF, gFF, 1.1);
-armchair(hx(8.60), hz(-1.05), FF, 0, gFF);
-
+/* ---------- balcony ----------
+   The "general balcony" of the brief: one continuous 2.40 m deep terrace
+   across almost the whole frontage, not the token 1.80 m ledge the first
+   version had. The family room and bedroom 3 both open straight onto it. */
+slab(hx(0.6), hz(UB), hx(12.95), hz(0.0), FF, SLAB, MAT.paverWarm, gFF, {});
+rail(hx(0.6),  hz(UB), hx(12.95), hz(UB),  FF, gFF);
+rail(hx(0.6),  hz(UB), hx(0.6),   hz(0.0), FF, gFF);
+rail(hx(12.95),hz(UB), hx(12.95), hz(0.0), FF, gFF);
+/* No porch or balcony columns: the plate above is the roof deck itself
+   stepping past the wall line, cantilevered on the floor structure with
+   nothing visible holding its outer edge up. That absence is what reads as
+   "cantilever" rather than "covered porch". */
+/* balcony furniture - a sitting end, a dining end, and planting between */
+sofa(hx(2.60), hz(-1.55), FF, 2.2, 0, gFF, MAT.fabric2);
+armchair(hx(4.55), hz(-1.05), FF, 1, gFF);
+coffeeTable(hx(3.10), hz(-0.95), FF, 1.0, 0.6, gFF);
+diningSet(hx(9.90), hz(-1.25), FF, 4, 0, gFF);
+potPlant(hx(1.20), hz(-1.95), FF, gFF, 1.15);
+potPlant(hx(6.75), hz(-2.00), FF, gFF, 1.25);
+potPlant(hx(12.40),hz(-1.95), FF, gFF, 1.15);
 
 /* ---------- fluted charcoal accents ----------
    Placed only where the wall is solid on BOTH floors, so each panel runs the
    full two storeys the way the reference elevation does. Split at the floor
-   line into a gGF piece and a gFF piece purely so the "Upper floor off" toggle
-   takes the top half away with the floor it belongs to; the two meet flush and
-   read as one panel. Ribs face outwards on each elevation. */
+   line into a gGF piece and a gFF piece purely so the "Upper floor off"
+   toggle takes the top half away with the floor it belongs to; the two meet
+   flush and read as one panel. Ribs face outwards on each elevation. */
 (function(){
   var T0 = GF + 0.10, T1 = FF, T2 = FF + CH - 0.20;
   var wt = EXT.t/2 + 0.005;
@@ -44,9 +66,6 @@ armchair(hx(8.60), hz(-1.05), FF, 0, gFF);
     flutePanel(cx, (T0+T1)/2, cz, w, T1-T0, face, gGF);
     flutePanel(cx, (T1+T2)/2, cz, w, T2-T1, face, gFF);
   }
-  /* front elevation, in the two piers between the window bays */
-  panel(hx(5.30), hz(0) - wt, 1.50, "-z");
-  panel(hx(8.80), hz(0) - wt, 1.35, "-z");
   /* east elevation */
   panel(hx(HW) + wt, hz(6.45), 0.95, "+x");
   panel(hx(HW) + wt, hz(9.65), 0.90, "+x");
@@ -55,149 +74,186 @@ armchair(hx(8.60), hz(-1.05), FF, 0, gFF);
   panel(hx(0) - wt, hz(7.00), 1.20, "-x");
   panel(hx(0) - wt, hz(10.85), 1.30, "-x");
 })();
+/* Single-storey fluting on the upper floor only, where it stands clear of the
+   ground floor over the two cantilevers - there is no wall below to continue
+   it down to. */
+(function(){
+  var T1 = FF, T2 = FF + CH - 0.20, wt = EXT.t/2 + 0.005;
+  flutePanel(hx(2.20), (T1+T2)/2, hz(UV1) + wt, 1.30, T2-T1, "+z", gFF);
+  flutePanel(hx(10.90),(T1+T2)/2, hz(UV1) + wt, 1.20, T2-T1, "+z", gFF);
+})();
 
 /* ---------- exterior walls ---------- */
 hwall(0,0,HW,0,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:-1,openings:[
-  opH(2.4,4.4,0,2.45,true), opH(6.6,7.8,0.90,2.40), opH(9.6,11.6,0,2.45,true)
+  opH(1.4,4.4,0,2.45,true), opH(6.9,7.9,0.90,2.40), opH(9.6,12.6,0,2.45,true)
 ]});
-hwall(0,HD,HW,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:1,openings:[
-  opH(1.2,3.8,0.90,2.45), opH(5.6,7.8,0.90,2.45), opH(9.4,12.0,0.90,2.45)
+hwall(0,UV1,HW,UV1,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:1,openings:[
+  opH(1.2,3.6,0.90,2.45), opH(5.2,7.6,0.90,2.45), opH(9.6,12.4,0.90,2.45)
 ]});
-hwall(0,0,0,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:-1,openings:[
-  opV(1.2,3.4,0.90,2.45), opV(4.9,5.7,1.60,2.35), opV(7.6,9.6,0.90,2.45)
+hwall(0,0,0,UV1,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:-1,openings:[
+  opV(0.8,2.2,0.90,2.45), opV(3.4,6.2,0.90,2.45), opV(7.6,9.4,1.60,2.35), opV(10.8,13.2,0.90,2.45)
 ]});
-hwall(HW,0,HW,HD,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:1,openings:[
-  opV(1.0,3.0,0.90,2.45), opV(3.7,4.5,1.60,2.35), opV(7.0,9.2,0.90,2.45), opV(10.1,10.9,1.60,2.35)
+hwall(HW,0,HW,UV1,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:1,openings:[
+  opV(1.2,3.6,0.90,2.45), opV(5.0,6.4,1.60,2.35), opV(7.4,8.8,1.60,2.35), opV(10.4,13.0,0.90,2.45)
 ]});
 
-/* ---------- interior walls ---------- */
-hwall(5.0,0,5.0,7.0,   {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opV(1.0,1.9,0,2.20) ]});
-hwall(5.0,7.0,5.0,HD,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opV(8.4,9.3,0,2.20) ]});
-hwall(6.5,2.6,6.5,7.36,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(0,4.6,5.0,4.6,   {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(0.8,1.7,0,2.20), opH(3.4,4.3,0,2.20) ]});
-hwall(2.9,4.6,2.9,7.0, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(0,7.0,5.0,7.0,   {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(0,9.7,2.1,9.7,   {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(0.8,1.7,0,2.20) ]});
-hwall(2.1,9.7,2.1,HD,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(8.55,0,8.55,HD,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
-  opV(1.4,2.3,0,2.20), opV(5.4,6.2,0,2.20), opV(8.2,9.1,0,2.20)
+/* ---------- interior walls ----------
+   The stairwell void is u 5.00-6.50, v 2.60-7.36, and it is what shapes this
+   plan: it blocks the middle of the floor between the front rooms and the
+   landing, so the corridor has to run east of it. */
+hwall(6.5,0,6.5,7.36, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opV(0.9,1.8,0,2.20) ]});
+hwall(0,2.6,5.0,2.6,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(1.4,2.3,0,2.20) ]});
+hwall(5.0,2.6,5.0,7.36,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(5.0,2.6,6.5,2.6, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(0,7.0,5.0,7.0,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(2.8,7.0,2.8,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(5.0,7.36,5.0,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(0,10.2,8.3,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
+  opH(0.8,1.7,0,2.20), opH(3.4,4.3,0,2.20), opH(5.6,6.5,0,2.20)
 ]});
-hwall(8.55,5.0,HW,5.0, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(8.55,6.6,HW,6.6, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(11.5,3.3,11.5,5.0,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(11.5,3.3,HW,3.3, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(11.9,12.8,0,2.20) ]});
-hwall(11.5,9.8,11.5,HD,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(11.5,9.8,HW,9.8, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(11.9,12.8,0,2.20) ]});
+hwall(8.3,0,8.3,UV1,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
+  opV(1.4,2.3,0,2.20), opV(5.2,6.1,0,2.20), opV(9.3,10.1,0,2.20)
+]});
+hwall(8.3,4.6,HW,4.6, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(11.5,12.4,0,2.20) ]});
+hwall(10.8,4.6,10.8,9.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(8.3,6.9,HW,6.9, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(8.3,9.2,HW,9.2, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
+  opH(9.0,9.9,0,2.20), opH(11.6,12.5,0,2.20)
+]});
 
 /* ============================================================
    FIRST FLOOR FURNITURE
    ============================================================ */
-/* --- master bedroom  (u 0..5.0, v 0..4.6) --- */
-/* headboard on the side wall so the balcony door stays clear */
-rugMat(hx(2.9), hz(2.5), FF, 3.4, 2.8, gFF);
-bed(hx(1.55), hz(2.30), FF, 1.95, 2.15, 3, gFF);
-tvUnit(hx(4.55), hz(2.30), FF, 1.7, 1, gFF);
-armchair(hx(4.60), hz(3.90), FF, 0, gFF);
-ceilingFan(hx(2.9), hz(2.5), FF+CH, gFF);
-downlight(hx(1.2),hz(1.0),FF+CH,gFF); downlight(hx(3.8),hz(1.0),FF+CH,gFF);
-downlight(hx(1.2),hz(4.0),FF+CH,gFF); downlight(hx(3.8),hz(4.0),FF+CH,gFF);
-ac(hx(4.0), hz(0.20), FF+2.55, 0, gFF);
-artwork(hx(0.18), hz(2.30), FF+1.95, 1.3, 0.9, 3, gFF);
+/* --- family room  (u 0..6.5, v 0..2.6) ---
+   Sits directly behind the balcony doors, so in use the two read as one
+   17 + 30 m2 room with a glass wall in the middle of it. */
+rugMat(hx(3.10), hz(1.35), FF, 3.6, 2.0, gFF);
+sofa(hx(3.00), hz(0.55), FF, 2.6, 0, gFF);
+armchair(hx(5.55), hz(1.60), FF, 1, gFF);
+coffeeTable(hx(3.10), hz(1.45), FF, 1.2, 0.65, gFF);
+tvUnit(hx(1.10), hz(2.32), FF, 2.0, 2, gFF);
+ceilingFan(hx(3.10), hz(1.35), FF+CH, gFF);
+[[1.3,0.7],[4.6,0.7],[1.3,2.1],[4.6,2.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+ac(hx(5.90), hz(0.22), FF+2.55, 0, gFF);
 
-/* --- walk-in closet (u 0..2.9, v 4.6..7.0) --- */
-wardrobe(hx(1.45), hz(6.85), FF, 2.5, 2, gFF);
-wardrobe(hx(0.35), hz(5.8), FF, 1.9, 1, gFF);
-fsolid(0.9,0.55,0.5, hx(2.2), FF+0.28, hz(5.5), MAT.wood, gFF);
-downlight(hx(1.45),hz(5.8),FF+CH,gFF);
+/* --- study / library  (u 0..5.0, v 2.6..7.0) ---
+   Entered from the family room, and deliberately a back room: no through
+   route passes it, which is the whole point of a room meant for reading.
+   Shelving on the two long walls, the desk under the west window. */
+bookshelf(hx(0.30), hz(3.60), FF, 1.7, 1, gFF);
+bookshelf(hx(0.30), hz(6.10), FF, 1.7, 1, gFF);
+bookshelf(hx(2.40), hz(6.88), FF, 2.6, 2, gFF);
+bookshelf(hx(4.70), hz(4.30), FF, 2.2, 3, gFF);
+desk(hx(1.55), hz(4.90), FF, 1.6, 1, gFF);
+chair(hx(2.35), hz(4.90), FF, 3, gFF);
+armchair(hx(3.65), hz(3.35), FF, 0, gFF);
+rugMat(hx(2.50), hz(4.60), FF, 2.6, 2.2, gFF, MAT.fabric2);
+potPlant(hx(4.55), hz(2.95), FF, gFF, 1.0);
+downlight(hx(1.4),hz(3.4),FF+CH,gFF); downlight(hx(3.8),hz(3.4),FF+CH,gFF);
+downlight(hx(1.4),hz(6.2),FF+CH,gFF); downlight(hx(3.8),hz(6.2),FF+CH,gFF);
+pendant(hx(2.50), hz(4.60), FF+CH, gFF, 0.95);
 
-/* --- master bathroom (u 2.9..5.0, v 4.6..7.0) --- */
-addBox(2.10,0.02,2.40, hx(3.95), FF+0.011, hz(5.8), MAT.tileWet, gFF, {cast:false});
-basin(hx(4.0), hz(4.90), FF, 0, gFF, 1.30);
-wc(hx(3.28), hz(6.68), FF, 2, gFF);
-shower(hx(4.05), hz(6.05), hx(4.95), hz(6.95), FF, gFF);
-downlight(hx(3.6),hz(5.3),FF+CH,gFF); downlight(hx(4.5),hz(6.4),FF+CH,gFF);
-
-/* --- bedroom 2 (u 0..5.0, v 7.0..11.5) --- */
-rugMat(hx(3.2), hz(9.0), FF, 3.0, 2.6, gFF);
-bed(hx(3.3), hz(8.6), FF, 1.55, 2.05, 0, gFF, MAT.fabric2);
-wardrobe(hx(3.6), hz(11.15), FF, 2.2, 2, gFF);
-desk(hx(0.55), hz(8.1), FF, 1.3, 1, gFF);
-ceilingFan(hx(3.2), hz(9.0), FF+CH, gFF);
-downlight(hx(1.2),hz(8.2),FF+CH,gFF); downlight(hx(4.2),hz(10.4),FF+CH,gFF);
-ac(hx(3.4), hz(7.20), FF+2.55, 0, gFF);
-/* bedroom 2 en-suite */
-addBox(2.10,0.02,1.80, hx(1.05), FF+0.011, hz(10.6), MAT.tileWet, gFF, {cast:false});
-wc(hx(0.42), hz(11.15), FF, 2, gFF);
-basin(hx(1.55), hz(10.05), FF, 0, gFF, 0.8);
-shower(hx(1.25), hz(10.75), hx(2.00), hz(11.45), FF, gFF);
-downlight(hx(1.05),hz(10.6),FF+CH,gFF);
-
-/* --- corridor / gallery --- */
-rugMat(hx(7.5), hz(4.0), FF, 1.3, 5.5, gFF, MAT.fabric2);
-artwork(hx(8.46), hz(3.6), FF+1.75, 0.9, 0.7, 1, gFF);
-artwork(hx(6.60), hz(1.4), FF+1.75, 0.9, 0.7, 3, gFF);
-potPlant(hx(7.9), hz(0.6), FF, gFF, 1.1);
-fsolid(1.10,0.78,0.36, hx(7.9), FF+0.39, hz(6.9), MAT.wood, gFF);
-[[7.5,1.2],[7.5,3.4],[7.5,5.6],[7.5,7.0]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
-/* stairwell head - glazed clerestory into the corridor */
+/* --- corridor + landing --- */
+rugMat(hx(7.40), hz(3.6), FF, 1.3, 6.0, gFF, MAT.fabric2);
+artwork(hx(8.22), hz(3.2), FF+1.75, 0.9, 0.7, 1, gFF);
+artwork(hx(6.58), hz(5.4), FF+1.75, 0.9, 0.7, 3, gFF);
+potPlant(hx(7.90), hz(0.70), FF, gFF, 1.1);
+fsolid(1.10,0.78,0.36, hx(7.75), FF+0.39, hz(9.85), MAT.wood, gFF);
+artwork(hx(7.75), hz(10.10), FF+1.70, 1.1, 0.8, 2, gFF);
+[[7.4,1.2],[7.4,3.6],[7.4,6.0],[6.6,8.6],[7.9,9.4]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+/* stairwell head - glazed clerestory borrowing light into the corridor */
 addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
+/* void balustrade, north edge of the stairwell where the flight arrives */
+rail(hx(5.0), hz(7.36), hx(6.5), hz(7.36), FF, gFF);
 
-/* --- family lounge (u 5.0..8.55, v 7.36..11.5) ---
-   kept clear at v 7.36-8.6 so you step off the stairs into open floor */
-rugMat(hx(6.90), hz(10.4), FF, 2.6, 2.0, gFF);
-sofa(hx(6.60), hz(11.00), FF, 2.5, 2, gFF);
-armchair(hx(5.60), hz(9.90), FF, 3, gFF);
-coffeeTable(hx(6.90), hz(10.30), FF, 1.0, 0.6, gFF);
-tvUnit(hx(8.30), hz(9.80), FF, 1.5, 1, gFF);
-bookshelf(hx(8.15), hz(10.70), FF, 1.3, 1, gFF);
-ceilingFan(hx(6.90), hz(10.2), FF+CH, gFF);
-downlight(hx(5.8),hz(8.2),FF+CH,gFF); downlight(hx(7.8),hz(10.8),FF+CH,gFF);
+/* --- master bedroom  (u 0..8.3, v 10.2..13.9  =  30.7 m2) ---
+   The brief asked for a much bigger master and this is where the extra floor
+   area went: 8.30 m wide, running the full width of the west side and out
+   over the rear cantilever, with the bed floating off the party wall rather
+   than pushed into a corner. */
+rugMat(hx(4.05), hz(12.10), FF, 4.6, 3.4, gFF);
+bed(hx(4.05), hz(11.70), FF, 2.00, 2.20, 0, gFF);
+fsolid(0.55,0.58,0.45, hx(2.70), FF+0.29, hz(10.62), MAT.woodDark, gFF);
+fsolid(0.55,0.58,0.45, hx(5.40), FF+0.29, hz(10.62), MAT.woodDark, gFF);
+tvUnit(hx(4.05), hz(13.60), FF, 2.2, 0, gFF);
+armchair(hx(1.05), hz(13.10), FF, 3, gFF);
+armchair(hx(7.40), hz(12.90), FF, 1, gFF);
+fsolid(0.5,0.45,0.5, hx(1.05), FF+0.23, hz(12.20), MAT.wood, gFF);
+ceilingFan(hx(4.05), hz(12.10), FF+CH, gFF);
+[[1.6,10.9],[6.4,10.9],[1.6,13.2],[6.4,13.2],[4.05,12.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+ac(hx(6.90), hz(10.42), FF+2.55, 0, gFF);
+artwork(hx(4.05), hz(10.45), FF+1.95, 1.5, 1.0, 0, gFF);
 
-/* --- bedroom 3 (u 8.55..13.55, v 0..5.0) --- */
-rugMat(hx(10.6), hz(2.4), FF, 3.0, 2.6, gFF);
-bed(hx(10.5), hz(2.6), FF, 1.55, 2.05, 3, gFF, MAT.fabric2);
-wardrobe(hx(10.0), hz(4.75), FF, 2.4, 2, gFF);
-desk(hx(12.9), hz(1.4), FF, 1.2, 3, gFF);
-ceilingFan(hx(10.6), hz(2.4), FF+CH, gFF);
-downlight(hx(9.4),hz(1.4),FF+CH,gFF); downlight(hx(12.4),hz(4.0),FF+CH,gFF);
-ac(hx(10.2), hz(0.20), FF+2.55, 0, gFF);
-/* bedroom 3 en-suite */
-addBox(2.05,0.02,1.70, hx(12.5), FF+0.011, hz(4.15), MAT.tileWet, gFF, {cast:false});
-wc(hx(11.95), hz(4.72), FF, 2, gFF);
-basin(hx(12.9), hz(3.62), FF, 0, gFF, 0.8);
-shower(hx(12.75), hz(4.30), hx(13.45), hz(4.95), FF, gFF);
-downlight(hx(12.5),hz(4.15),FF+CH,gFF);
+/* --- master bathroom  (u 0..2.8, v 7.0..10.2) --- */
+addBox(2.80,0.02,3.20, hx(1.40), FF+0.011, hz(8.60), MAT.tileWet, gFF, {cast:false});
+basin(hx(1.30), hz(7.25), FF, 0, gFF, 1.60);
+wc(hx(0.42), hz(9.70), FF, 2, gFF);
+bathtub(hx(1.65), hz(9.60), FF, 1.70, 0.78, gFF);
+shower(hx(2.00), hz(7.55), hx(2.72), hz(8.55), FF, gFF);
+downlight(hx(0.9),hz(7.8),FF+CH,gFF); downlight(hx(2.1),hz(9.4),FF+CH,gFF);
 
-/* --- linen / plant store --- */
-fsolid(4.60,2.20,0.45, hx(10.9), FF+1.10, hz(6.375), MAT.wood, gFF);
-downlight(hx(10.9),hz(5.8),FF+CH,gFF);
+/* --- master walk-in closet  (u 2.8..5.0, v 7.0..10.2) --- */
+wardrobe(hx(3.95), hz(7.20), FF, 2.0, 0, gFF);
+wardrobe(hx(3.05), hz(8.90), FF, 2.4, 3, gFF);
+wardrobe(hx(4.80), hz(8.90), FF, 2.4, 1, gFF);
+fsolid(1.0,0.55,0.55, hx(3.95), FF+0.28, hz(9.20), MAT.wood, gFF);
+downlight(hx(3.9),hz(8.6),FF+CH,gFF);
 
-/* --- bedroom 4 (u 8.55..13.55, v 6.6..11.5) --- */
-rugMat(hx(10.4), hz(8.8), FF, 3.0, 2.6, gFF);
-bed(hx(10.4), hz(8.5), FF, 1.55, 2.05, 0, gFF, MAT.fabric2);
-wardrobe(hx(9.8), hz(11.15), FF, 2.2, 2, gFF);
-desk(hx(9.0), hz(9.6), FF, 1.2, 1, gFF);
-ceilingFan(hx(10.4), hz(8.8), FF+CH, gFF);
-downlight(hx(9.4),hz(7.6),FF+CH,gFF); downlight(hx(12.4),hz(8.8),FF+CH,gFF);
-ac(hx(10.2), hz(6.80), FF+2.55, 0, gFF);
-/* bedroom 4 en-suite */
-addBox(2.05,0.02,1.70, hx(12.5), FF+0.011, hz(10.65), MAT.tileWet, gFF, {cast:false});
-wc(hx(11.95), hz(11.20), FF, 2, gFF);
-basin(hx(12.9), hz(10.12), FF, 0, gFF, 0.8);
-shower(hx(12.75), hz(10.80), hx(13.45), hz(11.45), FF, gFF);
-downlight(hx(12.5),hz(10.65),FF+CH,gFF);
+/* --- bedroom 2  (u 8.3..13.55, v 9.2..13.9) --- */
+rugMat(hx(10.90), hz(11.90), FF, 3.2, 2.8, gFF);
+bed(hx(10.90), hz(11.60), FF, 1.60, 2.10, 0, gFF, MAT.fabric2);
+fsolid(0.48,0.55,0.42, hx(9.85), FF+0.28, hz(10.35), MAT.woodDark, gFF);
+fsolid(0.48,0.55,0.42, hx(11.95),FF+0.28, hz(10.35), MAT.woodDark, gFF);
+desk(hx(13.00), hz(12.70), FF, 1.3, 1, gFF);
+tvUnit(hx(10.90), hz(13.62), FF, 1.6, 0, gFF);
+ceilingFan(hx(10.90), hz(11.90), FF+CH, gFF);
+downlight(hx(9.4),hz(10.6),FF+CH,gFF); downlight(hx(12.6),hz(13.0),FF+CH,gFF);
+ac(hx(12.60), hz(9.42), FF+2.55, 0, gFF);
+/* bedroom 2 en-suite (u 8.3..10.8, v 6.9..9.2) */
+addBox(2.50,0.02,2.30, hx(9.55), FF+0.011, hz(8.05), MAT.tileWet, gFF, {cast:false});
+wc(hx(8.72), hz(7.30), FF, 0, gFF);
+basin(hx(9.90), hz(7.15), FF, 0, gFF, 0.95);
+shower(hx(9.60), hz(8.30), hx(10.70), hz(9.10), FF, gFF);
+downlight(hx(9.6),hz(8.1),FF+CH,gFF);
+/* bedroom 2 walk-in (u 10.8..13.55, v 6.9..9.2) */
+wardrobe(hx(12.20), hz(7.15), FF, 2.4, 0, gFF);
+wardrobe(hx(11.05), hz(8.30), FF, 1.8, 3, gFF);
+downlight(hx(12.2),hz(8.2),FF+CH,gFF);
+
+/* --- bedroom 3  (u 8.3..13.55, v 0..4.6) ---
+   The second-biggest bedroom, and the other one that opens onto the balcony. */
+rugMat(hx(10.90), hz(2.40), FF, 3.2, 2.8, gFF);
+bed(hx(10.90), hz(2.75), FF, 1.60, 2.10, 2, gFF, MAT.fabric2);
+fsolid(0.48,0.55,0.42, hx(9.85), FF+0.28, hz(4.10), MAT.woodDark, gFF);
+fsolid(0.48,0.55,0.42, hx(11.95),FF+0.28, hz(4.10), MAT.woodDark, gFF);
+desk(hx(13.00), hz(1.60), FF, 1.3, 1, gFF);
+wardrobe(hx(9.30), hz(1.30), FF, 2.0, 3, gFF);
+ceilingFan(hx(10.90), hz(2.40), FF+CH, gFF);
+downlight(hx(9.4),hz(1.2),FF+CH,gFF); downlight(hx(12.6),hz(3.6),FF+CH,gFF);
+ac(hx(12.60), hz(4.38), FF+2.55, 2, gFF);
+/* bedroom 3 en-suite (u 10.8..13.55, v 4.6..6.9) */
+addBox(2.75,0.02,2.30, hx(12.18), FF+0.011, hz(5.75), MAT.tileWet, gFF, {cast:false});
+wc(hx(13.10), hz(5.05), FF, 0, gFF);
+basin(hx(11.60), hz(4.90), FF, 0, gFF, 0.95);
+shower(hx(11.00), hz(5.95), hx(12.10), hz(6.80), FF, gFF);
+downlight(hx(12.2),hz(5.8),FF+CH,gFF);
+
+/* --- linen / plant store (u 8.3..10.8, v 4.6..6.9) --- */
+fsolid(2.30,2.20,0.50, hx(9.55), FF+1.10, hz(4.90), MAT.wood, gFF);
+fsolid(0.70,1.60,0.70, hx(10.35), FF+0.80, hz(6.45), MAT.steel, gFF);
+downlight(hx(9.6),hz(5.9),FF+CH,gFF);
 
 /* ---------- roof slab + parapet ---------- */
-slab(hx(0), hz(0), hx(HW), hz(HD), RF, SLAB, MAT.wallInt, gRoof, {walk:false});
-parapetRoof(hx(0), hz(0), hx(HW), hz(HD), RF, 0.42, MAT.accent, MAT.white, gRoof);
+slab(hx(0), hz(0), hx(HW), hz(UV1), RF, SLAB, MAT.wallInt, gRoof, {walk:false});
+parapetRoof(hx(0), hz(0), hx(HW), hz(UV1), RF, 0.42, MAT.accent, MAT.white, gRoof);
 
 /* ---------- cantilevered roof wing over the balcony ----------
    The move the whole redesign is named for: the roof deck stepping past the
    front wall on its own plate, wide enough to cover the balcony below and
    deep enough to still be shading it at midday, with nothing under its
    leading edge. */
-addBox(12.2, 0.30, 2.10, hx(6.75), RF-0.15, hz(-1.05), MAT.wallExt, gRoof, {});
-addBox(12.4, 0.07, 0.15, hx(6.75), RF-0.015, hz(-2.10), MAT.accent, gRoof, {});
+addBox(12.75, 0.30, 2.40, hx(6.75), RF-0.15, hz(-1.20), MAT.wallExt, gRoof, {});
+addBox(12.95, 0.07, 0.15, hx(6.75), RF-0.015, hz(UB), MAT.accent, gRoof, {});
 
 /* ============================================================
    GAMES PAVILION  -  5.70 x 3.55 m, west side, always present
@@ -414,8 +470,8 @@ CTAG = "garden";
   hedgeRun( 3.40, 11.90,  6.40, 11.90, 0.80);
   palm(-8.20, 10.90, 5.6);
   palm( 8.70, 13.40, 6.1);
-  tree(-1.80, 10.60, 0.92);
-  tree( 5.60, 14.10, 0.78);
+  palm(-1.80, 10.60, 6.6);
+  palm( 5.60, 14.10, 5.9);
   [[-3.60, 8.10],[-1.20, 7.30],[0.70, 9.90],[-6.90, 12.90],[6.90, 7.20],
    [3.10, 13.10],[-4.20, 13.60],[8.60, 9.60]].forEach(function(p){
     shrub(p[0], p[1], 0.85 + ((p[0]*7+p[1]*3)%5)/9);
