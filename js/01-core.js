@@ -11,7 +11,15 @@ var PW = 19.55, PD = 33.52;              // plot width (E-W) x depth (N-S)
 var X0 = -PW/2, X1 = PW/2;               // -9.775 .. 9.775
 var Z0 = -PD/2, Z1 = PD/2;               // -16.76 (road) .. 16.76 (rear)
 
-var HX = -6.775, HZ = -9.76;             // duplex local origin
+/* The duplex sits 2.52 m further back than it first did. The original
+   position left only 4.60 m between the boundary wall and the balcony edge,
+   and a full-size pickup is 5.89 m long - the cars in the carport physically
+   could not be driven in or out. Moving the house north buys a 7.32 m front
+   yard, which is the shortest run that takes the longest vehicle plus the
+   gate clearance in front of it. It cannot go back any further: the sports
+   court is 8.0 m deep and pins the garden's front edge at z = 6.70, and the
+   upper floor's rear cantilever now lands within 40 mm of it. */
+var HX = -6.775, HZ = -7.24;             // duplex local origin
 var HW = 13.55,  HD = 11.5;              // duplex footprint
 var GF = 0.60;                           // ground floor level (raised plinth)
 var FF = 3.90;                           // first floor level
@@ -225,9 +233,8 @@ var gRoof = new T.Group();
    garden wants. The games pavilion sits outside both and is always there. */
 var gSport  = new T.Group();
 var gGarden = new T.Group();
-var gPav    = new T.Group();     /* games pavilion - present in both options */
 var gSolar = null;               /* PV on the main roof, only in court mode */
-[gSite,gGF,gFF,gRoof,gSport,gGarden,gPav].forEach(function(g){ scene.add(g); });
+[gSite,gGF,gFF,gRoof,gSport,gGarden].forEach(function(g){ scene.add(g); });
 var FURN = [];   // furniture meshes, for the furniture toggle
 
 /* ============================================================
@@ -1177,6 +1184,35 @@ new T.RGBELoader().load("assets/sky.hdr", function(hdrTex){
   HDRI_READY = true;
 });
 
+/* ---------- external model loader ----------
+   Everything else in this model is generated in the browser, but trees and
+   vehicles are the two things procedural geometry is genuinely bad at: a car
+   built from boxes reads as a car-shaped box, and no amount of care fixes
+   that. These arrive as .glb files instead.
+
+   They are the only downloaded assets in the project and they are the reason
+   the page is no longer instant on a slow connection, so they load
+   asynchronously and the model is fully usable before any of them arrive. */
+var MODELS = (function(){
+  var loader = (typeof T.GLTFLoader === "function") ? new T.GLTFLoader() : null;
+  var pending = 0, finished = 0, cbs = [];
+  function tick(){
+    if(finished >= pending) for(var i=0;i<cbs.length;i++) cbs[i]();
+  }
+  return {
+    ok: !!loader,
+    load: function(file, onDone){
+      if(!loader){ console.warn("GLTFLoader missing; skipping " + file); return; }
+      pending++;
+      loader.load("assets/models/" + file,
+        function(g){ finished++; try{ onDone(g); }catch(e){ console.warn("place failed: "+file, e); } tick(); },
+        undefined,
+        function(e){ finished++; console.warn("load failed: "+file, e); tick(); });
+    },
+    whenReady: function(f){ cbs.push(f); }
+  };
+})();
+
 /* ---------- collision + floor registries ---------- */
 var COLLIDERS = [];
 var FLOORS    = [];
@@ -1193,7 +1229,14 @@ function planting(g, fn){ var p = PGRP; PGRP = g; fn(); PGRP = p; }
 var CTAG = null;
 var CTOFF = {};                                  /* tag -> true when disabled */
 function tagged(fn, tag){ var p = CTAG; CTAG = tag; fn(); CTAG = p; }
-function addCollider(x0,x1,z0,z1,y0,y1){ COLLIDERS.push({x0:x0,x1:x1,z0:z0,z1:z1,y0:y0,y1:y1,t:CTAG}); }
+/* Returns the collider it just pushed. Anything that moves after the model is
+   built - the cars, the gate leaves - keeps that reference and edits it in
+   place, so the thing you can walk into always matches the thing you can see. */
+function addCollider(x0,x1,z0,z1,y0,y1){
+  var c = {x0:x0,x1:x1,z0:z0,z1:z1,y0:y0,y1:y1,t:CTAG};
+  COLLIDERS.push(c);
+  return c;
+}
 /* Drop the colliders that sit wholly inside a region. Used for the very small
    service rooms (BQ bathrooms and kitchenettes) where the fittings are correct
    at full size but leave a walker no room to stand - the fittings stay visible,

@@ -57,7 +57,10 @@ function mergeStatics(){
     (function walk(o){
       for(var i=0; i<o.children.length; i++){
         var c = o.children[i];
-        if(c.isGroup){ mergeDomain(c); continue; }
+        /* Imported .glb models and anything that moves at run time opt out of
+           the merge: merging bakes world transforms and freezes the mesh, which
+           is exactly wrong for a car that has to drive out of the gate. */
+        if(c.isGroup){ if(!c.userData.noMerge) mergeDomain(c); continue; }
         if(!c.isMesh){ continue; }
         before++;
         var mat = c.material, fu = furnish(c);
@@ -120,7 +123,7 @@ function mergeStatics(){
     }
   }
 
-  [gSite, gGF, gFF, gRoof, gSport, gGarden, gPav].forEach(mergeDomain);
+  [gSite, gGF, gFF, gRoof, gSport, gGarden].forEach(mergeDomain);
   FURN.length = 0;
   for(var n=0; n<newFurn.length; n++) FURN.push(newFurn[n]);
   return {before:before, after:after, furn:FURN.length};
@@ -142,7 +145,7 @@ var ZONES = [
   Z("Store", GF, hx(10.4),hz(4.6), hx(13.55),hz(6.4)),
   Z("Kitchen", GF, hx(8.55),hz(6.4), hx(13.55),hz(10.2)),
   Z("Pantry / laundry", GF, hx(8.55),hz(10.2), hx(13.55),hz(11.5)),
-  Z("Front porch", GF, hx(1.0),hz(-1.8), hx(12.5),hz(0)),
+  Z("Front porch", GF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
   /* first floor */
   Z("Family room", FF, hx(0),hz(0), hx(6.5),hz(2.6)),
   Z("Study / library", FF, hx(0),hz(2.6), hx(5.0),hz(7.0)),
@@ -157,9 +160,9 @@ var ZONES = [
   Z("Bedroom 2 en-suite", FF, hx(8.3),hz(6.9), hx(10.8),hz(9.2)),
   Z("Bedroom 2 walk-in", FF, hx(10.8),hz(6.9), hx(13.55),hz(9.2)),
   Z("Bedroom 2", FF, hx(8.3),hz(9.2), hx(13.55),hz(13.9)),
-  Z("Front balcony", FF, hx(0.6),hz(-2.4), hx(12.95),hz(0)),
-  /* games pavilion */
-  Z("Games pavilion", PVF, PVX0,PVZ0, PVX1,PVZ1),
+  Z("Front balcony", FF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
+  /* games tent - in the garden, so it goes with the garden */
+  Z("Games tent", 0, -8.40, 11.10, -3.20, 14.70),
   /* outdoors */
   Z("Driveway / carport", 0, -9.6,-16.7, -1.1,-11.2),
   Z("Front garden", 0, 0.2,-16.7, 9.7,-11.2),
@@ -692,44 +695,49 @@ function applyPost(q){
 }
 
 /* ---------- teleports ---------- */
+/* Every interior position below was found by sweeping the room for the point
+   furthest from any collider, then given a heading that faces the thing worth
+   looking at. They were all recomputed after the house moved 2.52 m north -
+   the previous set was measured off the old position and half of them ended
+   up standing inside a wall. */
 var SPOTS = [
   ["Street view (outside the gate)",  -0.40, 0,    -22.00, Math.PI],
   ["At the gate",                     -1.05, 0,    -15.60, Math.PI],
-  ["Driveway & carport",              -7.60, 0,     -9.90, Math.PI],
-  ["Front porch",                      0.20, GF,   -10.50, Math.PI],
-  ["Entrance foyer",                   0.17, GF,    -8.36, Math.PI],
-  ["Living room",                     -5.93, GF,    -9.36, 4.497],
-  ["Dining room",                     -2.83, GF,    -1.86, 1.422],
-  ["Kitchen",                          1.93, GF,    -1.96, -Math.PI/2],
-  ["Guest bedroom",                    3.73, GF,    -6.96, -Math.PI/2],
-  ["Rear lobby / breakfast",           0.12, GF,    -1.26, Math.PI],
-  ["Foot of the stairs",               0.17, GF,    -7.76, Math.PI],
-  ["Family room",                     -5.88, FF,    -8.86, -Math.PI/2],
-  ["Front balcony",                    1.12, FF,   -10.86, Math.PI],
-  ["Study / library",                 -3.27, FF,    -4.16, Math.PI/2],
-  ["Upstairs corridor",                0.72, FF,    -4.06, 0],
-  ["Upstairs landing",                -0.38, FF,    -1.06, 0],
-  ["Master bedroom",                  -0.08, FF,     1.64, Math.PI/2],
-  ["Walk-in closet",                  -2.87, FF,    -1.66, 0],
-  ["Master bathroom",                 -5.78, FF,    -1.36, Math.PI],
-  ["Bedroom 2",                        2.52, FF,     3.14, Math.PI],
-  ["Bedroom 3",                        4.72, FF,    -9.16, 0],
-  ["Rear terrace",                     3.40, 0,      4.85, 1.467],
-  ["Rear lawn (looking at the house)", 0.60, 0,      6.20, 0.300],
-  ["Games pavilion (at the table)",   -7.60, PVF,    4.50, Math.PI/2],
-  ["Games pavilion (from the door)",  -4.50, PVF,    3.20, 2.60],
+  ["Driveway & carport",              -4.16, 0,    -10.40, Math.PI],
+  ["Front porch",                      0.62, GF,    -9.24, Math.PI],
+  ["Entrance foyer",                  -0.28, GF,    -5.74, Math.PI],
+  ["Living room",                     -4.57, GF,    -0.54, Math.PI],
+  ["Dining room",                     -2.28, GF,     2.56, Math.PI/2],
+  ["Kitchen",                          2.03, GF,     1.16, -Math.PI/2],
+  ["Guest bedroom",                    3.52, GF,    -4.14, -Math.PI/2],
+  ["Rear lobby / breakfast",           0.62, GF,     1.26, 0],
+  ["Foot of the stairs",               0.62, GF,    -3.84, Math.PI],
+  ["Family room",                     -5.88, FF,    -6.34, -Math.PI/2],
+  ["Front balcony",                    1.12, FF,    -8.34, Math.PI],
+  ["Study / library",                 -3.27, FF,    -1.64, Math.PI/2],
+  ["Upstairs corridor",                0.72, FF,    -1.54, 0],
+  ["Upstairs landing",                -0.38, FF,     1.46, 0],
+  ["Master bedroom",                  -0.08, FF,     4.16, Math.PI/2],
+  ["Walk-in closet",                  -2.87, FF,     0.86, 0],
+  ["Master bathroom",                 -5.78, FF,     1.16, Math.PI],
+  ["Bedroom 2",                        2.52, FF,     5.66, Math.PI],
+  ["Bedroom 3",                        4.72, FF,    -6.64, 0],
+  ["Rear terrace (covered)",           3.16, 0,      5.56, 0],
+  ["Rear lawn (looking at the house)",-1.68, 0,      8.72, Math.PI],
   /* garden viewpoints - only listed when the garden is up */
-  ["Pergola",                         -5.20, 0.10,  10.90, 3.10,  "garden"],
-  ["Outdoor kitchen",                  2.60, 0,      6.75, 0.10,  "garden"],
-  ["Kitchen garden (raised beds)",    -4.60, 0,     13.30, 2.95,  "garden"],
+  ["Games tent (at the table)",       -5.32, 0.08,  11.40, 0,     "garden"],
+  ["Games tent (from the lawn)",      -3.10, 0,     10.60, 2.40,  "garden"],
+  ["Pergola",                         -3.68, 0.10,   9.24, 3.10,  "garden"],
+  ["Outdoor kitchen",                  3.56, 0,      7.86, 0.10,  "garden"],
+  ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
   ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
   /* court viewpoints - only listed when the court is up */
-  ["Court, from the baseline",        -7.10, 0.12,  10.90, -Math.PI/2, "sport"],
+  ["Court, from the baseline",         6.28, 0.12,   7.64, 0,          "sport"],
   ["Court, under the hoop",           -5.20, 0.12,  10.90,  Math.PI/2, "sport"],
   ["Court, at the net",                0.60, 0.12,  10.90,  Math.PI/2, "sport"],
   ["Court, from the goal end",         6.40, 0.12,  10.90,  Math.PI/2, "sport"],
-  ["Courtside bench",                 -0.40, 0,      4.85,  Math.PI,   "sport"],
-  ["Court, from the terrace",          5.60, 0,      4.30,  Math.PI,   "sport"],
+  ["Courtside bench",                 -2.40, 0,      6.10,  0,         "sport"],
+  ["Court, from the terrace",         -2.00, 0.12,   7.98,  0,         "sport"],
   ["Utility yard (gen. & tanks)",     -2.30, 0,     15.70, -Math.PI/2]
 ];
 function buildGoto(){
@@ -762,11 +770,174 @@ document.getElementById("infoClose").onclick = closeInfo;
 /* ---------- loop ---------- */
 var clock = new T.Clock();
 var bob = 0;
+/* ============================================================
+   GATE + VEHICLE MOVEMENT
+
+   The point of this is not the animation. It is that the question "can you
+   actually get three cars in and out of this compound" has a demonstrable
+   answer rather than an assured one, and the honest way to show that is to
+   drive them along the real route and let the geometry either allow it or
+   not. The path below is not a decorative curve - it is a two-stage move,
+   straight back out of the bay and then a swing onto the gate centreline,
+   and it only clears because the front yard is 7.32 m deep.
+   ============================================================ */
+
+/* ---------- gate ---------- */
+var GATE_SPEED = 1.0 / 1.6;              /* full swing in 1.6 s */
+function setGate(open){
+  if(typeof GATE === "undefined") return;
+  GATE.open = open;
+  var b = document.getElementById("btnGate");
+  if(b){ b.classList.toggle("on", open); b.textContent = open ? "Close gate" : "Open gate"; }
+}
+function updateGate(dt){
+  if(typeof GATE === "undefined") return;
+  var target = GATE.open ? 1 : 0;
+  if(GATE.t === target) return;
+  GATE.t += Math.sign(target - GATE.t) * Math.min(Math.abs(target - GATE.t), GATE_SPEED * dt);
+  /* ease so the leaves settle rather than stopping dead */
+  var e = GATE.t < 0.5 ? 2*GATE.t*GATE.t : 1 - Math.pow(-2*GATE.t + 2, 2)/2;
+  var a = e * Math.PI * 0.52;             /* just past 90 degrees, outward */
+  GATE.left.rotation.y  =  a;
+  GATE.right.rotation.y = -a;
+  /* the collider across the opening is only there while it is shut */
+  var shut = GATE.t < 0.15;
+  GATE.col.y1 = shut ? 2.4 : -1;          /* y1 below y0 = nothing can hit it */
+}
+
+/* ---------- vehicles ---------- */
+/* Each car has two stops: its bay, and a space on the street. The drive
+   between them is a path, not a lerp - the car has to back out of the bay
+   before it can turn, exactly as it would in life. */
+var CAR_SPEED = 1 / 4.2;                 /* one full move in 4.2 s */
+
+function carPath(v, s){
+  /* s: 0 = parked in the bay, 1 = out on the street.
+     Stage 1 (s 0..0.45): reverse straight out of the bay to the gate line.
+     Stage 2 (s 0.45..1):  swing onto the gate centreline and pull away. */
+  var home = v.home, away = v.away;
+  var gateX = (GATE.x0 + GATE.x1) / 2;
+  var gateZ = Z0;
+  var p = new THREE.Vector3(), yaw = 0;
+  if(s <= 0.45){
+    var k = s / 0.45;
+    p.set(home.x, 0, home.z + (gateZ - 0.9 - home.z) * k);
+    yaw = 0;
+  } else {
+    var k2 = (s - 0.45) / 0.55;
+    /* quadratic bezier from the gate line, through the gate, out to the street */
+    var p0 = new THREE.Vector3(home.x, 0, gateZ - 0.9);
+    /* the control point sits just outside the gate and east of it, which is
+       what turns the move into a real turn-out onto the road rather than a
+       car driving backwards across the carriageway */
+    var p1 = new THREE.Vector3(gateX + 1.2, 0, gateZ - 2.6);
+    var p2 = new THREE.Vector3(away.x, 0, away.z);
+    var im = 1 - k2;
+    p.x = im*im*p0.x + 2*im*k2*p1.x + k2*k2*p2.x;
+    p.z = im*im*p0.z + 2*im*k2*p1.z + k2*k2*p2.z;
+    /* heading from the tangent, so the car points where it is going */
+    var tx = 2*im*(p1.x-p0.x) + 2*k2*(p2.x-p1.x);
+    var tz = 2*im*(p1.z-p0.z) + 2*k2*(p2.z-p1.z);
+    yaw = Math.atan2(-tx, -tz);
+  }
+  return {pos:p, yaw:yaw};
+}
+
+function updateCars(dt){
+  if(typeof VEHICLES === "undefined") return;
+  for(var i=0;i<VEHICLES.length;i++){
+    var v = VEHICLES[i];
+    var target = v.out ? 1 : 0;
+    if(v.t === target){ v.moving = false; continue; }
+    /* a car will not drive through a shut gate; it waits for it */
+    if(GATE.t < 0.75){ v.moving = false; continue; }
+    v.moving = true;
+    v.t += Math.sign(target - v.t) * Math.min(Math.abs(target - v.t), CAR_SPEED * dt);
+    var r = carPath(v, v.t);
+    v.pivot.position.set(r.pos.x, 0, r.pos.z);
+    v.pivot.rotation.y = r.yaw;
+    /* the collider follows only while it is home; once it is moving there is
+       nothing to walk into, and a stale box in the driveway is worse than none */
+    if(v.col){
+      if(v.t < 0.02){
+        v.col.x0 = v.home.x - v.dim.wid/2; v.col.x1 = v.home.x + v.dim.wid/2;
+        v.col.z0 = v.home.z - v.dim.len/2; v.col.z1 = v.home.z + v.dim.len/2;
+        v.col.y1 = v.dim.hgt;
+      } else {
+        v.col.y1 = -1;
+      }
+    }
+  }
+}
+
+function toggleCar(i){
+  var v = VEHICLES[i];
+  if(!v) return;
+  v.out = !v.out;
+  if(v.out) setGate(true);          /* you cannot leave through a shut gate */
+  refreshCarButtons();
+}
+function refreshCarButtons(){
+  for(var i=0;i<VEHICLES.length;i++){
+    var b = document.getElementById("car" + i);
+    if(!b) continue;
+    b.classList.toggle("on", VEHICLES[i].out);
+    b.title = VEHICLES[i].name + (VEHICLES[i].out ? " - on the street" : " - parked");
+  }
+}
+
+/* ---------- click a car to send it out ---------- */
+(function(){
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  renderer.domElement.addEventListener("pointerdown", function(ev){
+    if(mode !== "orbit") return;              /* walk mode uses the pointer to look */
+    if(typeof VEHICLES === "undefined" || !VEHICLES.length) return;
+    var r = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    for(var i=0;i<VEHICLES.length;i++){
+      var hit = ray.intersectObject(VEHICLES[i].pivot, true);
+      if(hit.length){ toggleCar(i); break; }
+    }
+  });
+})();
+
+/* ---------- toolbar ---------- */
+(function(){
+  var bar = document.getElementById("bar");
+  if(!bar) return;
+  var host = document.createElement("div");
+  host.className = "grp";
+  host.id = "driveGrp";
+  var g = document.createElement("button");
+  g.className = "b"; g.id = "btnGate"; g.textContent = "Open gate";
+  g.onclick = function(){ setGate(!GATE.open); };
+  host.appendChild(g);
+  bar.insertBefore(host, document.getElementById("btnRoof"));
+
+  /* one button per vehicle, filled in once the models have arrived */
+  MODELS.whenReady(function(){
+    for(var i=0;i<VEHICLES.length;i++){
+      (function(idx){
+        var b = document.createElement("button");
+        b.className = "b"; b.id = "car" + idx;
+        b.textContent = VEHICLES[idx].name.split(" ")[0];
+        b.onclick = function(){ toggleCar(idx); };
+        host.appendChild(b);
+      })(i);
+    }
+    refreshCarButtons();
+  });
+})();
+
 function animate(){
   requestAnimationFrame(animate);
   var dt = Math.min(0.05, clock.getDelta());
   skyMat.uniforms.uT.value += dt;      /* the cloud deck drifts, very slowly */
   WIND.value += dt;                    /* one clock for every foliage material */
+  updateGate(dt);
+  updateCars(dt);
 
 
   if(mode==="walk"){
@@ -950,6 +1121,6 @@ animate();
 window.__J = { scene:scene, camera:camera, renderer:renderer, player:player, orbit:orbit,
   setMode:function(m){ setMode(m); }, zoneAt:zoneAt, floorAt:floorAt, collides:collides,
   COLLIDERS:COLLIDERS, FLOORS:FLOORS,
-  groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden,gPav:gPav,gSport:gSport},
+  groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden,gSport:gSport},
   setRear:setRear, rear:function(){ return rearBlock; }, CTOFF:CTOFF, MAT:MAT, SPOTS:SPOTS,
   hx:hx, hz:hz, EYE:EYE, MERGED:MERGED };

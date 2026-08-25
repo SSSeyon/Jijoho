@@ -15,7 +15,7 @@
         v = 13.90  ......  upper floor rear edge (2.40 m cantilever)
    ============================================================ */
 var UV1 = 13.90;      /* upper floor rear edge */
-var UB  = -2.40;      /* balcony front edge    */
+var UB  = -2.20;      /* balcony front edge    */
 
 /* ---------- first-floor slab (hole at the stairwell) ----------
    The slab itself is rendered concrete, because its edge is visible from the
@@ -252,99 +252,41 @@ parapetRoof(hx(0), hz(0), hx(HW), hz(UV1), RF, 0.42, MAT.accent, MAT.white, gRoo
    front wall on its own plate, wide enough to cover the balcony below and
    deep enough to still be shading it at midday, with nothing under its
    leading edge. */
-addBox(12.75, 0.30, 2.40, hx(6.75), RF-0.15, hz(-1.20), MAT.wallExt, gRoof, {});
+addBox(12.75, 0.30, 2.20, hx(6.75), RF-0.15, hz(-1.10), MAT.wallExt, gRoof, {});
 addBox(12.95, 0.07, 0.15, hx(6.75), RF-0.015, hz(UB), MAT.accent, gRoof, {});
 
-/* ============================================================
-   GAMES PAVILION  -  5.70 x 3.55 m, west side, always present
-   ------------------------------------------------------------
-   The boys' quarters are gone, and the indoor games space that used to sit
-   between its two units had to go somewhere. It is a standalone garden room
-   instead, on the ground the old open gazebo occupied: that keeps it out of
-   the rear of the plot, so it survives whichever rear option is chosen rather
-   than vanishing with one of them.
+/* ---------- water tanks, on the roof ----------
+   They used to sit in the utility yard on a 3.2 m steel tower, which is the
+   usual Lagos answer and a poor one: the tower is ugly, it eats the only
+   piece of service ground on the plot, and 3.2 m of head is barely enough to
+   run an upstairs shower properly.
 
-   The footprint is set by the table tennis table, which is the one piece of
-   equipment here with a non-negotiable size. A 2.74 m table needs run-off at
-   both ends to be playable at all, and 5.70 m external gives 5.40 m internal:
-   1.33 m at each end. That is short of the 2 m a club would want and generous
-   compared with the garage most people end up playing in.
-   ============================================================ */
-var PVX0 = -8.55, PVX1 = -2.85;      /* 5.70 m */
-var PVZ0 =  2.75, PVZ1 =  6.30;      /* 3.55 m - stops 250 mm short of the
-                                        court's house-side netting line */
-var PVF  = 0.30;                     /* plinth, same reasoning as the house */
-var PVCH = 2.85;
-var PVR  = PVF + PVCH + 0.15;
-function pvo(a,b,sill,top,gl){ return {a:a, b:b, sill:sill, top:top, glass:gl}; }
-
+   On the roof deck they start 7.2 m above the ground, which gives roughly
+   0.75 bar at the ground-floor taps and about 0.4 bar at the first-floor
+   showers - a real difference you can feel. They stand on a low plinth behind
+   the parapet, so from the street and the garden you see the parapet line and
+   not the tanks. */
 (function(){
-  var cx = (PVX0+PVX1)/2, cz = (PVZ0+PVZ1)/2;
-  var w = PVX1-PVX0, d = PVZ1-PVZ0;
-
-  /* plinth and floor */
-  addBox(w+0.30, PVF, d+0.30, cx, PVF/2, cz, MAT.stone, gPav, {});
-  addCollider(PVX0, PVX1, PVZ0, PVZ1, 0, PVF);
-  slab(PVX0, PVZ0, PVX1, PVZ1, PVF, 0.10, MAT.parquet, gPav, {cast:false});
-  /* step up, on the house side */
-  addBox(1.60, 0.15, 0.55, cx+1.20, 0.075, PVZ0-0.40, MAT.stone, gPav, {});
-  addFloor(cx+0.40, cx+2.00, PVZ0-0.68, PVZ0+0.02, 0.15);
-
-  /* Walls. The long house-facing side is mostly glazed - a games room that
-     looks onto the garden is worth having, and it keeps the pavilion from
-     reading as a shed parked on the lawn. */
-  wall(PVX0, PVZ0, PVX1, PVZ0, {h:PVCH, t:0.20, mat:MAT.wallExt, y:PVF, group:gPav, openings:[
-    pvo(PVX0+0.60, PVX0+2.40, 0.00, 2.35, true),      /* sliding doors */
-    pvo(PVX0+3.30, PVX1-0.55, 0.00, 2.35, true)
-  ]});
-  wall(PVX0, PVZ1, PVX1, PVZ1, {h:PVCH, t:0.20, mat:MAT.wallExt, y:PVF, group:gPav, openings:[
-    pvo(PVX0+1.30, PVX0+2.50, 1.35, 2.30, true),      /* high strip windows */
-    pvo(PVX0+3.40, PVX0+4.60, 1.35, 2.30, true)
-  ]});
-  wall(PVX0, PVZ0, PVX0, PVZ1, {h:PVCH, t:0.20, mat:MAT.wallExt, y:PVF, group:gPav});
-  wall(PVX1, PVZ0, PVX1, PVZ1, {h:PVCH, t:0.20, mat:MAT.wallExt, y:PVF, group:gPav, openings:[
-    pvo(PVZ0+1.20, PVZ0+2.40, 1.30, 2.30, true)
-  ]});
-
-  /* roof: shallow hip, same tile as the house so it reads as one property */
-  slab(PVX0, PVZ0, PVX1, PVZ1, PVR, 0.15, MAT.wallInt, gPav, {walk:false});
-  hipRoof(PVX0, PVZ0, PVX1, PVZ1, PVR, 0.95, 0.50, MAT.roof, gPav);
-
-  /* ---------- what is in it ---------- */
-  /* table tennis, along the long axis */
-  fsolid(2.74, 0.06, 1.52, cx, PVF+0.76, cz, M(0x1c5e3a,{r:0.75}), gPav);
-  addBox(2.78, 0.02, 0.03, cx, PVF+0.80, cz, MAT.white, gPav, {});
-  addBox(0.03, 0.02, 1.56, cx, PVF+0.80, cz, MAT.white, gPav, {});
-  addBox(0.02, 0.16, 1.80, cx, PVF+0.87, cz, MAT.white, gPav, {});
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(s){
-    addBox(0.07,0.72,0.07, cx+s[0]*1.25, PVF+0.38, cz+s[1]*0.66, MAT.black, gPav, {});
+  var tx = hx(11.30), tz = hz(11.60);
+  addBox(3.40, 0.22, 2.40, tx, RF + 0.11, tz, MAT.wallInt, gRoof, {});
+  [[-1.10, 0], [1.10, 0]].forEach(function(p){
+    var cx = tx + p[0];
+    addCyl(0.70, 0.70, 1.30, cx, RF + 0.87, tz, M(0x2f5f8f,{r:0.45,m:0.10,env:1.4}), gRoof, 20);
+    addCyl(0.75, 0.75, 0.09, cx, RF + 1.56, tz, M(0x24476b,{r:0.45,m:0.10}), gRoof, 20);
+    /* the down-main, dropping through the slab into the plant store below */
+    addCyl(0.045,0.045, 0.95, cx + 0.62, RF - 0.30, tz + 0.72, MAT.steel, gRoof, 8);
   });
-  /* dartboard on the blank west wall */
-  addCyl(0.24,0.24,0.06, PVX0+0.14, PVF+1.72, cz, M(0x2b2b2b,{r:0.9}), gPav, 18);
-  addCyl(0.09,0.09,0.07, PVX0+0.15, PVF+1.72, cz, MAT.bloom1, gPav, 14);
-  /* board-game corner */
-  fsolid(0.95,0.06,0.95, PVX1-0.95, PVF+0.75, PVZ1-0.85, MAT.wood, gPav);
-  fbox(0.50,0.70,0.50, PVX1-0.95, PVF+0.36, PVZ1-0.85, MAT.wood, gPav);
-  addBox(0.58,0.03,0.58, PVX1-0.95, PVF+0.80, PVZ1-0.85, M(0x30507a,{r:0.85}), gPav, {});
-  stool(PVX1-1.70, PVZ1-0.85, PVF, gPav);
-  stool(PVX1-0.95, PVZ1-1.60, PVF, gPav);
-  /* seating and shelving */
-  sofa(PVX0+1.35, PVZ1-0.60, PVF, 1.7, 2, gPav, MAT.fabric);
-  fsolid(1.20, 1.85, 0.38, PVX0+2.60, PVF+0.93, PVZ1-0.24, MAT.wood, gPav);
-  rugMat(cx, cz, PVF, 3.2, 2.0, gPav, MAT.fabric2);
-  pendant(cx-1.10, cz, PVF+PVCH, gPav, 0.70);
-  pendant(cx+1.10, cz, PVF+PVCH, gPav, 0.70);
-  downlight(PVX0+1.20, PVZ1-0.90, PVF+PVCH, gPav);
-  downlight(PVX1-1.20, PVZ1-0.90, PVF+PVCH, gPav);
-  ceilingFan(cx, PVZ0+0.95, PVF+PVCH, gPav);
-  potPlant(PVX1-0.45, PVZ0+0.50, PVF, gPav, 0.9);
-
-  /* Approach path, in gPav rather than in the garden group: the pavilion is
-     there in both options, so the way to reach it has to be too. */
-  var pz;
-  for(pz = PVZ0 - 0.62; pz > 0.80; pz -= 0.78){
-    surf(-4.78, pz, -4.22, pz+0.56, MAT.paverWarm, 0.035, gPav);
-  }
+  /* access ladder up the parapet from the roof hatch */
+  (function(){
+    var lx = tx - 2.05;
+    [-0.24, 0.24].forEach(function(o){
+      addCyl(0.028,0.028, 1.45, lx + o, RF + 0.72, tz - 1.55, MAT.steel, gRoof, 6);
+    });
+    for(var i=0;i<5;i++){
+      var r = addCyl(0.018,0.018, 0.48, lx, RF + 0.16 + i*0.28, tz - 1.55, MAT.steel, gRoof, 6);
+      r.rotation.z = Math.PI/2;
+    }
+  })();
 })();
 
 
@@ -417,6 +359,87 @@ CTAG = "garden";
     var pl = addCyl(0.15,0.08,0.18, gx, 3.02, gz, MAT.lamp, gGarden, 12); pl.castShadow = false;
   })();
 
+  /* ---------- games tent ----------
+     What used to be a 20 m2 glazed pavilion with block walls, a hip roof and
+     a plinth. It is a tent now: four poles, a peaked canvas and the table
+     tennis under it. That is a straight trade of about 8-10 million naira of
+     building for a few hundred thousand of fabric, and it hands the ground it
+     stood on back to the garden.
+
+     The honest catch is that it belongs to the garden now. It is drawn inside
+     gGarden, so switching to the sports court takes it away with everything
+     else back here - the old pavilion survived both options because it was a
+     building on its own foundation, and a tent in the middle of a badminton
+     court is not a thing you can have. */
+  (function(){
+    var tx = -5.80, tz = 12.90;          /* centre */
+    var hw = 2.60, hd = 1.80;            /* 5.20 x 3.60 m */
+    var eave = 2.30, ridge = 3.15;
+    var canvas = M(0xf6f2e8, {r:0.88, env:0.5});
+    var mast   = M(0x8b8f93, {r:0.35, m:0.65, env:1.4});
+
+    surf(tx-hw-0.30, tz-hd-0.30, tx+hw+0.30, tz+hd+0.30, MAT.paverWarm, 0.08, gGarden);
+    addFloor(tx-hw-0.30, tx+hw+0.30, tz-hd-0.30, tz+hd+0.30, 0.08);
+
+    /* four legs, guyed back to pegs so it reads as a tent and not a carport */
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(p){
+      addCyl(0.055, 0.065, eave, tx+p[0]*hw, eave/2, tz+p[1]*hd, mast, gGarden, 10);
+      addCollider(tx+p[0]*hw-0.09, tx+p[0]*hw+0.09, tz+p[1]*hd-0.09, tz+p[1]*hd+0.09, 0, eave);
+      var gx2 = tx + p[0]*(hw+0.75), gz2 = tz + p[1]*(hd+0.55);
+      var gl = addCyl(0.012, 0.012, 2.05, (tx+p[0]*hw+gx2)/2, eave*0.55, (tz+p[1]*hd+gz2)/2, mast, gGarden, 5);
+      gl.rotation.z = p[0]*0.36; gl.rotation.x = -p[1]*0.28;
+      addBox(0.07,0.16,0.07, gx2, 0.06, gz2, MAT.black, gGarden, {cast:false});
+    });
+    /* ridge bar */
+    addCyl(0.045,0.045, hw*2, tx, ridge, tz, mast, gGarden, 8).rotation.z = Math.PI/2;
+
+    /* the canvas: two sloping panels and two gable triangles, double-sided so
+       you see the underside of the fabric from below */
+    (function(){
+      var v = [], uv = [];
+      function tri(a,b,c, ua,ub,uc){
+        v.push(a[0],a[1],a[2], b[0],b[1],b[2], c[0],c[1],c[2]);
+        uv.push(ua[0],ua[1], ub[0],ub[1], uc[0],uc[1]);
+      }
+      var x0=tx-hw, x1=tx+hw, z0=tz-hd, z1=tz+hd;
+      /* slope to -z */
+      tri([x0,eave,z0],[x1,eave,z0],[x1,ridge,tz], [0,0],[1,0],[1,1]);
+      tri([x0,eave,z0],[x1,ridge,tz],[x0,ridge,tz], [0,0],[1,1],[0,1]);
+      /* slope to +z */
+      tri([x1,eave,z1],[x0,eave,z1],[x0,ridge,tz], [0,0],[1,0],[1,1]);
+      tri([x1,eave,z1],[x0,ridge,tz],[x1,ridge,tz], [0,0],[1,1],[0,1]);
+      /* gable ends */
+      tri([x0,eave,z0],[x0,ridge,tz],[x0,eave,z1], [0,0],[0.5,1],[1,0]);
+      tri([x1,eave,z1],[x1,ridge,tz],[x1,eave,z0], [0,0],[0.5,1],[1,0]);
+      var g = new T.BufferGeometry();
+      g.setAttribute("position", new T.Float32BufferAttribute(v,3));
+      g.setAttribute("uv", new T.Float32BufferAttribute(uv,2));
+      g.computeVertexNormals();
+      canvas.side = T.DoubleSide;
+      var m = new T.Mesh(g, canvas);
+      m.castShadow = true; m.receiveShadow = true;
+      gGarden.add(m);
+      /* a scalloped valance along both eaves - the detail that stops the
+         canopy reading as a folded sheet of card */
+      [z0, z1].forEach(function(zz){
+        addBox(hw*2, 0.22, 0.02, tx, eave-0.11, zz, canvas, gGarden, {cast:false});
+      });
+    })();
+
+    /* table tennis, and the run-off it finally has */
+    fsolid(2.74, 0.06, 1.52, tx, 0.84, tz, M(0x1c5e3a,{r:0.75}), gGarden);
+    addBox(2.78, 0.02, 0.03, tx, 0.88, tz, MAT.white, gGarden, {});
+    addBox(0.03, 0.02, 1.56, tx, 0.88, tz, MAT.white, gGarden, {});
+    addBox(0.02, 0.16, 1.80, tx, 0.95, tz, MAT.white, gGarden, {});
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(s){
+      addBox(0.07,0.72,0.07, tx+s[0]*1.25, 0.46, tz+s[1]*0.66, MAT.black, gGarden, {});
+    });
+    /* two chairs and a drinks table at the end of the tent */
+    armchair(tx-2.05, tz+1.25, 0.08, 1, gGarden);
+    armchair(tx+2.05, tz+1.25, 0.08, 3, gGarden);
+    var tl = addCyl(0.14,0.07,0.16, tx, ridge-0.16, tz, MAT.lamp, gGarden, 12); tl.castShadow = false;
+  })();
+
   /* ---------- outdoor kitchen, east of the pergola ---------- */
   (function(){
     var kx = 2.60, kz = 7.90;
@@ -458,22 +481,24 @@ CTAG = "garden";
     /* three fruit trees, spaced so they will not shade the beds at 4 pm */
     tree(4.90, GZ1-1.00, 0.72);
     tree(7.30, GZ1-2.60, 0.66);
-    tree(-8.30, GZ1-3.40, 0.70);
+    tree(-1.90, GZ1-0.85, 0.70);          /* moved clear of the games tent */
   })();
 
   /* ---------- planting: deep beds on three sides ---------- */
   flowerBed(-8.90, 7.10, -7.30, 9.40);
   flowerBed( 7.95, 8.20,  9.10, 11.60);
   flowerBed(-1.10, 13.30,  1.90, 14.35);
-  hedgeRun(-8.95, 12.10, -8.95, 14.60, 0.95);
+  hedgeRun(-8.95, 13.40, -8.95, 14.80, 0.95);
   hedgeRun(-2.60,  6.85,  0.90,  6.85, 0.70);
   hedgeRun( 3.40, 11.90,  6.40, 11.90, 0.80);
   palm(-8.20, 10.90, 5.6);
   palm( 8.70, 13.40, 6.1);
   palm(-1.80, 10.60, 6.6);
   palm( 5.60, 14.10, 5.9);
-  [[-3.60, 8.10],[-1.20, 7.30],[0.70, 9.90],[-6.90, 12.90],[6.90, 7.20],
-   [3.10, 13.10],[-4.20, 13.60],[8.60, 9.60]].forEach(function(p){
+  /* the two that used to stand at (-6.90, 12.90) and (-4.20, 13.60) are gone:
+     the games tent is on that ground now */
+  [[-3.60, 8.10],[-1.20, 7.30],[0.70, 9.90],[6.90, 7.20],
+   [3.10, 13.10],[8.60, 9.60],[-8.40, 9.90]].forEach(function(p){
     shrub(p[0], p[1], 0.85 + ((p[0]*7+p[1]*3)%5)/9);
   });
 
@@ -646,14 +671,14 @@ function netPanel(ax,az,bx,bz,y0,y1,mat,group,tile){
       var m = addBox(len,0.06,0.06,(ax+bx)/2, h, (az+bz)/2, MAT.steel, gSport, {cast:false});
       m.rotation.y = Math.atan2(-(bz-az), bx-ax);
     }
-    /* The games pavilion stands off the south-west corner and is there in both
-       options, so two of these runs have to stop short of it rather than pass
-       through its roof. On that stretch the pavilion wall is the ball stop. */
-    var PVE = PVX1 + 0.55;       /* clear of the pavilion eaves */
+    /* These used to stop short of the games pavilion, which stood off the
+       south-west corner and was present in both options. The pavilion is gone
+       - it is a tent in the garden now, and the garden is the thing this court
+       replaces - so the netting finally runs the full way round. */
     run(nx0,nz1,nx1,nz1,3.0);          /* rear - the 2.4 m boundary wall is behind it */
-    run(nx0,nz0+0.45,nx0,nz1,4.0);     /* west, starting behind the pavilion */
+    run(nx0,nz0,nx0,nz1,4.0);          /* west */
     run(nx1,nz0,nx1,nz1,4.0);          /* east */
-    run(PVE,nz0,nx1,nz0,2.6);          /* house side, east of the pavilion */
+    run(nx0,nz0,nx1,nz0,2.6);          /* house side */
   })();
 
   /* ---------- floodlights ---------- */
@@ -684,7 +709,11 @@ function netPanel(ax,az,bx,bz,y0,y1,mat,group,tile){
 
   /* ---------- courtside ---------- */
   /* benches east of the pavilion, which occupies the west end of this strip */
-  [-0.40, 4.60].forEach(function(bx){
+  /* Pushed out to the flanks. They used to sit at x -0.40 and 4.60, which is
+     exactly where the rear terrace and its dining table now are - and the
+     terrace is present in both options, so they would have been standing in
+     each other in court mode. */
+  [-3.90, 6.90].forEach(function(bx){
     addBox(1.90,0.09,0.42, bx, 0.50, z0-1.15, MAT.wood, gSport, {solid:true});
     addBox(1.90,0.09,0.40, bx, 0.86, z0-1.42, MAT.wood, gSport, {cast:false});
     [-0.82,0.82].forEach(function(d){

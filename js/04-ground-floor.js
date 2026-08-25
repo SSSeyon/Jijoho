@@ -13,9 +13,9 @@ addBox(HW+0.36, GF, HD+0.36, hx(HW/2), GF/2, hz(HD/2), MAT.stone, gGF, {});
 addCollider(hx(0), hx(HW), hz(0), hz(HD), 0, GF);
 slab(hx(0),hz(0),hx(HW),hz(HD), GF, 0.12, MAT.tileF, gGF, {cast:false});
 /* porch / terrace slab in front */
-addBox(11.50, GF, 1.80, hx(6.75), GF/2, hz(-0.90), MAT.stone, gGF, {});
-addCollider(hx(1.0), hx(12.5), hz(-1.80), hz(0), 0, GF);
-slab(hx(1.0),hz(-1.80),hx(12.5),hz(0), GF, 0.10, MAT.paverWarm, gGF, {cast:false});
+addBox(12.35, GF, 2.20, hx(6.75), GF/2, hz(-1.10), MAT.stone, gGF, {});
+addCollider(hx(0.6), hx(12.95), hz(-2.20), hz(0), 0, GF);
+slab(hx(0.6),hz(-2.20),hx(12.95),hz(0), GF, 0.10, MAT.paverWarm, gGF, {cast:false});
 
 /* ---------- plinth band ----------
    The 600 mm raised plinth used to meet the wall in a single flush plane, so
@@ -46,7 +46,7 @@ slab(hx(1.0),hz(-1.80),hx(12.5),hz(0), GF, 0.10, MAT.paverWarm, gGF, {cast:false
 [[0.0,0.0,5.0,11.5],[5.0,0.0,6.5,2.60],[5.0,7.36,6.5,11.5],[6.5,0.0,13.55,11.5]].forEach(function(r){
   addBox(r[2]-r[0]-0.02, 0.04, r[3]-r[1]-0.02, hx((r[0]+r[2])/2), GF+CH-0.02, hz((r[1]+r[3])/2), MAT.ceiling, gFF, {cast:false});
 });
-addBox(11.5, 0.04, 1.80, hx(6.75), GF+CH-0.02, hz(-0.90), MAT.ceiling, gFF, {cast:false});
+addBox(12.35, 0.04, 2.20, hx(6.75), GF+CH-0.02, hz(-1.10), MAT.ceiling, gFF, {cast:false});
 /* both live in the first-floor group so "Upper floor off" lifts the ceiling too */
 /* entrance steps - 400 mm treads, deep enough to stand on */
 (function(){
