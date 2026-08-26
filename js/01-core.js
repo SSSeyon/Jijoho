@@ -218,6 +218,29 @@ function setSky(h, doEnv){
   /* a low sun also grazes surfaces, which is exactly when shadow acne shows */
   sun.shadow.normalBias = 0.022 + (1 - Math.max(0,e)) * 0.028;
 
+  /* ---- lamps ----
+     Every fitting in the model - interior, exterior, the new run on the
+     outside of the boundary wall - shares MAT.lamp, so the whole compound
+     switches on the sun going down from this one line. It used to sit at a
+     fixed emissive of 0.9, which meant the lamps were lit at midday: not
+     merely wrong, but the thing that made a dusk render look ordinary,
+     because nothing came ON.
+     On at 19:00, off at 06:00, with a few minutes of ramp at each end so
+     dragging the slider does not snap. Sunset here is about 18:36, so 19:00
+     is genuinely dark - which is the point: they are wanted after dark, not
+     at dusk. The residual 0.05 by day is the fitting's own pale lens, not
+     light: a switched-off lamp is still a light-coloured object. */
+  var lf;
+  if(h >= 18.75)     lf = Math.min(1, (h - 18.75) / 0.25);
+  else if(h <= 5.90) lf = 1;
+  else if(h <= 6.15) lf = Math.max(0, (6.15 - h) / 0.25);
+  else               lf = 0;
+  if(typeof MAT !== "undefined"){
+    if(MAT.lamp) MAT.lamp.emissiveIntensity = 0.05 + 1.55 * lf;
+    if(MAT.led)  MAT.led.emissiveIntensity  = 0.30 + 1.30 * lf;
+    if(MAT.wash){ MAT.wash.opacity = 0.95 * lf; MAT.wash.visible = lf > 0.01; }
+  }
+
   DAYENV = p.env;
   if(doEnv !== false && typeof buildEnv === "function") buildEnv();
   if(typeof envDim === "function") envDim(DAYENV);
@@ -874,6 +897,37 @@ var MAT = {
   grille    : M(0xe8e6e0, {r:0.72, env:0.7}),
   led       : M(0x7fe0a8, {r:0.4, emis:0x3fd08a, ei:1.6})
 };
+
+/* ---------- wall wash ----------
+   An emissive fitting on its own does not read as a light that is ON. It reads
+   as a small bright object, because nothing around it changes. What sells it is
+   the pool the fitting throws on the wall behind it - and forty real point
+   lights to produce forty pools is not affordable, so this is a painted one: a
+   radial gradient on an additively-blended quad laid over the wall face.
+   Additive is what makes it behave like light rather than like a decal - it can
+   only brighten what is under it, so the wall texture still shows through. Its
+   opacity is driven from setSky() along with the lamps. */
+var WASHTEX = (function(){
+  var C = cv(128), g = C.x.createRadialGradient(64,64,1,64,64,63);
+  g.addColorStop(0.00, "rgba(255,228,182,1.00)");
+  g.addColorStop(0.30, "rgba(255,214,152,0.42)");
+  g.addColorStop(0.62, "rgba(255,201,132,0.13)");
+  g.addColorStop(1.00, "rgba(255,190,120,0.00)");
+  C.x.fillStyle = g; C.x.fillRect(0,0,128,128);
+  var t = new T.CanvasTexture(C.c);
+  t.encoding = T.sRGBEncoding;
+  return t;
+})();
+MAT.wash = new T.MeshBasicMaterial({
+  map: WASHTEX, transparent:true, opacity:0, depthWrite:false,
+  blending: T.AdditiveBlending, side: T.DoubleSide, toneMapped:false
+});
+MAT.wash.visible = false;
+/* rq is a count of quarter turns and, for wall-mounted things, the direction
+   the fitting faces. Read off the existing calls: the inside of the front wall
+   is rq 2 and throws into the compound (+z), the inside of the west wall is
+   rq 1 and throws +x. So: */
+var RQDIR = [[0,-1],[1,0],[0,1],[-1,0]];
 /* The ball-stop netting, the badminton net and the basketball net all went out
    with the sports court. NETTEX, MAT.netting, MAT.netWhite and MAT.netFine
    went with them - nothing else in the model used a net. */

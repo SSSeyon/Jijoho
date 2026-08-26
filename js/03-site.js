@@ -450,9 +450,28 @@ function preparePlant(node){
 }
 MODELS.load("trees.glb", function(gltf){
   gltf.scene.updateMatrixWorld(true);
+  /* The two tree models are baked much lighter and yellower than everything
+     else planted here: sampling their leaf maps gives an average of #84983a
+     against the bush's #4a5d15. Side by side the trees read as a different,
+     slightly sickly species rather than as the same garden, and at small sizes
+     the pale canopy on a bare pale stem reads as dead.
+     Tinting is the right lever rather than swapping the texture: multiplying
+     through material.color keeps every leaf's own variation and only moves the
+     overall cast. The factors below land the leaves at about #53661b - a shade
+     lighter than the bushes, which is what a tree should be - and take the
+     bark from grey #776e6e to a brown that does not flare white in sunlight. */
   ["tree4","tree6"].forEach(function(nm){
     var n = gltf.scene.getObjectByName(nm);
     if(n) PLANT_SRC[nm] = preparePlant(n.clone(true));
+  });
+  ["tree4","tree6"].forEach(function(nm){
+    if(!PLANT_SRC[nm]) return;
+    PLANT_SRC[nm].traverse(function(o){
+      if(!o.isMesh || !o.material) return;
+      var nmm = (o.material.name||"").toLowerCase();
+      if(nmm.indexOf("leaf") >= 0 || nmm.indexOf("leaves") >= 0) o.material.color.setHex(0xa0ab75);
+      else if(nmm.indexOf("bark") >= 0 || nmm.indexOf("trunk") >= 0) o.material.color.setHex(0xc9b6a4);
+    });
   });
   flushPlants();
 });
@@ -473,16 +492,23 @@ function placePlant(p){
   var u = src.userData;
   var k = p.h / u.h;
   var m = src.clone(true);
-  m.scale.setScalar(k);
-  m.position.set(p.x - u.cx*k, (p.y||0) - u.y0*k, p.z - u.cz*k);
-  m.rotation.y = p.rot;
+  /* There is one bush mesh in the file, so a bed of sixteen is the same
+     silhouette sixteen times and the eye picks that up immediately. Heading
+     alone does not break it up, because the bush is close to round in plan.
+     A little independent width and a degree or two of lean does, and costs
+     nothing: it is the same geometry with a different matrix. */
+  m.scale.set(k*(p.wx||1), k, k*(p.wz||1));
+  m.position.set(p.x - u.cx*k*(p.wx||1), (p.y||0) - u.y0*k, p.z - u.cz*k*(p.wz||1));
+  m.rotation.set(p.tlt?p.tlt[0]:0, p.rot, p.tlt?p.tlt[1]:0);
   (p.grp || gSite).add(m);
 }
-function plant(kind, x, z, h, grp, y){
+function plant(kind, x, z, h, grp, y, o){
   /* one hash, reused for species pick and heading, so a plant at a given spot
      always comes out the same way round however often the page is reloaded */
+  o = o||{};
   var seed = Math.abs(Math.sin(x*12.9898 + z*78.233) * 43758.5453);
-  var p = { k:kind, x:x, z:z, h:h, y:y||0, rot:(seed % 1)*Math.PI*2, grp:grp || (PGRP||gSite) };
+  var p = { k:kind, x:x, z:z, h:h, y:y||0, rot:(seed % 1)*Math.PI*2, grp:grp || (PGRP||gSite),
+            wx:o.wx, wz:o.wz, tlt:o.tlt };
   if(PLANT_SRC[kind]) placePlant(p); else PLANT_QUEUE.push(p);
   return seed;
 }
@@ -584,8 +610,14 @@ function flowerBed(x0,z0,x1,z1){
     var u = Math.max(nx>1 ? Math.abs(px-cx)/(w/2) : 0,
                      nz>1 ? Math.abs(pz-cz)/(d/2) : 0);
     var h = 0.50 * (1 - 0.42*u*u) * (0.90 + r()*0.22);
+    /* Let the outer rank sit over the kerb. Planting held strictly inside the
+       rectangle gives a ruled line where the soil meets the stone, which is
+       the one thing that still said "box of shrubs" rather than "bed". */
+    if(nx>1 && (ix===0 || ix===nx-1)) px += (ix?1:-1)*(0.05 + r()*0.05);
+    if(nz>1 && (iz===0 || iz===nz-1)) pz += (iz?1:-1)*(0.05 + r()*0.05);
     /* set into the soil rather than balanced on it */
-    plant("bush", px, pz, h, G, soil - h*0.10);
+    plant("bush", px, pz, h, G, soil - h*0.10,
+          { wx:0.86+r()*0.30, wz:0.86+r()*0.30, tlt:[(r()-0.5)*0.13, (r()-0.5)*0.13] });
 
     /* Flower heads: 50-85 mm across, several to a plant, sitting DOWN in the
        upper half of the foliage. The first attempt put two or three 150 mm
@@ -597,10 +629,34 @@ function flowerBed(x0,z0,x1,z1){
       var bm = r()<0.80 ? main : alt;
       for(var b=0;b<nb;b++){
         var a=r()*Math.PI*2, rr=h*(0.10 + r()*0.28);
-        addSphere(0.026 + r()*0.016,
+        var fh = addSphere(0.026 + r()*0.016,
                   px+Math.cos(a)*rr, soil + h*(0.55 + r()*0.25), pz+Math.sin(a)*rr,
                   bm, G, {seg:7});
+        /* squashed, because a flower head is a disc of petals seen from above
+           and a true sphere at this size reads as a berry */
+        fh.scale.y = 0.58 + r()*0.18;
       }
+    }
+  }
+
+  /* One accent plant standing above the mass, where the bed is deep enough to
+     carry it. A bed of one species at one height is a block of green.
+     This is the bush again at roughly twice the height of its neighbours, NOT
+     one of the tree models: tried both of those at 1.2 m and they read as
+     lollipops - a pale canopy on a bare stem, several shades lighter than the
+     bush foliage they were meant to rise out of. They look right at 5 m and
+     wrong at 1.2 m. Skipped on the 650 mm front strip. */
+  if(Math.min(w,d) >= 1.0){
+    var sxp = cx + (r()-0.5)*w*0.36, szp = cz + (r()-0.5)*d*0.36;
+    var sh  = 0.82 + r()*0.14;
+    plant("bush", sxp, szp, sh, G, soil - sh*0.08,
+          { wx:0.80+r()*0.16, wz:0.80+r()*0.16, tlt:[(r()-0.5)*0.10,(r()-0.5)*0.10] });
+    for(var s=0;s<5;s++){
+      var sa=r()*Math.PI*2, sr=sh*(0.08+r()*0.24);
+      var sfh = addSphere(0.028 + r()*0.016,
+                          sxp+Math.cos(sa)*sr, soil + sh*(0.55 + r()*0.28), szp+Math.sin(sa)*sr,
+                          main, G, {seg:7});
+      sfh.scale.y = 0.58 + r()*0.18;
     }
   }
   addCollider(cx-w/2-KB, cx+w/2+KB, cz-d/2-KB, cz+d/2+KB, 0, 0.55);
@@ -735,6 +791,27 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
   extLight(4.80, hz(HD)+0.16, Y+0.35, 2, gSite);
   /* and one on each carport pier, aimed down the driveway */
   [-9.20, -1.35].forEach(function(x){ extLight(x, -16.20, Y, 2, gSite); });
+
+  /* ---- the OUTSIDE face of the boundary wall ----
+     Everything above lights the compound from within its own wall, which does
+     nothing for the street: from outside, the plot went dark at the wall line.
+     This run is mounted on the outer face at the same 2.10 m.
+     It is denser on the frontage, where it lights the approach and the gate,
+     and sparse down the flanks and across the rear, which face neighbours
+     rather than a road - lighting those at full spacing would be paying to
+     floodlight someone else's yard. Worth knowing it is not free: about
+     thirty bulkheads at 12 W is a further 360 W on the generator, all of it
+     drawn through the hours the generator is least likely to be running. */
+  [-9.30, -6.60, -3.90, -1.20, 1.60, 4.20, 6.80, 9.20].forEach(function(x){
+    extLight(x, Z0-0.13, Y, 0, gSite);
+  });
+  [-11.60, -5.20, 1.20, 7.60, 13.90].forEach(function(z){
+    extLight(X0-0.13, z, Y, 3, gSite);
+    extLight(X1+0.13, z, Y, 1, gSite);
+  });
+  [-6.40, 1.20, 8.60].forEach(function(x){
+    extLight(x, Z1+0.13, Y, 2, gSite);
+  });
 })();
 
 /* ---------- the solar array now sits on the main roof, in part 5 ---------- */

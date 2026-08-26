@@ -377,10 +377,23 @@ function picLight(cx,cz,y,w,rq,g){
 function extLight(cx,cz,y,rq,g){
   var D = dims(rq,0.11,0.09);
   fbox(D[0],0.26,D[1], cx, y, cz, MAT.accent, g);
-  var up   = addCyl(0.045,0.045,0.015, cx, y+0.135, cz, MAT.lamp, g, 10, {furn:true});
-  var down = addCyl(0.045,0.045,0.015, cx, y-0.135, cz, MAT.lamp, g, 10, {furn:true});
+  /* NOT furn:true. These were tagged as furniture, which had two consequences:
+     the "Empty" toggle - meant to strip the house back to shell and finishes -
+     switched off every exterior light in the compound, and each disc was held
+     out of the merge for the privilege. A bulkhead screwed to a boundary wall
+     is not furniture. */
+  var up   = addCyl(0.045,0.045,0.015, cx, y+0.135, cz, MAT.lamp, g, 10);
+  var down = addCyl(0.045,0.045,0.015, cx, y-0.135, cz, MAT.lamp, g, 10);
   up.castShadow = false; down.castShadow = false;
 
+  /* the pool this throws on the wall behind it, sitting just proud of the wall
+     face so it passes the depth test; see MAT.wash */
+  var dir = RQDIR[rq % 4];
+  var q = new T.Mesh(new T.PlaneGeometry(0.62, 1.85), MAT.wash);
+  q.position.set(cx - dir[0]*0.006, y, cz - dir[1]*0.006);
+  if(dir[0] !== 0) q.rotation.y = Math.PI/2;
+  q.castShadow = false; q.receiveShadow = false;
+  g.add(q);
 }
 function door(cx,cz,w,rq,g,y){
   // an open leaf, hinged flat against the wall

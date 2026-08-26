@@ -177,8 +177,13 @@ artwork(hx(7.75), hz(10.10), FF+1.70, 1.1, 0.8, 2, gFF);
 [[7.4,1.2],[7.4,3.6],[7.4,6.0],[6.6,8.6],[7.9,9.4]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
 /* stairwell head - glazed clerestory borrowing light into the corridor */
 addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
-/* void balustrade, north edge of the stairwell where the flight arrives */
-rail(hx(5.0), hz(7.36), hx(6.5), hz(7.36), FF, gFF);
+/* No balustrade across v = 7.36. There used to be one, described in the code
+   as guarding "the north edge of the stairwell where the flight arrives" -
+   which is the contradiction: the edge where a flight arrives is a doorway,
+   not a drop, and rail() puts a solid 1.05 m collider across its whole span.
+   It sealed the top of the stairs, so the first floor could only be reached by
+   teleporting to it. The void's other three edges (u = 5.0, u = 6.5, v = 2.60)
+   are all closed by real walls, so nothing here is unguarded. */
 
 /* --- master bedroom  (u 0..8.3, v 10.2..13.9  =  30.7 m2) ---
    The brief asked for a much bigger master and this is where the extra floor
