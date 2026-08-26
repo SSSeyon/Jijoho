@@ -49,8 +49,29 @@ function onPlinth(w,h,d,cx,cy,cz,mat,g,inset,lift){
   return fsolid(w, h-lift, d, cx, cy+lift+(h-lift)/2, cz, mat, g);
 }
 
-/* ---- bed: w x d footprint, headboard at local -Z ---- */
+/* ---- bed ----
+   The beds and their side tables are downloaded .glb models now, for the same
+   reason the cars and the trees are: an upholstered platform bed with a
+   tailored headboard is a shape procedural boxes get about 70% of the way to
+   and then stop.
+
+   The box version below is still built, still correct, and still what you see
+   on a slow connection or if the download fails - it goes up immediately in a
+   noMerge group, and the group is thrown away the moment the real model lands.
+   That is the whole trick: no loading gap, no empty bedrooms, and no reliance
+   on a network request succeeding for the room to make sense. */
+var BEDQ = [];
 function bed(cx,cz,y,w,d,rq,g,linenMat){
+  var grp = new T.Group();
+  grp.userData.noMerge = true;             /* so it can still be removed later */
+  g.add(grp);
+  bedProc(cx,cz,y,w,d,rq,grp,linenMat);
+  BEDQ.push({cx:cx, cz:cz, y:y, w:w, d:d, rq:rq, g:g, proc:grp});
+  planFurn("bed", cx, cz, w, d + 0.14, rq, y);
+}
+
+/* ---- procedural bed: w x d footprint, headboard at local -Z ---- */
+function bedProc(cx,cz,y,w,d,rq,g,linenMat){
   /* Low platform base, inset so the mattress oversails it on all four sides,
      and a slim upholstered headboard hung clear of the floor. Both in the same
      family as the walls - the reference has no dark timber anywhere. */
@@ -91,7 +112,136 @@ function bed(cx,cz,y,w,d,rq,g,linenMat){
     onPlinth(sd2[0],0.42,sd2[1], s2[0], y, s2[1], MAT.joinery, g, 0.045, 0.06);
     addCyl(0.09,0.115,0.22, s2[0], y+0.53, s2[1], MAT.lamp, g, 10, {furn:true});
   }
-  planFurn("bed", cx, cz, w, d + 0.14, rq, y);
+}
+
+/* ---------- the real beds ----------
+   Both models are normalised exactly the way the vehicles are: measure the
+   bounding box that actually arrived, work out which horizontal axis is the
+   long one, spin it so that axis runs the way the room wants it, then scale
+   uniformly until the WIDTH matches the bed size the plan was drawn to. It is
+   scaled on width rather than a fixed factor so a 1.60 m bed and a 1.80 m bed
+   come out at their real sizes from the same file, and so the swing-clash
+   check and the 2D plans stay honest about what is in the room.
+
+   Uniform scale matters: the alternative - stretching one axis to hit both the
+   width and the length - is what makes downloaded furniture look subtly wrong
+   without anyone being able to say why. If a 1.80 x 2.05 m bed comes out
+   40 mm long, that is the right kind of error. */
+function placeBeds(){
+  if(!BEDQ.length || !MODELS.ok) return;
+
+  function loaded(file, onEach){
+    MODELS.load(file, function(gl){
+      var src = gl.scene || gl.scenes[0];
+      src.traverse(function(o){
+        if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; }
+      });
+      onEach(src);
+    });
+  }
+
+  /* headboard end of a .glb is not knowable from the file, so both models are
+     placed by their bounding box and then turned to face the way the plan
+     says. Anything that comes out backwards is fixed with FLIP below rather
+     than by editing the asset. */
+  var FLIP_BED  = 0;                       /* extra quarter turns, bed */
+  var FLIP_SIDE = 0;                       /* extra quarter turns, side table */
+
+  /* longAlongZ says which way the piece's long horizontal axis should end up
+     pointing in the group's own coordinates; "on" says which measurement the
+     target refers to - "short" for the bed, whose short axis IS the bed size,
+     and "height" for the side table, where the widest thing in the bounding
+     box is the lampshade and scaling off it would give a comically small
+     table. The group returned is sitting on y = 0 and centred in plan, and
+     carries its measured size on userData.size. */
+  function fit(src, target, longAlongZ, on){
+    var inst = src.clone(true);
+    var b = new T.Box3().setFromObject(inst);
+    var s = b.getSize(new T.Vector3());
+    /* which horizontal axis is the long one, as authored */
+    var longIsZ = s.z >= s.x;
+    var wrap = new T.Group();
+    if(longIsZ !== longAlongZ){ inst.rotation.y = Math.PI/2; }
+    wrap.add(inst);
+    /* re-measure after the turn, then scale on whichever axis was asked for */
+    var b2 = new T.Box3().setFromObject(wrap);
+    var s2 = b2.getSize(new T.Vector3());
+    var ref = (on === "height") ? s2.y : (longAlongZ ? s2.x : s2.z);
+    var k = target / Math.max(ref, 1e-6);
+    wrap.scale.setScalar(k);
+    /* sit it on the floor and centre it on the origin in plan */
+    var b3 = new T.Box3().setFromObject(wrap);
+    var c3 = b3.getCenter(new T.Vector3());
+    inst.position.x -= c3.x / k;
+    inst.position.z -= c3.z / k;
+    inst.position.y -= b3.min.y / k;
+    wrap.userData.size = s2.multiplyScalar(k);
+    return wrap;
+  }
+
+  /* the box stand-in has done its job. Called from whichever model lands
+     first, so a half-successful download never leaves two beds in one room. */
+  function dropProc(q){
+    if(!q.proc) return;
+    q.proc.traverse(function(o){
+      var ix = FURN.indexOf(o); if(ix >= 0) FURN.splice(ix,1);
+    });
+    q.g.remove(q.proc);
+    q.proc = null;
+  }
+
+  loaded("bed.glb", function(src){
+    for(var i=0; i<BEDQ.length; i++){
+      var q = BEDQ[i];
+      dropProc(q);
+      /* rq 0 and 2 lay the bed along z; 1 and 3 lay it along x */
+      /* built in the bed's own frame - length along local Z, head at -Z, the
+         same convention bedProc() uses - and then turned by rq. Note the sign:
+         rot() above turns local -Z to +X for rq = 1, and three.js rotation.y
+         turns it to -X, so the quarter turns go the other way round here. */
+      var m = fit(src, q.w, true, "short");
+      /* Uniform scale means matching the width leaves the length wherever the
+         model's own proportions put it - 1.95 m for a 2.05 m bed, 1.73 for a
+         2.00. Rather than distort it, slide it back so the HEADBOARD lands on
+         the plan's head line. That is the edge that has to be right: it is the
+         one against the wall, and it is what the side tables line up with. */
+      var len = m.userData.size.z;
+      m.children[0].position.z -= (q.d - len) / (2 * m.scale.z);
+      m.position.set(q.cx, q.y, q.cz);
+      m.rotation.y = -(q.rq + FLIP_BED) * Math.PI/2;
+      q.g.add(m);
+      FURN.push(m);
+    }
+  });
+
+  loaded("bedside.glb", function(src){
+    for(var i=0; i<BEDQ.length; i++){
+      var q = BEDQ[i];
+      dropProc(q);
+      /* A nightstand stands against the same wall the headboard does, so its
+         LONG axis runs parallel to the bed's width - local X - and its short
+         one runs away from the wall. Getting that round the wrong way is what
+         drove the first attempt 95 mm into the external wall.
+
+         Scaled on height, not on plan: the widest thing in this model's
+         bounding box is the lampshade, and normalising a bedside table on the
+         width of its lamp gives you a doll's-house table with a table lamp the
+         size of a floor lamp on it. 0.95 m overall puts the top at about
+         0.52 m, which is where it belongs beside a 0.55 m mattress. */
+      var t0 = fit(src, 0.95, false, "height");
+      var td = t0.userData.size.z;             /* depth away from the wall */
+      var off = [-q.w/2 - 0.41];
+      if(q.w > 1.3) off.push(q.w/2 + 0.41);
+      for(var j=0; j<off.length; j++){
+        var t = (j === 0) ? t0 : fit(src, 0.95, false, "height");
+        var p = place(q.rq, q.cx, q.cz, off[j], -q.d/2 + td/2);
+        t.position.set(p[0], q.y, p[1]);
+        t.rotation.y = -(q.rq + FLIP_SIDE) * Math.PI/2;
+        q.g.add(t);
+        FURN.push(t);
+      }
+    }
+  });
 }
 
 /* ---- sofa: back at local -Z ----
@@ -213,7 +363,13 @@ function desk(cx,cz,y,w,rq,g){
   fbox(0.04,0.73,0.04,cx-(D[0]/2-0.07),y+0.365,cz+(D[1]/2-0.07),MAT.steel,g);
   fbox(0.04,0.73,0.04,cx+(D[0]/2-0.07),y+0.365,cz+(D[1]/2-0.07),MAT.steel,g);
   fbox(0.5,0.32,0.02,cx,y+0.955,cz-0.09,MAT.carGlass,g);
-  chair(cx,cz+0.58,y,rq,g);
+  /* The chair used to be placed at cz + 0.58 whatever way the desk faced, and
+     turned to face the same way the desk did. So on the two desks that stand
+     against a side wall it sat beside the desk rather than at it, and on all
+     of them it had its back to the work surface. In front of the desk, turned
+     to face it. */
+  var cp = place(rq,cx,cz,0,0.58);
+  chair(cp[0],cp[1],y,(rq+2)%4,g);
   planFurn("desk", cx, cz, w, 0.58, rq, y);
 }
 /* ---- cantilever chair ----

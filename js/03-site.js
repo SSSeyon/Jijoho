@@ -183,16 +183,20 @@ addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gSite, {});
   /* three tapered beams, root to tip. Each is a box tilted a fraction of a
      degree so the underside falls away from the wall - the taper is what stops
      a 6.5 m overhang reading as a floating slab. */
+  /* The canopy - beams, deck, fascias and the lights slung under it - lives in
+     gRoofSite, so "Roof off" takes the carport's lid off along with the
+     house's. The two piers below stay: they are the wall's own structure and
+     what is left standing tells you where the canopy was. */
   [cx0+0.55, (cx0+cx1)/2, cx1-0.55].forEach(function(bx){
-    var b = addBox(0.22, 0.44, d+0.30, bx, cy-0.20, (cz0+cz1)/2, MAT.accent, gSite, {});
+    var b = addBox(0.22, 0.44, d+0.30, bx, cy-0.20, (cz0+cz1)/2, MAT.accent, gRoofSite, {});
     b.rotation.x = -0.019;                    /* ~35 mm of fall over 6.5 m */
   });
   /* the deck itself, thin because the beams carry it */
-  addBox(w+0.5, 0.09, d+0.5, (cx0+cx1)/2, cy+0.06, (cz0+cz1)/2, MAT.accent, gSite, {});
-  addBox(w+0.3, 0.07, d+0.3, (cx0+cx1)/2, cy+0.14, (cz0+cz1)/2, MAT.fascia, gSite, {});
+  addBox(w+0.5, 0.09, d+0.5, (cx0+cx1)/2, cy+0.06, (cz0+cz1)/2, MAT.accent, gRoofSite, {});
+  addBox(w+0.3, 0.07, d+0.3, (cx0+cx1)/2, cy+0.14, (cz0+cz1)/2, MAT.fascia, gRoofSite, {});
   /* a deeper fascia at the free end - the tip of a cantilever is where the eye
      looks for reassurance, and a blade edge there looks wrong */
-  addBox(w+0.5, 0.26, 0.10, (cx0+cx1)/2, cy-0.03, cz1+0.25, MAT.fascia, gSite, {});
+  addBox(w+0.5, 0.26, 0.10, (cx0+cx1)/2, cy-0.03, cz1+0.25, MAT.fascia, gRoofSite, {});
 
   /* the two piers, in the plane of the boundary wall */
   [cx0+0.2, cx1-0.2].forEach(function(px){
@@ -202,7 +206,7 @@ addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gSite, {});
   /* lights under the deck, one over each bay plus one at the open end so you
      are not reversing into a dark hole */
   [[-7.76,-15.4],[-5.07,-15.4],[-2.58,-15.4],[-5.07,-11.0]].forEach(function(p){
-    var m=addCyl(0.09,0.09,0.04,p[0],cy-0.44,p[1],MAT.lamp,gSite,12); m.castShadow=false;
+    var m=addCyl(0.09,0.09,0.04,p[0],cy-0.44,p[1],MAT.lamp,gRoofSite,12); m.castShadow=false;
   });
 })();
 
@@ -725,7 +729,8 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
      a glance: a full-height louvred intake, an exhaust stack up past the roof
      line, and an acoustic lining you can see inside the vent. */
   addBox(2.60,2.35,1.40, -4.90, 1.175, 15.80, MAT.wallExt, gSite, {solid:true});
-  hipRoof(-6.20,15.10,-3.60,16.50, 2.35, 0.50, 0.28, MAT.roof, gSite);
+  /* the pitched roof goes in gRoofSite so "Roof off" lifts it too */
+  hipRoof(-6.20,15.10,-3.60,16.50, 2.35, 0.50, 0.28, MAT.roof, gRoofSite);
   /* louvred intake across most of the front face */
   addBox(1.70,1.35,0.05, -4.90, 1.05, 15.08, MAT.black, gSite, {});
   for(var lv=0; lv<9; lv++){

@@ -191,6 +191,104 @@ if(typeof MODELS !== "undefined" && MODELS.whenReady){
 ].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
 /* The Courtside / Sports court / Basketball key zones went with the court. */
 
+/* ---------- room labels ----------
+   The room names were already in the model - zoneAt() has been reading them
+   off ZONES to fill the status bar since the first version. This just draws
+   them in the scene as well, which is the difference between "you are in the
+   study" and being able to see, at a glance from the dollhouse view, what
+   every room in the house is.
+
+   Three decisions worth writing down:
+
+   Sprites, not HTML overlays. A sprite is depth-tested against the model, so a
+   label behind a wall is hidden by that wall for free. An HTML label floats on
+   top of everything and would show you the master bedroom's name through the
+   roof - which is exactly the confusion the labels are meant to remove. It
+   also means the same objects work unchanged in the walkthrough and in the
+   dollhouse: the sprite turns to face whatever the camera is doing.
+
+   sizeAttenuation off, so a label is a constant size on screen rather than a
+   constant size in metres. Map labels behave this way for a reason: text sized
+   in metres is unreadable the moment you pull back far enough to see the whole
+   plan, which is precisely when you want to read it.
+
+   One label per NAME, not per zone. The family room is two rectangles because
+   it wraps the stairwell, and two identical names floating a metre apart reads
+   as a bug. The bigger rectangle wins and the label goes in the middle of it. */
+var gLabels = (function(){
+  var g = new T.Group();
+  g.userData.noMerge = true;         /* sprites cannot be merged anyway */
+  g.visible = false;
+  scene.add(g);
+
+  /* pick the largest rectangle for each distinct room name */
+  var byName = {};
+  for(var i=0; i<ZONES.length; i++){
+    var z = ZONES[i];
+    var a = (z.x1-z.x0) * (z.z1-z.z0);
+    if(!byName[z.n] || a > byName[z.n].a) byName[z.n] = {z:z, a:a};
+  }
+
+  var PAD = 14, FS = 44;             /* canvas pixels; the sprite is scaled */
+  function makeSprite(text){
+    var c = document.createElement("canvas");
+    var x = c.getContext("2d");
+    x.font = "600 " + FS + "px system-ui, Segoe UI, Helvetica, Arial, sans-serif";
+    var w = Math.ceil(x.measureText(text).width) + PAD*2;
+    var h = FS + PAD*2;
+    /* power-of-two is not required and the texture is never mipmapped, so the
+       canvas is sized to the text and nothing is wasted */
+    c.width = w; c.height = h;
+    x = c.getContext("2d");
+    x.font = "600 " + FS + "px system-ui, Segoe UI, Helvetica, Arial, sans-serif";
+    /* a soft dark pill behind the text, because a label has to read against
+       both a white ceiling and a dark rug and cannot be one flat colour */
+    x.fillStyle = "rgba(12,17,22,0.72)";
+    var r = h/2;
+    x.beginPath();
+    x.moveTo(r,0); x.lineTo(w-r,0); x.arc(w-r,r,r,-Math.PI/2,Math.PI/2);
+    x.lineTo(r,h); x.arc(r,r,r,Math.PI/2,-Math.PI/2); x.closePath(); x.fill();
+    x.strokeStyle = "rgba(255,255,255,0.20)"; x.lineWidth = 2; x.stroke();
+    x.fillStyle = "#f2f5f7";
+    x.textAlign = "center"; x.textBaseline = "middle";
+    x.fillText(text, w/2, h/2 + 2);
+
+    var t = new T.CanvasTexture(c);
+    t.minFilter = T.LinearFilter;
+    t.magFilter = T.LinearFilter;
+    t.generateMipmaps = false;
+    if(renderer.capabilities.getMaxAnisotropy)
+      t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+    var m = new T.Sprite(new T.SpriteMaterial({
+      map: t, transparent: true, depthTest: true, depthWrite: false,
+      sizeAttenuation: false, toneMapped: false
+    }));
+    var S = 0.030;                   /* fraction of the viewport, roughly */
+    m.scale.set(S * (w/h), S, 1);
+    m.renderOrder = 900;
+    return m;
+  }
+
+  Object.keys(byName).forEach(function(name){
+    var z = byName[name].z;
+    var s = makeSprite(name);
+    /* Head height inside, a little lower outside. Indoors 2.05 m clears every
+       wardrobe and door head in the building and still sits under the 3.00 m
+       ceiling; outdoors there is nothing to clear and a lower label sits
+       closer to the ground it is naming. */
+    var indoors = z.y > 0.3;
+    s.position.set((z.x0+z.x1)/2, z.y + (indoors ? 2.05 : 1.90), (z.z0+z.z1)/2);
+    g.add(s);
+  });
+  return g;
+})();
+
+document.getElementById("btnLabels").onclick = function(){
+  var on = !this.classList.contains("on");
+  this.classList.toggle("on", on);
+  gLabels.visible = on;
+};
+
 function zoneAt(x,z,y){
   var best=null;
   for(var i=0;i<ZONES.length;i++){
@@ -255,6 +353,7 @@ document.addEventListener("keydown", function(e){
   if(e.code==="KeyV"){ setMode(mode==="walk"?"orbit":"walk"); }
   if(e.code==="KeyG"){ setGlass(MAT.glass.transmission > 0 ? false : true); }
   if(e.code==="KeyR"){ toggleBtn("btnRoof"); }
+  if(e.code==="KeyL"){ toggleBtn("btnLabels"); }
   if(e.code==="KeyF"){ toggleBtn("btnFloor"); }
   if(e.code==="Escape" && document.getElementById("planPanel").classList.contains("open")) closePlans();
   if(e.code==="Escape" && document.getElementById("infoPanel").classList.contains("open")) closeInfo();
@@ -540,7 +639,7 @@ function setMode(m){
     ? "move · look & zoom" : "pan · orbit & zoom";
   fov = FOV0; camera.fov = fov; camera.updateProjectionMatrix();
   if(m==="orbit" && locked) document.exitPointerLock();
-  if(m==="walk"){ gRoof.visible=true; gFF.visible=true;
+  if(m==="walk"){ setRoofs(true); gFF.visible=true;
     document.getElementById("btnRoof").classList.remove("on");
     document.getElementById("btnFloor").classList.remove("on"); }
 }
@@ -550,13 +649,13 @@ document.getElementById("btnOrbit").onclick = function(){ setMode("orbit"); };
 document.getElementById("btnRoof").onclick = function(){
   var on = !this.classList.contains("on");
   this.classList.toggle("on", on);
-  gRoof.visible = !on;
+  setRoofs(!on);
 };
 document.getElementById("btnFloor").onclick = function(){
   var on = !this.classList.contains("on");
   this.classList.toggle("on", on);
   gFF.visible = !on;
-  if(on){ gRoof.visible=false; document.getElementById("btnRoof").classList.add("on"); }
+  if(on){ setRoofs(false); document.getElementById("btnRoof").classList.add("on"); }
 };
 document.getElementById("btnFurn").onclick = function(){
   var on = !this.classList.contains("on");
@@ -824,20 +923,23 @@ var SPOTS = [
   ["Guest bedroom",                    3.52, GF,    -4.14, -Math.PI/2],
   ["Rear lobby / breakfast",           0.62, GF,     1.26, 0],
   ["Foot of the stairs",               0.62, GF,    -3.84, Math.PI],
-  ["Family room",                     -5.88, FF,    -6.34, -Math.PI/2],
+  /* Every first-floor viewpoint below was re-set when the floor was replanned.
+     Each one stands in the corner furthest from the room's main piece of
+     furniture and looks diagonally at it, which is the view that shows a room
+     rather than a wall. */
+  ["Family room",                     -1.28, FF,    -6.04, 2.06],
   ["Front balcony",                    1.12, FF,    -8.34, Math.PI],
-  ["Study / library",                 -3.27, FF,    -1.64, Math.PI/2],
+  ["Study / library",                 -2.88, FF,    -1.34, 1.44],
   ["Upstairs corridor",                0.72, FF,    -1.54, 0],
   ["Upstairs landing",                -0.38, FF,     1.46, 0],
-  /* Re-aimed. The bed has moved to the rear wall, so the view that shows the
-     room is the long diagonal across it rather than the axis west. */
-  ["Master bedroom",                   0.83, FF,     3.76, 1.99],
-  ["Walk-in closet",                  -2.87, FF,     0.86, 0],
-  ["Master bathroom",                 -5.78, FF,     1.16, Math.PI],
-  /* Was standing 0.9 m from the rear wall facing it, with the whole room and
-     the bed behind the camera. Turned round and moved into the corner. */
-  ["Bedroom 2",                        2.23, FF,     6.06, -0.80],
-  ["Bedroom 3",                        4.72, FF,    -6.64, 0],
+  ["Upstairs sitting area",           -0.18, FF,     3.16, Math.PI],
+  ["Master bedroom",                   2.33, FF,    -2.64, -0.98],
+  ["Walk-in closet",                   2.78, FF,    -1.64, Math.PI],
+  ["Master bathroom",                  5.18, FF,    -1.64, 2.85],
+  ["Bedroom 2",                        2.43, FF,     3.36, -2.44],
+  ["Bedroom 3",                       -2.48, FF,     3.56, 2.32],
+  ["Bedroom 3 bathroom",              -5.78, FF,     1.16, Math.PI],
+  ["Bedroom 3 walk-in",               -2.87, FF,     0.86, 0],
   ["Rear terrace (covered)",           3.16, 0,      5.56, 0],
   ["Rear lawn (looking at the house)",-1.68, 0,      8.72, Math.PI],
   /* garden viewpoints - only listed when the garden is up */

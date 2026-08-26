@@ -803,8 +803,22 @@ var PLANSVG = (function(){
 
     s += '<h2>Room schedule</h2>';
     s += '<p>Clear areas, wall thicknesses deducted &mdash; not the grid rectangle.</p>';
-    s += tbl(["Room","Level","Clear size (m)","Area (m²)"], ROOMS.map(function(r){
-      return [r.n, r.lvl, r.w.toFixed(2)+" × "+r.d.toFixed(2), r.area.toFixed(1)];
+    /* A room that is not a rectangle is more than one zone - the family room
+       wraps the stairwell and is two. Listing it twice would be arithmetic for
+       the reader to do, so the parts are added up here and the size column
+       says what shape it actually is. */
+    var seen = {}, rows = [];
+    ROOMS.forEach(function(r){
+      var k = r.lvl + "|" + r.n;
+      if(seen[k]){ seen[k].area += r.area; seen[k].parts++; return; }
+      seen[k] = { n:r.n, lvl:r.lvl, w:r.w, d:r.d, area:r.area, parts:1 };
+      rows.push(seen[k]);
+    });
+    s += tbl(["Room","Level","Clear size (m)","Area (m²)"], rows.map(function(r){
+      return [r.n, r.lvl,
+              r.parts > 1 ? "L-shaped, " + r.parts + " parts"
+                          : r.w.toFixed(2)+" × "+r.d.toFixed(2),
+              r.area.toFixed(1)];
     }));
 
     s += '<h2>Door schedule</h2>';

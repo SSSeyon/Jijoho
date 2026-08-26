@@ -97,83 +97,148 @@ hwall(0,0,HW,0,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:-1,openings:[
 hwall(0,UV1,HW,UV1,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:1,openings:[
   opH(1.2,3.6,0.90,2.45), opH(5.2,7.6,0.90,2.45), opH(9.6,12.4,0.90,2.45)
 ]});
+/* West wall openings follow the rooms behind them, and those rooms moved when
+   the master crossed the plan. The family room now runs back to v = 4.00, so
+   its window grew to 2.60 m; the study starts at v = 4.00 and its window
+   starts with it. The high-silled one at 7.60 lights bedroom 3's bathroom and
+   the last one is bedroom 3 itself. */
 hwall(0,0,0,UV1,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:-1,openings:[
-  opV(0.8,2.2,0.90,2.45), opV(3.4,6.2,0.90,2.45), opV(7.6,9.4,1.60,2.35), opV(10.8,13.2,0.90,2.45)
+  opV(0.8,3.4,0.90,2.45), opV(4.4,6.5,0.90,2.45), opV(7.6,9.4,1.60,2.35), opV(10.8,13.2,0.90,2.45)
 ]});
+/* East wall. The two high-silled bathroom windows moved with the bands they
+   light: the middle partition is at v = 5.25 now, and the old opening ran from
+   5.00 to 6.40, so it would have had a wall built through the middle of it -
+   half a window in the master bedroom and half in the bathroom. */
 hwall(HW,0,HW,UV1,{h:CH,t:EXT.t,mat:EXT.mat,y:FF,group:gFF,trim:1,openings:[
-  opV(1.2,3.6,0.90,2.45), opV(5.0,6.4,1.60,2.35), opV(7.4,8.8,1.60,2.35), opV(10.4,13.0,0.90,2.45)
+  opV(1.2,3.6,0.90,2.45), opV(5.6,6.9,1.60,2.35), opV(8.0,9.3,1.60,2.35), opV(10.4,13.0,0.90,2.45)
 ]});
 
 /* ---------- interior walls ----------
    The stairwell void is u 5.00-6.50, v 2.60-7.36, and it is what shapes this
    plan: it blocks the middle of the floor between the front rooms and the
    landing, so the corridor has to run east of it. */
+
+/* ---------- the first floor, replanned ----------
+   The master has crossed the plan to the entrance side and lost its width.
+
+   It used to be 8.11 x 3.51 m: the full width of the west side, out over the
+   rear cantilever, at the furthest possible point from the front door. Wide
+   and shallow is the worst proportion a bedroom can have - 8.11 m of wall
+   with a 1.80 m bed against it leaves 6 m of nothing, which is why it read as
+   a corridor with a bed at one end.
+
+   It is now 5.06 x 5.06 m, square, in the front-east corner. That corner is
+   the one place in the building where 5.06 falls out of the existing grid
+   without moving an exterior wall or the stair: u 8.30 to 13.55 measures
+   5.25 between grid lines, and 5.25 less half the 150 mm partition and half
+   the 230 mm external wall is 5.06 exactly. Matching the depth to it needed
+   one wall moved, from v = 4.60 to v = 5.25.
+
+   What that displaced, in order:
+     - bedroom 3 came out of the front-east corner and went to the rear-west
+       one the master vacated;
+     - the master's old bathroom and closet at v 7.00-10.20 became bedroom 3's,
+       unchanged, because they already sat right beside it;
+     - the east wing's three service bands each moved south by 650-700 mm to
+       keep their proportions, taking bedroom 2 from 4.51 to 3.85 m deep;
+     - the rear-west corner left over at u 5.00-8.30 became an open sitting
+       area at the head of the stairs, facing the rear windows;
+     - the family room absorbed the study's front 1.40 m and is now L-shaped
+       around the stairwell, 23.6 m2 gross against 16.9.
+
+   The study lost that 1.40 m of length, which is the reduction asked for: it
+   was 4.81 x 4.33 m and is now 4.81 x 2.85. It keeps its west window, both
+   long walls of shelving and the desk under the glass. What it no longer has
+   is a third of a room of circulation nobody was walking through.
+   ============================================================ */
+
+/* corridor spine and the stairwell, all unchanged - the stair below fixes
+   the void at u 5.00-6.50, v 2.60-7.36 and nothing here may touch it */
 hwall(6.5,0,6.5,7.36, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opV(0.9,1.8,0,2.20) ]});
-hwall(0,2.6,5.0,2.6,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(1.4,2.3,0,2.20) ]});
 hwall(5.0,2.6,5.0,7.36,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
 hwall(5.0,2.6,6.5,2.6, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+/* The wall at v = 2.60 across u 0-5.00 has gone. It was the family room's back
+   wall and taking it out is what makes the family room bigger: the room now
+   wraps the stairwell, running the full 6.50 m across the front and then 5.00
+   m back down the west side to the study door. */
+hwall(0,4.0,5.0,4.0,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(1.2,2.1,0,2.20) ]});
 hwall(0,7.0,5.0,7.0,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
 hwall(2.8,7.0,2.8,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(5.0,7.36,5.0,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(0,10.2,8.3,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
-  opH(0.8,1.7,0,2.20), opH(3.4,4.3,0,2.20), opH(5.6,6.5,0,2.20)
+/* runs all the way to the rear wall now, separating bedroom 3 from the
+   sitting area at the head of the stairs, with bedroom 3's door in it */
+hwall(5.0,7.36,5.0,UV1,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opV(10.6,11.5,0,2.20) ]});
+/* bedroom 3's two service doors, both off the bedroom itself */
+hwall(0,10.2,5.0,10.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
+  opH(0.8,1.7,0,2.20), opH(3.4,4.3,0,2.20)
 ]});
+/* corridor east wall. The middle door has gone: it used to open into the
+   linen store, and the room behind it is the master's walk-in closet now,
+   which is reached from the bedroom and from nowhere else. */
+/* Bedroom 2's door moved 1.00 m north as well. At v = 9.30-10.10 it straddled
+   the new partition at v = 9.90, which would have landed a wall in the middle
+   of a doorway. */
 hwall(8.3,0,8.3,UV1,  {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
-  opV(1.4,2.3,0,2.20), opV(5.2,6.1,0,2.20), opV(9.3,10.1,0,2.20)
+  opV(1.4,2.3,0,2.20), opV(10.3,11.1,0,2.20)
 ]});
-hwall(8.3,4.6,HW,4.6, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[ opH(11.5,12.4,0,2.20) ]});
-hwall(10.8,4.6,10.8,9.2,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(8.3,6.9,HW,6.9, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
-hwall(8.3,9.2,HW,9.2, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
+/* master's rear wall, moved from 4.60 to 5.25 - the one move that squares the
+   room. Two doors in it: closet on the left, bathroom on the right. */
+hwall(8.3,5.25,HW,5.25,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
+  opH(9.0,9.9,0,2.20), opH(11.5,12.4,0,2.20)
+]});
+hwall(10.8,5.25,10.8,9.9,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(8.3,7.65,HW,7.65,{h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF});
+hwall(8.3,9.9,HW,9.9, {h:CH,t:INT.t,mat:INT.mat,y:FF,group:gFF,openings:[
   opH(9.0,9.9,0,2.20), opH(11.6,12.5,0,2.20)
 ]});
 
 /* ============================================================
    FIRST FLOOR FURNITURE
    ============================================================ */
-/* --- family room  (u 0..6.5, v 0..2.6) ---
-   Sits directly behind the balcony doors, so in use the two read as one
-   17 + 30 m2 room with a glass wall in the middle of it. */
-/* This room is only 2.41 m deep inside, and it was carrying a 2.6 m sofa, an
-   armchair, a 1.2 m coffee table AND a TV unit across that depth. Measured
-   front to back the gaps came out at 145 mm between the sofa and the table and
-   335 mm between the table and the TV - not a room, a corridor with furniture
-   in it. The armchair has gone, the table is a small round one, and the two
-   pieces that have to face each other now have 1.13 m between them. */
-rugMat(hx(3.10), hz(1.30), FF, 3.8, 1.9, gFF);
-sofa(hx(3.05), hz(0.58), FF, 2.60, 0, gFF);
-coffeeTable(hx(3.10), hz(1.56), FF, 0.80, 0.80, gFF);
-tvUnit(hx(3.05), hz(2.32), FF, 1.90, 2, gFF);
-potPlant(hx(5.85), hz(1.90), FF, gFF, 1.0);
-[[1.3,0.7],[4.6,0.7],[1.3,2.1],[4.6,2.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
-wallLight(hx(0.20), hz(1.30), FF+1.95, 1, gFF);
+/* --- family room  (u 0..6.5, v 0..2.6  +  u 0..5.0, v 2.6..4.0  =  23.6 m2) ---
+   L-shaped now, wrapped round the stairwell. The old room was a 6.50 x 2.41 m
+   strip, and 2.41 m is not a depth you can put two facing pieces of furniture
+   in: the previous attempt had 1.13 m between the sofa and the television and
+   that was after an armchair had been deleted to get it.
+
+   Taking the wall at v = 2.60 out gives the room a second leg 5.00 m long
+   running back down the west side, and the seating has moved into it. Sofa
+   under the west window, screen on the stairwell wall opposite, 3.64 m apart,
+   with the front strip left open as the route from the stair to the balcony
+   doors - which is what a landing-side family room is actually used as. */
+rugMat(hx(2.65), hz(2.90), FF, 3.6, 2.3, gFF);
+sofa(hx(0.53), hz(2.90), FF, 2.00, 3, gFF);
+coffeeTable(hx(2.30), hz(2.90), FF, 0.95, 0.55, gFF);
+tvUnit(hx(4.76), hz(3.20), FF, 1.10, 1, gFF);
+armchair(hx(1.15), hz(1.05), FF, 0, gFF);
+potPlant(hx(5.90), hz(2.10), FF, gFF, 1.0);
+potPlant(hx(0.55), hz(0.60), FF, gFF, 0.9);
+[[1.3,0.7],[4.6,0.7],[1.3,2.4],[3.6,1.5],[2.6,3.5]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
 wallLight(hx(6.30), hz(1.30), FF+1.95, 3, gFF);
 ac(hx(5.90), hz(0.22), FF+2.55, 0, gFF);
 
-/* --- study / library  (u 0..5.0, v 2.6..7.0) ---
-   Entered from the family room, and deliberately a back room: no through
-   route passes it, which is the whole point of a room meant for reading.
-   Shelving on the two long walls, the desk under the west window. */
-bookshelf(hx(0.30), hz(3.60), FF, 1.7, 1, gFF);
-bookshelf(hx(0.30), hz(6.10), FF, 1.7, 1, gFF);
-bookshelf(hx(2.40), hz(6.88), FF, 2.6, 2, gFF);
-bookshelf(hx(4.70), hz(4.30), FF, 2.2, 3, gFF);
-desk(hx(1.55), hz(4.90), FF, 1.6, 1, gFF);
-chair(hx(2.35), hz(4.90), FF, 3, gFF);
-armchair(hx(3.65), hz(3.35), FF, 0, gFF);
-rugMat(hx(2.50), hz(4.60), FF, 2.6, 2.2, gFF, MAT.fabric2);
-potPlant(hx(4.55), hz(2.95), FF, gFF, 1.0);
-downlight(hx(1.4),hz(3.4),FF+CH,gFF); downlight(hx(3.8),hz(3.4),FF+CH,gFF);
-downlight(hx(1.4),hz(6.2),FF+CH,gFF); downlight(hx(3.8),hz(6.2),FF+CH,gFF);
-pendant(hx(2.50), hz(4.60), FF+CH, gFF, 0.95);
+/* --- study / library  (u 0..5.0, v 4.0..7.0  =  4.81 x 2.85 m) ---
+   1.40 m shorter than it was. It had 4.33 m of depth, three walls of shelving
+   and an armchair, and the middle of it was floor nobody crossed - the room is
+   entered at one end and every fitting in it stands against a wall.
+
+   What it kept is the part that made it worth having: the west window, the
+   desk under it, and the long shelved walls either side. What it lost is the
+   circulation, which the family room next door had a use for. */
+bookshelf(hx(2.60), hz(6.75), FF, 2.6, 2, gFF);
+bookshelf(hx(4.76), hz(5.55), FF, 2.0, 1, gFF);
+desk(hx(0.41), hz(5.45), FF, 1.6, 3, gFF);
+armchair(hx(3.35), hz(4.65), FF, 0, gFF);
+rugMat(hx(2.60), hz(5.40), FF, 2.4, 1.7, gFF, MAT.fabric2);
+potPlant(hx(4.55), hz(4.45), FF, gFF, 0.95);
+downlight(hx(1.4),hz(4.5),FF+CH,gFF); downlight(hx(3.8),hz(4.5),FF+CH,gFF);
+downlight(hx(1.4),hz(6.4),FF+CH,gFF); downlight(hx(3.8),hz(6.4),FF+CH,gFF);
+pendant(hx(2.60), hz(5.40), FF+CH, gFF, 0.95);
 
 /* --- corridor + landing --- */
 rugMat(hx(7.40), hz(3.6), FF, 1.3, 6.0, gFF, MAT.fabric2);
 artwork(hx(8.22), hz(3.2), FF+1.75, 0.9, 0.7, 1, gFF);
 artwork(hx(6.58), hz(5.4), FF+1.75, 0.9, 0.7, 3, gFF);
 potPlant(hx(7.90), hz(0.70), FF, gFF, 1.1);
-fsolid(1.10,0.78,0.36, hx(7.75), FF+0.39, hz(9.85), MAT.wood, gFF);
-artwork(hx(7.75), hz(10.10), FF+1.70, 1.1, 0.8, 2, gFF);
 [[7.4,1.2],[7.4,3.6],[7.4,6.0],[6.6,8.6],[7.9,9.4]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
 /* stairwell head - glazed clerestory borrowing light into the corridor */
 addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
@@ -185,48 +250,111 @@ addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
    teleporting to it. The void's other three edges (u = 5.0, u = 6.5, v = 2.60)
    are all closed by real walls, so nothing here is unguarded. */
 
-/* --- master bedroom  (u 0..8.3, v 10.2..13.9  =  30.7 m2) ---
-   The brief asked for a much bigger master and this is where the extra floor
-   area went: 8.30 m wide, running the full width of the west side and out
-   over the rear cantilever, with the bed floating off the party wall rather
-   than pushed into a corner. */
-/* bed() draws its own pair of bedside tables. The two extra ones that used to
-   be placed here stood in exactly the same spots, so every bed in the house
-   had four - two of them inside the other two. Same duplication in bedrooms 2
-   and 3; removed in all three. */
-/* The bed has crossed the room to the rear wall. It used to stand against the
-   south wall with its head at v = 10.48 - and that wall carries three doors,
-   one of which (the walk-in closet, u 3.4-4.3) opened straight onto the
-   pillows. A wall with three openings in it is a circulation wall, not a bed
-   wall; the rear wall is 8.3 m of unbroken plaster with the window either
-   side of it, which is where a bed belongs. */
-rugMat(hx(4.05), hz(12.30), FF, 4.6, 3.0, gFF);
-bed(hx(4.05), hz(12.60), FF, 1.80, 2.05, 2, gFF);
-/* The west wall is a 2.40 m window from v = 10.8 to 13.2, so there is no wall
-   there to hang a screen on - the first attempt put the television squarely in
-   front of the glass. The south wall carries three doors and the only free
-   panel wide enough is u 6.5-8.3, which puts the screen at the foot corner
-   rather than square on to the bed. In a room 3.70 m deep that is not a
-   compromise, it is the only place a television goes. */
-tvUnit(hx(7.40), hz(10.45), FF, 1.5, 0, gFF);
-/* one reading chair by the window, not a pair flanking the bed */
-armchair(hx(7.70), hz(12.80), FF, 1, gFF);
-fsolid(0.44,0.42,0.44, hx(7.70), FF+0.21, hz(11.85), MAT.woodPale, gFF);
-[[1.6,10.9],[6.4,10.9],[1.6,13.2],[6.4,13.2],[4.05,12.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
-wallLight(hx(0.20), hz(10.50), FF+1.95, 1, gFF);
-ac(hx(8.11), hz(11.30), FF+2.55, 3, gFF);
-/* 1.10 m wide, on the 1.30 m of wall between the closet and landing doors.
-   The 1.50 m panel that used to hang here was centred on u = 4.05, which is
-   inside the closet doorway. */
-artwork(hx(4.95), hz(10.33), FF+1.90, 1.1, 0.85, 0, gFF);
-picLight(hx(4.95), hz(10.42), FF+2.45, 1.0, 0, gFF);
+/* --- upstairs sitting area  (u 5.0..8.3, v 10.2..13.9  =  3.15 x 3.55 m) ---
+   The corner the master used to occupy and does not need. It is open to the
+   landing rather than walled off, so what you get at the head of the stairs is
+   a room with a view of the garden instead of a turn in a corridor - and the
+   rear windows at v = 13.90 finally light something that is used. */
+rugMat(hx(6.70), hz(12.20), FF, 2.6, 2.4, gFF, MAT.fabric2);
+sofa(hx(7.80), hz(12.20), FF, 2.00, 1, gFF, MAT.fabric2);
+armchair(hx(5.55), hz(11.70), FF, 3, gFF);
+coffeeTable(hx(6.75), hz(12.20), FF, 0.90, 0.55, gFF);
+fsolid(1.10,0.78,0.36, hx(6.65), FF+0.39, hz(13.62), MAT.wood, gFF);
+potPlant(hx(5.45), hz(13.30), FF, gFF, 1.15);
+[[6.0,11.0],[7.6,11.0],[6.0,13.2],[7.6,13.2]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+pendant(hx(6.70), hz(12.20), FF+CH, gFF, 0.90);
 
-/* --- master bathroom  (u 0..2.8, v 7.0..10.2) --- */
+/* --- master bedroom  (u 8.3..13.55, v 0..5.25  =  5.06 x 5.06 m  =  25.6 m2) ---
+   Square, and on the entrance side: the balcony doors at u 9.60-12.60 are its
+   own, so the master opens straight onto the front terrace and the roof wing
+   that shades it.
+
+   The bed is centred on the east window with its head under the glass. That
+   window sills at 0.90 and the headboard is 0.85 tall, which is not a
+   coincidence - it is the one wall in the room long enough to take a 1.80 m
+   bed plus both tables (3.04 m overall against 5.06 m of wall) and still be
+   symmetrical. The other three walls are all spoken for: glazing at the front,
+   the corridor door on the west, and two doors in the rear wall. */
+rugMat(hx(11.60), hz(2.40), FF, 3.4, 3.0, gFF);
+bed(hx(12.41), hz(2.40), FF, 1.80, 2.05, 1, gFF);
+tvUnit(hx(8.55), hz(3.70), FF, 1.60, 3, gFF);
+/* A bench at the foot of the bed rather than a reading chair by the window.
+   The chair was drawn first, at u 9.15 / v 1.05, and the swing check caught
+   it: the bedroom door hinges at v = 1.40 and its leaf swept straight through
+   it. Every other spot in the room that takes a chair is either in front of
+   the balcony doors or inside the arc of one of the two rear-wall doors, and a
+   bench across the bed foot uses ground nothing else wants. */
+onPlinth(0.45, 0.46, 1.50, hx(11.05), FF, hz(2.40), MAT.fabric, gFF, 0.05, 0.06);
+planFurn("bench", hx(11.05), hz(2.40), 0.45, 1.50, 0, FF);
+[[9.4,1.2],[12.4,1.2],[9.4,4.4],[12.4,4.4],[11.6,2.4]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
+wallLight(hx(13.35), hz(4.60), FF+1.95, 3, gFF);
+ac(hx(8.42), hz(4.85), FF+2.55, 3, gFF);
+/* on the 1.60 m of rear wall between the closet and bathroom doors */
+artwork(hx(10.70), hz(5.10), FF+1.90, 1.2, 0.85, 2, gFF);
+picLight(hx(10.70), hz(5.02), FF+2.45, 1.1, 2, gFF);
+
+/* --- master walk-in closet  (u 8.3..10.8, v 5.25..7.65) ---
+   Two facing runs and 1.19 m between them. A third run across the end was
+   drawn and taken out again: 2.35 m of room with wardrobes on three sides
+   leaves a slot, not a dressing room. */
+wardrobe(hx(8.67), hz(6.60), FF, 2.0, 3, gFF);
+wardrobe(hx(10.43), hz(6.60), FF, 2.0, 1, gFF);
+fsolid(0.90,0.50,0.45, hx(9.55), FF+0.25, hz(7.30), MAT.wood, gFF);
+downlight(hx(9.55),hz(6.0),FF+CH,gFF); downlight(hx(9.55),hz(7.2),FF+CH,gFF);
+
+/* --- master bathroom  (u 10.8..13.55, v 5.25..7.65  =  2.56 x 2.25 m) ---
+   Shower, not a bath. 5.8 m2 will take a 1.70 m tub or a 1.30 m shower and a
+   basin you can stand at, and in a master ensuite next door to a walk-in the
+   shower is the one that gets used. The bath is in bedroom 3's bathroom, which
+   is the old master bathroom and is 9.0 m2. */
+addBox(2.56,0.02,2.25, hx(12.18), FF+0.011, hz(6.45), MAT.tileWet, gFF, {cast:false});
+basin(hx(13.28), hz(6.00), FF, 1, gFF, 1.05);
+wc(hx(11.05), hz(5.72), FF, 3, gFF);
+shower(hx(10.90), hz(6.60), hx(12.20), hz(7.55), FF, gFF);
+downlight(hx(12.6),hz(5.9),FF+CH,gFF); downlight(hx(11.5),hz(7.1),FF+CH,gFF);
+picLight(hx(13.20), hz(6.00), FF+2.05, 0.9, 3, gFF);
+
+/* --- bedroom 2  (u 8.3..13.55, v 9.9..13.9  =  5.06 x 3.89 m) --- */
+rugMat(hx(10.90), hz(12.30), FF, 3.4, 2.8, gFF);
+bed(hx(10.90), hz(12.55), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
+desk(hx(13.14), hz(11.00), FF, 1.2, 1, gFF);
+wardrobe(hx(8.67), hz(12.50), FF, 2.0, 3, gFF);
+tvUnit(hx(10.75), hz(10.15), FF, 1.50, 0, gFF);
+downlight(hx(9.6),hz(10.8),FF+CH,gFF); downlight(hx(12.6),hz(10.8),FF+CH,gFF);
+downlight(hx(10.9),hz(13.0),FF+CH,gFF);
+wallLight(hx(13.35), hz(13.30), FF+1.95, 3, gFF);
+ac(hx(9.10), hz(10.12), FF+2.55, 0, gFF);
+/* bedroom 2 en-suite (u 8.3..10.8, v 7.65..9.9) */
+addBox(2.35,0.02,2.10, hx(9.55), FF+0.011, hz(8.78), MAT.tileWet, gFF, {cast:false});
+wc(hx(8.55), hz(8.05), FF, 3, gFF);
+basin(hx(9.95), hz(7.87), FF, 0, gFF, 0.95);
+shower(hx(9.55), hz(8.60), hx(10.70), hz(9.60), FF, gFF);
+downlight(hx(9.55),hz(8.6),FF+CH,gFF);
+/* linen / plant store (u 10.8..13.55, v 7.65..9.9) */
+fsolid(2.55,2.20,0.50, hx(12.18), FF+1.10, hz(7.95), MAT.wood, gFF);
+fsolid(0.70,1.60,0.70, hx(11.30), FF+0.80, hz(9.45), MAT.steel, gFF);
+downlight(hx(12.2),hz(8.8),FF+CH,gFF);
+
+/* --- bedroom 3  (u 0..5.0, v 10.2..13.9  =  4.81 x 3.55 m) ---
+   The room the master left. It keeps the bathroom and the walk-in that were
+   built for the master at v 7.00-10.20, both entered off its own rear wall,
+   which makes it the best-served bedroom in the house after the master and a
+   perfectly reasonable place to put a teenager or a long-staying guest. */
+rugMat(hx(2.40), hz(12.30), FF, 3.4, 2.8, gFF);
+bed(hx(2.40), hz(12.55), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
+desk(hx(0.41), hz(11.20), FF, 1.2, 3, gFF);
+tvUnit(hx(2.55), hz(10.45), FF, 1.50, 0, gFF);
+downlight(hx(1.4),hz(10.9),FF+CH,gFF); downlight(hx(3.8),hz(10.9),FF+CH,gFF);
+downlight(hx(2.4),hz(13.0),FF+CH,gFF);
+wallLight(hx(4.85), hz(13.30), FF+1.95, 1, gFF);
+ac(hx(4.85), hz(11.90), FF+2.55, 1, gFF);
+potPlant(hx(4.55), hz(13.35), FF, gFF, 1.0);
+
+/* --- bedroom 3 bathroom  (u 0..2.8, v 7.0..10.2  =  9.0 m2) ---
+   Built as the master bathroom and unchanged: it is the only bathroom in the
+   house with room for both a bath and a separate shower, and it is now the one
+   the children use. */
 addBox(2.80,0.02,3.20, hx(1.40), FF+0.011, hz(8.60), MAT.tileWet, gFF, {cast:false});
-/* 2.80 x 3.20 m carrying a basin, a WC, a bath and a shower. That is a lot,
-   and the 1.60 m vanity was the piece with the least claim on the space - a
-   1.15 m single bowl leaves the same 600 mm of usable worktop and returns
-   450 mm to the floor between it and the shower. */
 basin(hx(1.05), hz(7.25), FF, 0, gFF, 1.15);
 wc(hx(0.42), hz(9.70), FF, 2, gFF);
 bathtub(hx(1.62), hz(9.62), FF, 1.62, 0.75, gFF);
@@ -234,57 +362,15 @@ shower(hx(2.02), hz(7.60), hx(2.72), hz(8.60), FF, gFF);
 downlight(hx(0.9),hz(7.8),FF+CH,gFF); downlight(hx(2.1),hz(9.4),FF+CH,gFF);
 picLight(hx(1.05), hz(7.12), FF+2.00, 0.9, 0, gFF);
 
-/* --- master walk-in closet  (u 2.8..5.0, v 7.0..10.2) --- */
+/* --- bedroom 3 walk-in  (u 2.8..5.0, v 7.0..10.2) --- */
 wardrobe(hx(3.95), hz(7.20), FF, 2.0, 0, gFF);
 wardrobe(hx(3.05), hz(8.90), FF, 2.4, 3, gFF);
 wardrobe(hx(4.80), hz(8.90), FF, 2.4, 1, gFF);
 fsolid(1.0,0.55,0.55, hx(3.95), FF+0.28, hz(9.20), MAT.wood, gFF);
 downlight(hx(3.9),hz(8.6),FF+CH,gFF);
 
-/* --- bedroom 2  (u 8.3..13.55, v 9.2..13.9) --- */
-rugMat(hx(10.80), hz(11.90), FF, 3.2, 2.8, gFF);
-/* The 1.2 m of floor between the headboard and the wall behind it is not
-   waste. The door into this room is on the west wall at v = 9.3-10.1, and
-   pulling the bed back to the wall would put the head of it immediately
-   beside the door you walk in through. */
-bed(hx(10.80), hz(11.55), FF, 1.60, 2.00, 0, gFF, MAT.fabric2);
-desk(hx(13.05), hz(12.80), FF, 1.2, 1, gFF);
-tvUnit(hx(10.80), hz(13.62), FF, 1.6, 0, gFF);
-downlight(hx(9.4),hz(10.6),FF+CH,gFF); downlight(hx(12.6),hz(13.0),FF+CH,gFF);
-wallLight(hx(8.50), hz(12.40), FF+1.95, 1, gFF);
-ac(hx(12.60), hz(9.42), FF+2.55, 0, gFF);
-/* bedroom 2 en-suite (u 8.3..10.8, v 6.9..9.2) */
-addBox(2.50,0.02,2.30, hx(9.55), FF+0.011, hz(8.05), MAT.tileWet, gFF, {cast:false});
-wc(hx(8.72), hz(7.30), FF, 0, gFF);
-basin(hx(9.90), hz(7.15), FF, 0, gFF, 0.95);
-shower(hx(9.60), hz(8.30), hx(10.70), hz(9.10), FF, gFF);
-downlight(hx(9.6),hz(8.1),FF+CH,gFF);
-/* bedroom 2 walk-in (u 10.8..13.55, v 6.9..9.2) */
-wardrobe(hx(12.20), hz(7.15), FF, 2.4, 0, gFF);
-wardrobe(hx(11.05), hz(8.30), FF, 1.8, 3, gFF);
-downlight(hx(12.2),hz(8.2),FF+CH,gFF);
-
-/* --- bedroom 3  (u 8.3..13.55, v 0..4.6) ---
-   The second-biggest bedroom, and the other one that opens onto the balcony. */
-rugMat(hx(10.90), hz(2.55), FF, 3.2, 2.8, gFF);
-bed(hx(10.90), hz(2.70), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
-desk(hx(13.05), hz(1.55), FF, 1.2, 1, gFF);
-/* clear of the bedroom door arc, which caught it at v = 1.30 */
-wardrobe(hx(9.25), hz(3.35), FF, 2.0, 3, gFF);
-downlight(hx(9.4),hz(1.2),FF+CH,gFF); downlight(hx(12.6),hz(3.6),FF+CH,gFF);
-wallLight(hx(8.50), hz(3.60), FF+1.95, 1, gFF);
-ac(hx(12.60), hz(4.38), FF+2.55, 2, gFF);
-/* bedroom 3 en-suite (u 10.8..13.55, v 4.6..6.9) */
-addBox(2.75,0.02,2.30, hx(12.18), FF+0.011, hz(5.75), MAT.tileWet, gFF, {cast:false});
-wc(hx(13.10), hz(5.05), FF, 0, gFF);
-basin(hx(11.60), hz(4.90), FF, 0, gFF, 0.95);
-shower(hx(11.00), hz(5.95), hx(12.10), hz(6.80), FF, gFF);
-downlight(hx(12.2),hz(5.8),FF+CH,gFF);
-
-/* --- linen / plant store (u 8.3..10.8, v 4.6..6.9) --- */
-fsolid(2.30,2.20,0.50, hx(9.55), FF+1.10, hz(4.90), MAT.wood, gFF);
-fsolid(0.70,1.60,0.70, hx(10.35), FF+0.80, hz(6.45), MAT.steel, gFF);
-downlight(hx(9.6),hz(5.9),FF+CH,gFF);
+/* the real beds and side tables, once every one of them has been queued */
+placeBeds();
 
 /* ---------- roof slab + parapet ---------- */
 slab(hx(0), hz(0), hx(HW), hz(UV1), RF, SLAB, MAT.wallInt, gRoof, {walk:false});
@@ -459,11 +545,12 @@ CTAG = "garden";
       canvas.side = T.DoubleSide;
       var m = new T.Mesh(g, canvas);
       m.castShadow = true; m.receiveShadow = true;
-      gGarden.add(m);
+      /* the canvas is this building's roof, so it goes with the roofs */
+      gRoofGarden.add(m);
       /* a scalloped valance along both eaves - the detail that stops the
          canopy reading as a folded sheet of card */
       [z0, z1].forEach(function(zz){
-        addBox(hw*2, 0.22, 0.02, tx, eave-0.11, zz, canvas, gGarden, {cast:false});
+        addBox(hw*2, 0.22, 0.02, tx, eave-0.11, zz, canvas, gRoofGarden, {cast:false});
       });
     })();
 

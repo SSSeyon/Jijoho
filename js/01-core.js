@@ -258,6 +258,25 @@ var gRoof = new T.Group();
 var gGarden = new T.Group();
 var gSolar = null;               /* PV on the main roof deck */
 [gSite,gGF,gFF,gRoof,gGarden].forEach(function(g){ scene.add(g); });
+
+/* ---------- the other roofs ----------
+   gRoof only ever held the duplex's own roof deck, so "Roof off" lifted the
+   lid on the house and left the carport canopy, the utility enclosure's
+   pitched roof and the games tent's canvas sitting there with everything under
+   them still hidden. From above that is the wrong picture: three of the four
+   things you are looking down into stay shut.
+
+   These two groups collect the other structures' roofs so the same toggle
+   takes them all. They are children of the domains they belong to rather than
+   of gRoof, because the merge is per-domain and moving a mesh between domains
+   would change what it gets batched with. A child group is its own merge
+   domain and survives the merge as a Group, so its visible flag still works
+   afterwards - which is the whole reason this can be done with two groups
+   instead of a list of individual meshes. */
+var gRoofSite   = new T.Group(); gSite.add(gRoofSite);
+var gRoofGarden = new T.Group(); gGarden.add(gRoofGarden);
+var ROOFS = [gRoof, gRoofSite, gRoofGarden];
+function setRoofs(v){ for(var i=0;i<ROOFS.length;i++) ROOFS[i].visible = v; }
 var FURN = [];   // furniture meshes, for the furniture toggle
 
 /* ============================================================
@@ -1445,19 +1464,26 @@ var ZONES = [
   Z("Pantry / laundry", GF, hx(8.55),hz(10.2), hx(13.55),hz(11.5)),
   Z("Front porch", GF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
   /* first floor */
+  /* The first floor was replanned when the master moved to the entrance side -
+     see the long note at the top of the wall block in 05-upper-floor.js. The
+     family room is the only L-shaped room in the house, so it takes two
+     entries; the more specific one has to come first for zoneAt() to find it,
+     and both carry the same name so the label reads as one room. */
+  Z("Family room", FF, hx(0),hz(2.6), hx(5.0),hz(4.0)),
   Z("Family room", FF, hx(0),hz(0), hx(6.5),hz(2.6)),
-  Z("Study / library", FF, hx(0),hz(2.6), hx(5.0),hz(7.0)),
+  Z("Study / library", FF, hx(0),hz(4.0), hx(5.0),hz(7.0)),
   Z("Upstairs corridor", FF, hx(6.5),hz(0), hx(8.3),hz(7.36)),
   Z("Upstairs landing", FF, hx(5.0),hz(7.36), hx(8.3),hz(10.2)),
-  Z("Master bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
-  Z("Walk-in closet", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
-  Z("Master bedroom", FF, hx(0),hz(10.2), hx(8.3),hz(13.9)),
-  Z("Bedroom 3", FF, hx(8.3),hz(0), hx(13.55),hz(4.6)),
-  Z("Linen / plant store", FF, hx(8.3),hz(4.6), hx(10.8),hz(6.9)),
-  Z("Bedroom 3 en-suite", FF, hx(10.8),hz(4.6), hx(13.55),hz(6.9)),
-  Z("Bedroom 2 en-suite", FF, hx(8.3),hz(6.9), hx(10.8),hz(9.2)),
-  Z("Bedroom 2 walk-in", FF, hx(10.8),hz(6.9), hx(13.55),hz(9.2)),
-  Z("Bedroom 2", FF, hx(8.3),hz(9.2), hx(13.55),hz(13.9)),
+  Z("Upstairs sitting area", FF, hx(5.0),hz(10.2), hx(8.3),hz(13.9)),
+  Z("Bedroom 3 bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
+  Z("Bedroom 3 walk-in", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
+  Z("Bedroom 3", FF, hx(0),hz(10.2), hx(5.0),hz(13.9)),
+  Z("Master bedroom", FF, hx(8.3),hz(0), hx(13.55),hz(5.25)),
+  Z("Walk-in closet", FF, hx(8.3),hz(5.25), hx(10.8),hz(7.65)),
+  Z("Master bathroom", FF, hx(10.8),hz(5.25), hx(13.55),hz(7.65)),
+  Z("Bedroom 2 en-suite", FF, hx(8.3),hz(7.65), hx(10.8),hz(9.9)),
+  Z("Linen / plant store", FF, hx(10.8),hz(7.65), hx(13.55),hz(9.9)),
+  Z("Bedroom 2", FF, hx(8.3),hz(9.9), hx(13.55),hz(13.9)),
   Z("Front balcony", FF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
   /* games tent - in the garden, so it goes with the garden */
   Z("Games tent", 0, -8.40, 11.10, -3.20, 14.70),

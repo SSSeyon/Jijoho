@@ -24,6 +24,7 @@
   <button class="b" id="btnRoof">Roof off</button>
   <button class="b" id="btnFloor">Upper floor off</button>
   <button class="b" id="btnFurn">Empty</button>
+  <button class="b" id="btnLabels">Room labels</button>
   <div class="tod" title="Time of day - drag for the sun angle">
     <span class="sunico">&#9788;</span>
     <input type="range" id="tod" min="5.0" max="21.5" step="0.1" value="17.3">
@@ -46,7 +47,7 @@
   <b>Drag to look &nbsp;&middot;&nbsp; double-click the floor to walk there</b><br>
   <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> move &nbsp;&middot;&nbsp;
   <span class="k">Shift</span> run &nbsp;&middot;&nbsp; <span class="k">V</span> dollhouse &nbsp;&middot;&nbsp;
-  <span class="k">R</span> roof &nbsp;&middot;&nbsp; <span class="k">G</span> glass<br>
+  <span class="k">R</span> roof &nbsp;&middot;&nbsp; <span class="k">L</span> room labels &nbsp;&middot;&nbsp; <span class="k">G</span> glass<br>
   <span class="k">Shift</span>+click for game-style mouse-look &nbsp;&middot;&nbsp; <span class="k">Esc</span> to leave it
 </div>
 
@@ -125,13 +126,13 @@
       room schedule on the <b>Schedules &amp; checks</b> tab of the 2D plans is generated from the
       model itself and gives <i>clear</i> areas, with each bounding wall&rsquo;s thickness deducted
       &mdash; so the living room is 32.8&nbsp;m&sup2; there against the 35.0&nbsp;m&sup2; its
-      5.0&nbsp;&times;&nbsp;7.0&nbsp;m grid would suggest, and the master 28.5&nbsp;m&sup2; against
-      30.7. Those figures cannot drift, because they are computed from the same coordinates that
+      5.0&nbsp;&times;&nbsp;7.0&nbsp;m grid would suggest, and the master 25.6&nbsp;m&sup2; against
+      27.6. Those figures cannot drift, because they are computed from the same coordinates that
       build the 3D. The ones in this document are typed, and can.
     </div>
     <div class="note">
       <b>What the bigger upper floor costs, stated plainly.</b>
-      Enlarging the first floor to 188.3&nbsp;m&sup2; buys the master suite, the library, the family room and the
+      Enlarging the first floor to 188.3&nbsp;m&sup2; buys the master suite, the library, the family room, the upstairs sitting area and the
       27.2&nbsp;m&sup2; balcony, and it is the right move for how the house will actually be lived in. But it is not
       free on paper: because the upper floor now oversails the ground floor front and back, it &mdash; not the
       ground floor &mdash; is what a planning authority measures. <i>Building coverage rises from 26.9&nbsp;% to
@@ -141,7 +142,7 @@
       longer comfortably inside it, and the margin you were carrying has gone. <b>Confirm the coverage limit for
       your street with the Physical Planning Permit Authority before drawings go in.</b> If it comes back tighter
       than 36&nbsp;%, the cheapest fix is to pull the rear cantilever back from 2.40&nbsp;m to about
-      1.20&nbsp;m &mdash; that costs roughly 16&nbsp;m&sup2; off the master bedroom and bedroom&nbsp;2 and brings
+      1.20&nbsp;m &mdash; that costs roughly 16&nbsp;m&sup2; off bedroom&nbsp;3 and bedroom&nbsp;2 and brings
       coverage back to about 33&nbsp;%.
     </div>
 
@@ -179,6 +180,19 @@
       That is the right trade here; the alternative is pathfinding, which is a lot of machinery to stop somebody
       looking at their own garden.
     </div>
+    <div class="note">
+      <b>Room labels</b> (<span class="k">L</span>) writes every room&rsquo;s name into the scene. They work in
+      the walkthrough and in the dollhouse view alike, and they are drawn as sprites rather than as an HTML
+      overlay, which means they are depth-tested against the building: a label behind a wall is hidden by that
+      wall. That is the point &mdash; a name floating through the roof would be worse than no name. They are
+      sized in screen space, not in metres, so they stay readable when you pull right back to see the whole plan.
+      <br><br>
+      <b>Roof off</b> (<span class="k">R</span>) now lifts every roof on the plot, not just the house&rsquo;s. The
+      carport canopy, the generator house&rsquo;s pitched roof and the games tent&rsquo;s canvas go with it, so
+      looking down at the compound shows you the inside of all four structures rather than one. The carport&rsquo;s
+      two piers stay standing, because they are the boundary wall&rsquo;s own structure and they tell you where
+      the canopy was.
+    </div>
 
     <h2>The carport</h2>
     <div class="note">
@@ -210,6 +224,23 @@
       <div>Joinery</div><div>flat-slab handleless, matte, painted rather than timber</div>
       <div>Beds</div><div>low platform base, soft upholstered headboard</div>
       <div>Accent</div><div>one muted mauve cushion per sofa, and nothing else</div>
+    </div>
+    <div class="note">
+      <b>The beds and bedside tables are real models now</b>, not boxes &mdash; the same treatment the cars and
+      the trees get, and for the same reason: an upholstered platform bed with a tailored headboard is a shape
+      procedural geometry gets about 70&nbsp;% of the way to and then stops.
+      <br><br>
+      Each one is scaled uniformly off the size the plan asks for &mdash; the bed on its <i>width</i>, so a
+      1.60&nbsp;m and an 1.80&nbsp;m bed both come out at their real sizes from one file; the bedside table on its
+      <i>height</i>, because the widest thing in that model&rsquo;s bounding box is the lampshade and normalising
+      on it would give you a doll&rsquo;s-house table under a floor lamp. Uniform scale leaves the length wherever
+      the model&rsquo;s own proportions put it, so each bed is slid back until its headboard lands on the plan&rsquo;s
+      head line: that is the edge against the wall and the edge the tables line up with, and it is the one that
+      has to be right.
+      <br><br>
+      The box version is still built and still correct. It goes up immediately and is thrown away the moment the
+      download lands, so there is no gap with an empty bedroom in it and no room that stops making sense if the
+      network does.
     </div>
 
     <h2>Room dimensions</h2>
@@ -243,8 +274,11 @@
       </ul>
       The family room was the worst of the rest: only 2.41&nbsp;m deep inside, and carrying a 2.6&nbsp;m sofa, an
       armchair, a 1.2&nbsp;m coffee table and a TV unit across that depth. Front to back the gaps came out at
-      145&nbsp;mm between sofa and table and 335&nbsp;mm between table and TV. The armchair has gone and the two
-      pieces that have to face each other now have 1.13&nbsp;m between them.
+      145&nbsp;mm between sofa and table and 335&nbsp;mm between table and TV. Squeezing the furniture bought
+      1.13&nbsp;m between the two pieces that have to face each other, which was as far as squeezing could go
+      &mdash; the room itself was the problem. It has since been given a second leg down the west side and the
+      seating has moved into it, so the sofa and the screen are now 3.64&nbsp;m apart and the front strip is left
+      clear as the route from the stair to the balcony doors.
       <br><br>
       The kitchen sits at 29&nbsp;% and the storage rooms lower still. That is correct &mdash; a kitchen is mostly
       counter and a walk-in is mostly wardrobe.
@@ -306,29 +340,54 @@
     <h3>First floor &mdash; 188.3 m&sup2;</h3>
     <table>
       <tr><th>Room</th><th>Size</th><th class="n">Area</th></tr>
-      <tr><td>Master bedroom (en-suite)</td><td>8.30 &times; 3.70</td><td class="n">30.7 m&sup2;</td></tr>
-      <tr><td>&nbsp;&nbsp;&mdash; master bathroom</td><td>2.80 &times; 3.20</td><td class="n">9.0 m&sup2;</td></tr>
+      <tr><td>Master bedroom (en-suite)</td><td>5.25 &times; 5.25</td><td class="n">27.6 m&sup2;</td></tr>
+      <tr><td>&nbsp;&nbsp;&mdash; master bathroom</td><td>2.75 &times; 2.40</td><td class="n">6.6 m&sup2;</td></tr>
+      <tr><td>&nbsp;&nbsp;&mdash; walk-in closet</td><td>2.50 &times; 2.40</td><td class="n">6.0 m&sup2;</td></tr>
+      <tr><td>Bedroom 2 (en-suite)</td><td>5.25 &times; 4.00</td><td class="n">21.0 m&sup2;</td></tr>
+      <tr><td>&nbsp;&nbsp;&mdash; en-suite</td><td>2.50 &times; 2.25</td><td class="n">5.6 m&sup2;</td></tr>
+      <tr><td>Bedroom 3 (en-suite)</td><td>5.00 &times; 3.70</td><td class="n">18.5 m&sup2;</td></tr>
+      <tr><td>&nbsp;&nbsp;&mdash; bathroom (bath + shower)</td><td>2.80 &times; 3.20</td><td class="n">9.0 m&sup2;</td></tr>
       <tr><td>&nbsp;&nbsp;&mdash; walk-in closet</td><td>2.20 &times; 3.20</td><td class="n">7.0 m&sup2;</td></tr>
-      <tr><td>Bedroom 2 (en-suite)</td><td>5.25 &times; 4.70</td><td class="n">24.7 m&sup2;</td></tr>
-      <tr><td>&nbsp;&nbsp;&mdash; en-suite</td><td>2.50 &times; 2.30</td><td class="n">5.8 m&sup2;</td></tr>
-      <tr><td>&nbsp;&nbsp;&mdash; walk-in closet</td><td>2.75 &times; 2.30</td><td class="n">6.3 m&sup2;</td></tr>
-      <tr><td>Bedroom 3 (en-suite)</td><td>5.25 &times; 4.60</td><td class="n">24.2 m&sup2;</td></tr>
-      <tr><td>&nbsp;&nbsp;&mdash; en-suite</td><td>2.75 &times; 2.30</td><td class="n">6.3 m&sup2;</td></tr>
-      <tr><td>Study / library</td><td>5.00 &times; 4.40</td><td class="n">22.0 m&sup2;</td></tr>
-      <tr><td>Family room</td><td>6.50 &times; 2.60</td><td class="n">16.9 m&sup2;</td></tr>
+      <tr><td>Study / library</td><td>5.00 &times; 3.00</td><td class="n">15.0 m&sup2;</td></tr>
+      <tr><td>Family room (L-shaped)</td><td>&mdash;</td><td class="n">23.9 m&sup2;</td></tr>
+      <tr><td>Upstairs sitting area</td><td>3.30 &times; 3.70</td><td class="n">12.2 m&sup2;</td></tr>
       <tr><td>Corridor</td><td>1.80 &times; 7.36</td><td class="n">13.2 m&sup2;</td></tr>
       <tr><td>Landing</td><td>3.30 &times; 2.84</td><td class="n">9.4 m&sup2;</td></tr>
       <tr><td>Stairwell void</td><td>1.50 &times; 4.76</td><td class="n">7.1 m&sup2;</td></tr>
-      <tr><td>Linen &amp; plant store</td><td>2.50 &times; 2.30</td><td class="n">5.8 m&sup2;</td></tr>
+      <tr><td>Linen &amp; plant store</td><td>2.75 &times; 2.25</td><td class="n">6.2 m&sup2;</td></tr>
       <tr><td>Front balcony (covered)</td><td>12.35 &times; 2.20</td><td class="n">27.2 m&sup2;</td></tr>
     </table>
     <div class="note">
-      <b>Three bedrooms up, one down.</b> The fourth upstairs bedroom is gone and its floor area went into the
-      other three &mdash; chiefly the master, which grows from 23.0 to <b>30.7&nbsp;m&sup2;</b> and now runs the
-      full 8.30&nbsp;m width of the west side, out over the rear cantilever. Bedrooms 2 and 3 both gained an
-      en-suite of their own and bedroom 2 gained a walk-in closet. Three upstairs plus the ground-floor guest room
-      makes <b>four bedrooms</b>, which is exactly the four-bedroom duplex of the original brief &mdash; the count
-      has not changed, only how they are distributed and how much room each one gets.
+      <b>The master is 5.06 &times; 5.06 m, and it is on the entrance side.</b> It used to be 8.11 &times; 3.51&nbsp;m
+      &mdash; the full width of the west side, out over the rear cantilever, at the furthest point in the house from
+      the front door. Wide and shallow is the worst proportion a bedroom can have: 8.11&nbsp;m of wall with a
+      1.80&nbsp;m bed against it leaves six metres of nothing, which is why it read as a corridor with a bed at one end.
+      <br><br>
+      It is square now, in the front-east corner, and it opens onto the balcony through its own sliding doors. That
+      corner is the one place in the building where 5.06 falls out of the existing grid without moving an external
+      wall or the stair &mdash; u&nbsp;8.30 to 13.55 is 5.25 between grid lines, less half a 150&nbsp;mm partition
+      and half a 230&nbsp;mm external wall. Squaring the depth to match took one wall moved, from v&nbsp;=&nbsp;4.60
+      to 5.25.
+      <br><br>
+      Everything else on the floor moved to make room. Bedroom&nbsp;3 took the rear-west corner the master left,
+      and with it the 9.0&nbsp;m&sup2; bathroom and the walk-in that were built for the master &mdash; so the one
+      bathroom in the house with both a bath and a separate shower is now the children's. The study gave up
+      1.40&nbsp;m of its length; it was 4.81&nbsp;&times;&nbsp;4.33&nbsp;m and is now 4.81&nbsp;&times;&nbsp;2.85,
+      keeping the west window, the desk under it and both shelved walls, and losing a third of a room of
+      circulation nobody was walking through. The family room took that 1.40&nbsp;m and now wraps the stairwell:
+      23.9&nbsp;m&sup2; against 16.9, with 3.64&nbsp;m between the sofa and the screen where the old room had
+      1.13. The rear-west corner left over became an open sitting area at the head of the stairs, which is what
+      finally gives the rear windows something to light.
+    </div>
+    <div class="note">
+      <b>Three bedrooms up, one down.</b> Three upstairs plus the ground-floor guest room makes
+      <b>four bedrooms</b>, which is the four-bedroom duplex of the original brief. All three upstairs have an
+      en-suite; the master and bedroom&nbsp;3 each have a walk-in as well.
+      <br><br>
+      The master gave up area to get its shape: 25.6&nbsp;m&sup2; clear against the 28.5 it had before. That is
+      the trade, and it is deliberate. A square 5.06&nbsp;m room takes a bed centred on a window with both tables,
+      a screen on the facing wall and a bench at the foot, with 1.5&nbsp;m of clear floor round the whole
+      arrangement. The 8.11&nbsp;m room was larger on paper and had one usable wall.
       <br><br>
       <b>The 2.40 m cantilevers are real engineering.</b> Both the front and rear projections are unsupported, and
       at that span they need a downstand edge beam, top steel carried at least 2.5&nbsp;m back into the slab, and
@@ -391,7 +450,7 @@
 
     <h3>Also at the rear</h3>
     <ul>
-      <li><b>Games tent</b> &mdash; the table tennis under a 5.20 &times; 3.60&nbsp;m canvas on the garden lawn, plus the 16.9&nbsp;m&sup2; upstairs family room and the 22.0&nbsp;m&sup2; library indoors.</li>
+      <li><b>Games tent</b> &mdash; the table tennis under a 5.20 &times; 3.60&nbsp;m canvas on the garden lawn, plus the 23.9&nbsp;m&sup2; upstairs family room, the 12.2&nbsp;m&sup2; sitting area at the head of the stairs and the 15.0&nbsp;m&sup2; library indoors.</li>
       <li><b>Rear terrace, 6.0&nbsp;m &times; 2.4&nbsp;m</b> &mdash; paved, tight against the kitchen and rear lobby,
         with a six-seat dining set and a masonry barbecue. It is now <i>covered</i>: the first floor cantilevers
         2.40&nbsp;m over it, which roofs the whole terrace and is the reason the parasol has gone.</li>
