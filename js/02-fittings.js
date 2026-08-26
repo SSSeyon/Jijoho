@@ -60,6 +60,91 @@ function onPlinth(w,h,d,cx,cy,cz,mat,g,inset,lift){
    noMerge group, and the group is thrown away the moment the real model lands.
    That is the whole trick: no loading gap, no empty bedrooms, and no reliance
    on a network request succeeding for the room to make sense. */
+/* ============================================================
+   DEFERRED MODELS
+
+   Four pieces of furniture are downloaded .glb files rather than boxes, and
+   they all need the same three things: a box stand-in up immediately, a
+   normalisation that makes an asset authored at an arbitrary size land at the
+   size the plan was drawn to, and one download per file however many instances
+   the house wants. That machinery was written for the beds; it is here now
+   because the sofas, the armchairs and the planters need every bit of it.
+
+   Instances are queued as the floors are built and placed once, at the end, so
+   each file is fetched exactly once and its scene graph is cloned per instance
+   with the geometry and textures shared. ============================================================ */
+var MODELQ = {};                       /* file -> [instance records] */
+function queueModel(file, rec){ (MODELQ[file] || (MODELQ[file] = [])).push(rec); }
+
+/* Normalise a downloaded model to a real-world size.
+
+   `on` names which of the model's own dimensions the target refers to - "w"
+   its X, "d" its Z, "h" its Y - and `turn` optionally swings its long
+   horizontal axis onto a named axis first ("z" or "x"), for assets whose
+   authored orientation is not the one the plan wants.
+
+   The scale is always UNIFORM. Stretching one axis to hit two target
+   dimensions is what makes downloaded furniture look subtly wrong without
+   anyone being able to say why: a 2.05 m bed coming out 1.95 m long is the
+   right kind of error, a 2.05 m bed with narrow cushions is not.
+
+   Which dimension to measure on is a judgement per asset, not a default. A bed
+   is scaled on its width because that is the number the plan means. A bedside
+   table is scaled on its HEIGHT, because the widest thing in its bounding box
+   is the lampshade and normalising on that gives a doll's-house table under a
+   floor lamp. A planter is scaled on height for the same reason - the foliage
+   is wider than the pot and it is the pot that has a real size.
+
+   Returns a group standing on y = 0, centred in plan, carrying its measured
+   size on userData.size. Anything that has to line up with a wall reads that
+   size and slides the instance inside the group. */
+function fitModel(src, target, on, turn){
+  var inst = src.clone(true);
+  var wrap = new T.Group();
+  /* Downloaded geometry is interleaved and mergeBufferGeometries cannot take
+     it. Without this the second merge pass - the one that runs after the
+     models have landed - throws on every instance of every file. */
+  wrap.userData.noMerge = true;
+  if(turn){
+    var b0 = new T.Box3().setFromObject(inst), s0 = b0.getSize(new T.Vector3());
+    if((s0.z >= s0.x) !== (turn === "z")) inst.rotation.y = Math.PI/2;
+  }
+  wrap.add(inst);
+  var b2 = new T.Box3().setFromObject(wrap), s2 = b2.getSize(new T.Vector3());
+  var ref = (on === "h") ? s2.y : (on === "d") ? s2.z : s2.x;
+  var k = target / Math.max(ref, 1e-6);
+  wrap.scale.setScalar(k);
+  var b3 = new T.Box3().setFromObject(wrap), c3 = b3.getCenter(new T.Vector3());
+  inst.position.x -= c3.x / k;
+  inst.position.z -= c3.z / k;
+  inst.position.y -= b3.min.y / k;
+  wrap.userData.size = s2.multiplyScalar(k);
+  return wrap;
+}
+
+/* Load one file and hand the shadow-flagged scene to a placer. */
+function loadModel(file, onSrc){
+  MODELS.load(file, function(gl){
+    var src = gl.scene || gl.scenes[0];
+    src.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    onSrc(src);
+  });
+}
+
+/* The box stand-in has done its job. The COLLIDERS it registered are left
+   alone deliberately - they are the physics of the piece, they were correct
+   before the download and they are still correct after it, and rebuilding them
+   from a downloaded bounding box would make what you can walk into depend on
+   whether a network request succeeded. */
+function dropProc(rec){
+  if(!rec.proc) return;
+  rec.proc.traverse(function(o){
+    var ix = FURN.indexOf(o); if(ix >= 0) FURN.splice(ix,1);
+  });
+  rec.proc.parent.remove(rec.proc);
+  rec.proc = null;
+}
+
 var BEDQ = [];
 function bed(cx,cz,y,w,d,rq,g,linenMat){
   var grp = new T.Group();
@@ -114,141 +199,130 @@ function bedProc(cx,cz,y,w,d,rq,g,linenMat){
   }
 }
 
-/* ---------- the real beds ----------
-   Both models are normalised exactly the way the vehicles are: measure the
-   bounding box that actually arrived, work out which horizontal axis is the
-   long one, spin it so that axis runs the way the room wants it, then scale
-   uniformly until the WIDTH matches the bed size the plan was drawn to. It is
-   scaled on width rather than a fixed factor so a 1.60 m bed and a 1.80 m bed
-   come out at their real sizes from the same file, and so the swing-clash
-   check and the 2D plans stay honest about what is in the room.
+/* ---------- placing the downloaded pieces ----------
+   Called once, after every floor has been built and every instance queued. */
+function placeModels(){
+  if(!MODELS.ok) return;
 
-   Uniform scale matters: the alternative - stretching one axis to hit both the
-   width and the length - is what makes downloaded furniture look subtly wrong
-   without anyone being able to say why. If a 1.80 x 2.05 m bed comes out
-   40 mm long, that is the right kind of error. */
-function placeBeds(){
-  if(!BEDQ.length || !MODELS.ok) return;
-
-  function loaded(file, onEach){
-    MODELS.load(file, function(gl){
-      var src = gl.scene || gl.scenes[0];
-      src.traverse(function(o){
-        if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; }
-      });
-      onEach(src);
-    });
-  }
-
-  /* headboard end of a .glb is not knowable from the file, so both models are
-     placed by their bounding box and then turned to face the way the plan
-     says. Anything that comes out backwards is fixed with FLIP below rather
-     than by editing the asset. */
-  var FLIP_BED  = 0;                       /* extra quarter turns, bed */
-  var FLIP_SIDE = 0;                       /* extra quarter turns, side table */
-
-  /* longAlongZ says which way the piece's long horizontal axis should end up
-     pointing in the group's own coordinates; "on" says which measurement the
-     target refers to - "short" for the bed, whose short axis IS the bed size,
-     and "height" for the side table, where the widest thing in the bounding
-     box is the lampshade and scaling off it would give a comically small
-     table. The group returned is sitting on y = 0 and centred in plan, and
-     carries its measured size on userData.size. */
-  function fit(src, target, longAlongZ, on){
-    var inst = src.clone(true);
-    var b = new T.Box3().setFromObject(inst);
-    var s = b.getSize(new T.Vector3());
-    /* which horizontal axis is the long one, as authored */
-    var longIsZ = s.z >= s.x;
-    var wrap = new T.Group();
-    if(longIsZ !== longAlongZ){ inst.rotation.y = Math.PI/2; }
-    wrap.add(inst);
-    /* re-measure after the turn, then scale on whichever axis was asked for */
-    var b2 = new T.Box3().setFromObject(wrap);
-    var s2 = b2.getSize(new T.Vector3());
-    var ref = (on === "height") ? s2.y : (longAlongZ ? s2.x : s2.z);
-    var k = target / Math.max(ref, 1e-6);
-    wrap.scale.setScalar(k);
-    /* sit it on the floor and centre it on the origin in plan */
-    var b3 = new T.Box3().setFromObject(wrap);
-    var c3 = b3.getCenter(new T.Vector3());
-    inst.position.x -= c3.x / k;
-    inst.position.z -= c3.z / k;
-    inst.position.y -= b3.min.y / k;
-    wrap.userData.size = s2.multiplyScalar(k);
-    return wrap;
-  }
-
-  /* the box stand-in has done its job. Called from whichever model lands
-     first, so a half-successful download never leaves two beds in one room. */
-  function dropProc(q){
-    if(!q.proc) return;
-    q.proc.traverse(function(o){
-      var ix = FURN.indexOf(o); if(ix >= 0) FURN.splice(ix,1);
-    });
-    q.g.remove(q.proc);
-    q.proc = null;
-  }
-
-  loaded("bed.glb", function(src){
+  /* ---- beds ----
+     rq 0 and 2 lay the bed along z, 1 and 3 along x. Built in the bed's own
+     frame - length along local Z, head at -Z, the same convention bedProc()
+     uses - and then turned by rq. Note the sign: rot() turns local -Z to +X
+     for rq = 1 and three.js rotation.y turns it to -X, so the quarter turns go
+     the other way round here. */
+  if(BEDQ.length) loadModel("bed.glb", function(src){
     for(var i=0; i<BEDQ.length; i++){
       var q = BEDQ[i];
       dropProc(q);
-      /* rq 0 and 2 lay the bed along z; 1 and 3 lay it along x */
-      /* built in the bed's own frame - length along local Z, head at -Z, the
-         same convention bedProc() uses - and then turned by rq. Note the sign:
-         rot() above turns local -Z to +X for rq = 1, and three.js rotation.y
-         turns it to -X, so the quarter turns go the other way round here. */
-      var m = fit(src, q.w, true, "short");
+      var m = fitModel(src, q.w, "w", "z");
       /* Uniform scale means matching the width leaves the length wherever the
-         model's own proportions put it - 1.95 m for a 2.05 m bed, 1.73 for a
-         2.00. Rather than distort it, slide it back so the HEADBOARD lands on
-         the plan's head line. That is the edge that has to be right: it is the
-         one against the wall, and it is what the side tables line up with. */
+         model's own proportions put it. Rather than distort it, slide it back
+         so the HEADBOARD lands on the plan's head line. That is the edge that
+         has to be right: it is the one against the wall, and it is what the
+         side tables line up with. */
       var len = m.userData.size.z;
       m.children[0].position.z -= (q.d - len) / (2 * m.scale.z);
       m.position.set(q.cx, q.y, q.cz);
-      m.rotation.y = -(q.rq + FLIP_BED) * Math.PI/2;
-      q.g.add(m);
-      FURN.push(m);
+      m.rotation.y = -q.rq * Math.PI/2;
+      q.g.add(m); FURN.push(m);
     }
   });
 
-  loaded("bedside.glb", function(src){
+  /* ---- bedside tables ----
+     A nightstand stands against the same wall the headboard does, so its LONG
+     axis runs parallel to the bed's width - local X - and its short one runs
+     away from the wall. Getting that round the wrong way is what drove the
+     first attempt 95 mm into the external wall. 0.95 m overall height puts the
+     top at about 0.52 m, which is where it belongs beside a 0.55 m mattress. */
+  if(BEDQ.length) loadModel("bedside.glb", function(src){
     for(var i=0; i<BEDQ.length; i++){
       var q = BEDQ[i];
       dropProc(q);
-      /* A nightstand stands against the same wall the headboard does, so its
-         LONG axis runs parallel to the bed's width - local X - and its short
-         one runs away from the wall. Getting that round the wrong way is what
-         drove the first attempt 95 mm into the external wall.
-
-         Scaled on height, not on plan: the widest thing in this model's
-         bounding box is the lampshade, and normalising a bedside table on the
-         width of its lamp gives you a doll's-house table with a table lamp the
-         size of a floor lamp on it. 0.95 m overall puts the top at about
-         0.52 m, which is where it belongs beside a 0.55 m mattress. */
-      var t0 = fit(src, 0.95, false, "height");
-      var td = t0.userData.size.z;             /* depth away from the wall */
       var off = [-q.w/2 - 0.41];
       if(q.w > 1.3) off.push(q.w/2 + 0.41);
       for(var j=0; j<off.length; j++){
-        var t = (j === 0) ? t0 : fit(src, 0.95, false, "height");
+        var t = fitModel(src, 0.95, "h", "x");
+        var td = t.userData.size.z;
         var p = place(q.rq, q.cx, q.cz, off[j], -q.d/2 + td/2);
         t.position.set(p[0], q.y, p[1]);
-        t.rotation.y = -(q.rq + FLIP_SIDE) * Math.PI/2;
-        q.g.add(t);
-        FURN.push(t);
+        t.rotation.y = -q.rq * Math.PI/2;
+        q.g.add(t); FURN.push(t);
       }
     }
   });
+
+  /* ---- sofas and armchairs ----
+     Two different files, because they are two different pieces of furniture
+     and no amount of scaling turns one into the other. The Velo is a 2.44 m
+     three-seater: scaled uniformly down to a 0.92 m armchair it would stand
+     370 mm high, which is a footstool. The lounge chair is a metre square, so
+     scaled up to a 2.00 m sofa it would stand 1.72 m high, which is a wall.
+     Each is used at the size it was drawn at.
+
+     Both are aligned by their BACK rather than their centre, for the same
+     reason the beds are aligned by the headboard: the back is the edge that
+     goes against the wall, and it is the one the plan means. */
+  [["sofa.glb", SOFAQ], ["outchair.glb", CHAIRQ]].forEach(function(job){
+    if(!job[1].length) return;
+    loadModel(job[0], function(src){
+      for(var i=0; i<job[1].length; i++){
+        var q = job[1][i];
+        dropProc(q);
+        var m = fitModel(src, q.w, "w", q.turn);
+        var dep = m.userData.size.z;
+        m.children[0].position.z -= (q.d - dep) / (2 * m.scale.z);
+        m.position.set(q.cx, q.y, q.cz);
+        m.rotation.y = -q.rq * Math.PI/2;
+        q.g.add(m); FURN.push(m);
+      }
+    });
+  });
+
+  /* ---- planters ----
+     One file at every size, which is the whole point of scaling on a measured
+     dimension: the 0.90 scale pots beside the upstairs seating and the 1.35
+     ones flanking the front door are the same asset, and they are 1.00 m and
+     1.49 m tall respectively because that is what the argument asked for. */
+  if(POTQ.length) loadModel("pot.glb", function(src){
+    for(var i=0; i<POTQ.length; i++){
+      var q = POTQ[i];
+      dropProc(q);
+      var m = fitModel(src, 1.10*q.s, "h", null);
+      m.position.set(q.x, q.y, q.z);
+      m.rotation.y = q.rot;
+      q.g.add(m); FURN.push(m);
+    }
+  });
 }
+/* the old name, still called from the end of the first floor */
+function placeBeds(){ placeModels(); }
 
 /* ---- sofa: back at local -Z ----
    Modelled on the loft reference: a low modular seat that sits almost on the
    floor with no visible legs, a thin flat back cushion rather than a bolstered
    roll, and arms that stop level with the back. */
+var SOFAQ = [], CHAIRQ = [], POTQ = [];
+/* Real sofas and real armchairs, with the box version below still built as the
+   stand-in. w decides which of the two files a piece is: anything 1.40 m or
+   wider is a sofa, anything narrower is a chair. */
 function sofa(cx,cz,y,w,rq,g,mat){
+  if(MODELS.ok){
+    var grp = new T.Group();
+    grp.userData.noMerge = true;
+    g.add(grp);
+    sofaProc(cx,cz,y,w,rq,grp,mat);
+    /* The Velo's long axis is authored on X and the lounge chair is square in
+       plan, so only the sofa gets turned; asking fit to orient a 1.14 x 1.17 m
+       chair by "which axis is longer" would swing it 90 degrees on a 20 mm
+       difference. */
+    var q = {cx:cx, cz:cz, y:y, w:w, d:0.84, rq:rq, g:g, proc:grp,
+             turn:(w >= 1.4) ? "x" : null};
+    (w >= 1.4 ? SOFAQ : CHAIRQ).push(q);
+    return;
+  }
+  sofaProc(cx,cz,y,w,rq,g,mat);
+}
+function sofaProc(cx,cz,y,w,rq,g,mat){
   mat = mat||MAT.fabric;
   var d = 0.84;
   /* plinth: the whole footprint, 60 mm off the floor, so the seat appears to
@@ -373,21 +447,29 @@ function desk(cx,cz,y,w,rq,g){
   planFurn("desk", cx, cz, w, 0.58, rq, y);
 }
 /* ---- cantilever chair ----
-   The reference chairs are the classic tubular sled: a single bent steel tube
+   The reference chairs are the classic tubular sled: a single bent tube
    running under the seat and up the back, no back legs at all. Modelled as the
-   two side frames plus the seat and back pads. 0.42 m square seat, 0.45 high. */
+   two side frames plus the seat and back pads. 0.42 m square seat, 0.45 high.
+
+   The frame is white lacquer, not the polished steel it used to be. That was a
+   free choice while every seat in the house was a box; it stopped being one
+   when the sofas became the Velo, whose frame is white powder-coated tube and
+   whose only metal is white. A chrome cantilever chair pulled up to a
+   white-framed sofa is the one thing in the room that says the furniture came
+   from two places. Nothing else about the chair changes. */
 function chair(cx,cz,y,rq,g){
+  var FR = MAT.white;
   var s;
   for(s=-1;s<=1;s+=2){
     var side = place(rq,cx,cz,s*0.20,0);
     /* the runner on the floor and the one under the seat */
     var rd = dims(rq,0.032,0.44);
-    fbox(rd[0],0.032,rd[1], side[0], y+0.02, side[1], MAT.steel, g);
-    fbox(rd[0],0.032,rd[1], side[0], y+0.42, side[1], MAT.steel, g);
+    fbox(rd[0],0.032,rd[1], side[0], y+0.02, side[1], FR, g);
+    fbox(rd[0],0.032,rd[1], side[0], y+0.42, side[1], FR, g);
     /* the front bend that carries the load, and the back upright */
     var fp = place(rq,cx,cz,s*0.20,0.20), bp2 = place(rq,cx,cz,s*0.20,-0.20);
-    addCyl(0.017,0.017,0.42, fp[0], y+0.22, fp[1], MAT.steel, g, 8, {furn:true});
-    addCyl(0.017,0.017,0.40, bp2[0], y+0.62, bp2[1], MAT.steel, g, 8, {furn:true});
+    addCyl(0.017,0.017,0.42, fp[0], y+0.22, fp[1], FR, g, 8, {furn:true});
+    addCyl(0.017,0.017,0.40, bp2[0], y+0.62, bp2[1], FR, g, 8, {furn:true});
   }
   fsolid(dims(rq,0.42,0.42)[0], 0.06, dims(rq,0.42,0.42)[1], cx, y+0.465, cz, MAT.fabric2, g);
   var bp = place(rq,cx,cz,0,-0.20);

@@ -665,12 +665,31 @@ function flowerBed(x0,z0,x1,z1){
   }
   addCollider(cx-w/2-KB, cx+w/2+KB, cz-d/2-KB, cz+d/2+KB, 0, 0.55);
 }
+/* ---- potted plant ----
+   Every one of these is the same downloaded planter at a different size, which
+   is what s is for: s = 0.90 beside the upstairs seating, s = 1.35 flanking
+   the front door, and the model is scaled to 1.10 * s metres tall in each
+   case. Scaling on height rather than on width matters here for the same
+   reason it does on the bedside tables - the foliage is half again as wide as
+   the pot, and normalising a planter on the spread of its leaves gives you a
+   thimble under a bush.
+
+   The turned cone and blob of canopy below still go up first and are still
+   what you see if the download fails. The rotation is derived from the
+   position so that four pots in a row are not four identical pots, and so
+   that the same pot is at the same angle on every reload. */
 function potPlant(x,z,y,g,s){
   s=s||1;
-  addCyl(0.24*s,0.19*s,0.44*s,x,y+0.22*s,z,MAT.planter,g,14,{furn:true});
-  var pc = canopy(x, y+0.74*s, z, 0.38*s, 0.32*s, 5, MAT.foliageLo, g, Math.floor(x*7+z*13)+3);
+  var grp = new T.Group();
+  grp.userData.noMerge = true;
+  g.add(grp);
+  addCyl(0.24*s,0.19*s,0.44*s,x,y+0.22*s,z,MAT.planter,grp,14,{furn:true});
+  var pc = canopy(x, y+0.74*s, z, 0.38*s, 0.32*s, 5, MAT.foliageLo, grp, Math.floor(x*7+z*13)+3);
   FURN.push(pc);
   addCollider(x-0.3*s,x+0.3*s,z-0.3*s,z+0.3*s,y,y+0.6*s);
+  if(MODELS.ok)
+    POTQ.push({x:x, z:z, y:y, s:s, g:g, proc:grp,
+               rot:((Math.abs(x)*37 + Math.abs(z)*61) % 6.2832)});
 }
 
 /* ---------- front garden: planting on the edges, the lawn left open ---------- */

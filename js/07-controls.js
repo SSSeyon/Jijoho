@@ -272,6 +272,10 @@ var gLabels = (function(){
   Object.keys(byName).forEach(function(name){
     var z = byName[name].z;
     var s = makeSprite(name);
+    /* What makes a label a control rather than a caption: it carries the room
+       it names, and gotoRoom() below turns that into a standing point. */
+    s.userData.room = name;
+    s.userData.zone = z;
     /* Head height inside, a little lower outside. Indoors 2.05 m clears every
        wardrobe and door head in the building and still sits under the 3.00 m
        ceiling; outdoors there is nothing to clear and a lower label sits
@@ -287,6 +291,7 @@ document.getElementById("btnLabels").onclick = function(){
   var on = !this.classList.contains("on");
   this.classList.toggle("on", on);
   gLabels.visible = on;
+  if(!on) canvas.style.cursor = (mode==="walk" && !locked) ? "grab" : "";
 };
 
 function zoneAt(x,z,y){
@@ -399,11 +404,14 @@ var pick = { ray: new T.Raycaster(), v: new T.Vector2() };
 var glide = { on:false, x:0, z:0, y:0, t:0 };
 
 /* Find a standing point at or near (x,z). Returns {x,z,y} or null.
-   The spiral is deliberately coarse - 0.35 m steps out to 2.1 m - because the
-   point of it is "near enough", not "exactly there". */
+   The spiral is deliberately coarse - 0.35 m steps out to 4.2 m - because the
+   point of it is "near enough", not "exactly there". The radius doubled when
+   double-click stopped refusing non-floor targets: you can now aim at a
+   2.20 m wardrobe or the side of a car, and the nearest place to stand is
+   further away than it is for a patch of floor. */
 function standNear(x, z, y){
   var r, a, tx, tz, fy;
-  for(r=0; r<=2.1; r+=0.35){
+  for(r=0; r<=4.2; r+=0.35){
     var n = r < 0.01 ? 1 : Math.max(6, Math.round(r*10));
     for(a=0; a<n; a++){
       var th = (a/n)*Math.PI*2;
@@ -416,27 +424,158 @@ function standNear(x, z, y){
   return null;
 }
 
+/* Walk to whatever was clicked.
+
+   This used to walk the hit list looking for the first NEAR-HORIZONTAL face
+   and give up if it found none, on the reasoning that only a floor is a place
+   to stand. In practice that made most of the building undouble-clickable:
+   aim at a wall, a wardrobe front, a sofa back, a window, a car or the sky and
+   nothing happened at all, with no feedback to say why. "Take me over there"
+   is the instruction, and the surface the cursor happens to be over is not a
+   reason to refuse it.
+
+   So the FIRST hit is taken whatever it is, and the surface only decides where
+   the destination sits relative to it:
+
+     - horizontal (floor, lawn, a table top, a stair tread) - stand on it;
+     - anything else (wall, door, cupboard, car, tree trunk) - stand in FRONT
+       of it, backed off 0.60 m along the ray, which is where you would stand
+       to look at the thing you just pointed at;
+     - nothing hit at all (open sky) - drop the ray onto the ground plane you
+       are standing on and go there.
+
+   standNear() then does the rest, and it is the part that makes the promise
+   good: it spirals out from the point until it finds somewhere legal, so
+   clicking the middle of the kitchen island puts you beside the island rather
+   than inside it. The spiral now runs to 4.2 m instead of 2.1 m, because the
+   old radius was smaller than some of the things people click on. */
 function goToScreen(cx, cy){
   var r = canvas.getBoundingClientRect();
   pick.v.x =  ((cx - r.left)/r.width )*2 - 1;
   pick.v.y = -((cy - r.top )/r.height)*2 + 1;
   pick.ray.setFromCamera(pick.v, camera);
   var hits = pick.ray.intersectObjects(scene.children, true);
-  var i, h;
+  var i, h = null;
   for(i=0;i<hits.length;i++){
-    h = hits[i];
-    if(!h.face) continue;
-    /* only near-horizontal faces are floor: a click on a wall should not
-       teleport you into it */
-    var nrm = h.face.normal.clone().transformDirection(h.object.matrixWorld);
-    if(nrm.y < 0.55) continue;
-    var s = standNear(h.point.x, h.point.z, h.point.y);
-    if(!s) continue;
-    glide.on = true; glide.x = s.x; glide.z = s.z; glide.y = s.y; glide.t = 0;
-    return true;
+    /* sprites have no face and are not places; the room labels are handled by
+       their own click, not by this */
+    if(hits[i].object && hits[i].object.isSprite) continue;
+    if(!hits[i].face) continue;
+    h = hits[i]; break;
   }
-  return false;
+
+  var tx, tz, ty;
+  if(h){
+    var nrm = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+    tx = h.point.x; tz = h.point.z; ty = h.point.y;
+    if(nrm.y < 0.55){
+      /* a face you cannot stand on: back off towards the camera so the
+         destination is in front of it rather than inside it */
+      var d = pick.ray.ray.direction;
+      var back = 0.60 / Math.max(0.20, Math.hypot(d.x, d.z));
+      tx -= d.x * back; tz -= d.z * back;
+      ty = floorAt(tx, tz, ty + 0.9);
+    }
+  } else {
+    /* nothing at all under the cursor - the sky. Intersect the ray with the
+       ground you are standing on, so a click at the horizon still walks you
+       out that way instead of doing nothing. */
+    var o = pick.ray.ray.origin, dir = pick.ray.ray.direction;
+    if(dir.y > -0.02) return false;             /* pointing up: no ground */
+    var t = (player.y - o.y) / dir.y;
+    if(t <= 0 || t > 400) return false;
+    tx = o.x + dir.x*t; tz = o.z + dir.z*t; ty = player.y;
+  }
+
+  var s = standNear(tx, tz, ty);
+  if(!s) return false;
+  glide.on = true; glide.x = s.x; glide.z = s.z; glide.y = s.y; glide.t = 0;
+  return true;
 }
+
+/* ---------- room labels as controls ----------
+   A label that names a room and cannot be clicked is a caption. Clicking one
+   puts you in that room, on foot, looking at it - and out of dollhouse view if
+   that is where you were, because "take me to the master bedroom" means walk
+   me into it, not centre the doll's house on it.
+
+   Where you land comes from SPOTS where there is one. Those positions were
+   each found by sweeping the room for the point furthest from any collider and
+   then given a heading that faces the thing worth looking at, and no rule
+   derived from the zone rectangle beats a viewpoint someone aimed by hand.
+   The handful of zones with no spot - mostly outdoor ones - fall back to the
+   middle of the rectangle, facing along its long axis. */
+/* Zone names and spot names were written years apart and do not always agree
+   on punctuation - "Driveway / carport" against "Driveway & carport", "Utility
+   yard" against "Utility yard / generator". Comparing them stripped of
+   everything but letters and digits matches those without a lookup table.
+
+   The prefix only runs one way, and that matters: a spot may QUALIFY a room
+   ("Rear lawn (looking at the house)"), but a room name that merely starts
+   with a spot name is a different room. "Bedroom 2" is a prefix of "Bedroom 2
+   en-suite", and sending someone who asked for the en-suite into the bedroom
+   is worse than having no viewpoint at all. Shortest qualifying spot wins, so
+   plain "Kitchen" beats "Kitchen garden (raised beds)". */
+function norm(s){ return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
+/* The two rooms whose viewpoint is not named after them. Standing in the
+   middle of the staircase zone puts you halfway up a flight facing a wall;
+   what anyone clicking either of these wants is the bottom of it. */
+var ROOMSPOT = { "Staircase":"Foot of the stairs", "Stair hall":"Foot of the stairs" };
+function gotoRoom(name, zone){
+  var i, s = null, key = norm(ROOMSPOT[name] || name);
+  for(i=0;i<SPOTS.length;i++){
+    if(SPOTS[i][5] && CTOFF[SPOTS[i][5]]) continue;
+    var sk = norm(SPOTS[i][0]);
+    if(sk.indexOf(key) !== 0) continue;
+    if(!s || sk.length < norm(s[0]).length) s = SPOTS[i];
+  }
+  var x, y, z, yaw;
+  if(s){
+    x = s[1]; y = s[2]; z = s[3]; yaw = s[4];
+  } else {
+    if(!zone) return false;
+    var cx = (zone.x0+zone.x1)/2, cz = (zone.z0+zone.z1)/2;
+    var st = standNear(cx, cz, zone.y);
+    if(!st) return false;
+    x = st.x; y = st.y; z = st.z;
+    /* face along the long axis, towards the far end of the room */
+    yaw = (zone.x1-zone.x0) > (zone.z1-zone.z0)
+        ? (x < cx ? -Math.PI/2 : Math.PI/2)
+        : (z < cz ? 0 : Math.PI);
+  }
+  if(mode !== "walk") setMode("walk");
+  glide.on = false;
+  player.x = x; player.y = y; player.z = z; player.yaw = yaw; player.pitch = -0.03;
+  orbit.tx = x; orbit.ty = y + 2.0; orbit.tz = z;
+  dismissHint();
+  return true;
+}
+
+/* A plain click, in either mode, tested against the labels only. It is a click
+   and not a double-click because the labels are buttons, and it is filtered on
+   how far the pointer travelled since it went down so that letting go at the
+   end of a look-drag over a label does not teleport you. */
+var labelPick = { ray: new T.Raycaster(), v: new T.Vector2(), dx:0, dy:0, ok:false };
+labelPick.ray.params.Sprite = { threshold: 0 };
+function labelAt(cx, cy){
+  if(!gLabels.visible) return null;
+  var r = canvas.getBoundingClientRect();
+  labelPick.v.x =  ((cx - r.left)/r.width )*2 - 1;
+  labelPick.v.y = -((cy - r.top )/r.height)*2 + 1;
+  labelPick.ray.setFromCamera(labelPick.v, camera);
+  var hs = labelPick.ray.intersectObjects(gLabels.children, false);
+  return hs.length ? hs[0].object : null;
+}
+canvas.addEventListener("pointerdown", function(e){
+  labelPick.dx = e.clientX; labelPick.dy = e.clientY; labelPick.ok = true;
+});
+canvas.addEventListener("pointerup", function(e){
+  if(!labelPick.ok) return;
+  labelPick.ok = false;
+  if(Math.abs(e.clientX-labelPick.dx) > 6 || Math.abs(e.clientY-labelPick.dy) > 6) return;
+  var s = labelAt(e.clientX, e.clientY);
+  if(s) gotoRoom(s.userData.room, s.userData.zone);
+});
 
 /* look-drag state for walk mode */
 var look = { down:false, lx:0, ly:0 };
@@ -459,6 +598,15 @@ function dismissHint(){
 window.addEventListener("mouseup", function(){
   look.down = false;
   canvas.style.cursor = (mode==="walk" && !locked) ? "grab" : "";
+});
+/* the labels are clickable, so they have to look clickable */
+canvas.addEventListener("mousemove", function(e){
+  if(locked || isTouch) return;
+  if(gLabels.visible && !look.down && !orbit.dragging && !orbit.panning && labelAt(e.clientX, e.clientY)){
+    canvas.style.cursor = "pointer";
+  } else if(canvas.style.cursor === "pointer"){
+    canvas.style.cursor = (mode==="walk") ? "grab" : "";
+  }
 });
 window.addEventListener("mousemove", function(e){
   if(mode!=="walk") return;

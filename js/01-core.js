@@ -1490,8 +1490,11 @@ var ZONES = [
   /* outdoors */
   Z("Driveway / carport", 0, -9.6,-16.7, -1.1,-11.2),
   Z("Front garden", 0, 0.2,-16.7, 9.7,-11.2),
-  Z("Rear terrace", 0, -1.3,1.7, 4.9,4.2),
-  Z("Rear lawn", 0, -9.7,1.7, 9.7,6.7),
+  /* The terrace and the lawn moved north with the house; the zone boxes did
+     not, so both still sat over ground that is now under the building. You
+     were standing on the terrace and being told you were in the rear lobby. */
+  Z("Rear terrace", 0, -1.3,4.3, 4.9,6.7),
+  Z("Rear lawn", 0, -9.7,6.7, 9.7,11.1),
   Z("Utility yard", 0, -9.7,15.0, 9.7,16.8),
   Z("West garden walk", 0, -9.7,-11.3, -6.8,7.8),
   Z("East service path", 0, 6.8,-11.3, 9.7,14.7)

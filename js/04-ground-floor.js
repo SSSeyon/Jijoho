@@ -172,9 +172,15 @@ potPlant(hx(4.45), hz(10.95), GF, gGF, 1.0);
 
 /* --- foyer --- */
 rugMat(hx(6.75), hz(1.2), GF, 1.6, 2.2, gGF, MAT.fabric2);
-fsolid(1.30,0.80,0.38, hx(8.28), GF+0.40, hz(1.3), MAT.woodDark, gGF);
-addBox(0.05,1.10,0.85, hx(8.45), GF+1.85, hz(1.3), MAT.steel, gGF, {});
-potPlant(hx(5.25), hz(0.55), GF, gGF, 1.2);
+/* The console ran ACROSS door D2, not along a wall: 1.30 m of it laid out on
+   the u axis, centred on u 8.28, so 380 mm of sideboard stood inside a door
+   opening that runs v 1.40-2.30 in the u = 8.55 wall. Turned through 90 deg
+   and moved up to the clear length of that wall above the door. */
+fsolid(0.38,0.80,1.30, hx(8.36), GF+0.40, hz(0.72), MAT.woodDark, gGF);
+addBox(0.05,1.10,0.85, hx(8.52), GF+1.85, hz(0.72), MAT.steel, gGF, {});
+/* and the pot stood on the diagonal between the front door and D1, which is
+   the single most walked line in the house. Into the corner behind it. */
+potPlant(hx(5.45), hz(0.45), GF, gGF, 1.2);
 pendant(hx(6.75), hz(1.3), GF+CH, gGF, 1.3);
 downlight(hx(7.5), hz(2.4), GF+CH, gGF);
 
@@ -205,6 +211,10 @@ ac(hx(11.0), hz(0.20), GF+2.55, 0, gGF);
 /* --- powder room --- */
 wc(hx(9.05), hz(5.9), GF, 2, gGF);
 basin(hx(9.9), hz(4.95), GF, 0, gGF, 0.75);
+/* 1.85 x 1.80 m, and a WC and a basin correct at full size leave a walker
+   nowhere to stand in it. Same call the BQ bathrooms use: the fittings stay
+   drawn, you just walk through them rather than into them. */
+clearColliders(hx(8.62), hz(4.68), hx(10.33), hz(6.32));
 addBox(1.85,0.02,1.80, hx(9.475), GF+0.011, hz(5.5), MAT.tileWet, gGF, {cast:false});
 downlight(hx(9.5),hz(5.5),GF+CH,gGF);
 
@@ -223,22 +233,32 @@ pendant(hx(11.5), hz(8.85), GF+CH, gGF, 1.1);
 [[9.6,7.4],[12.6,7.4],[9.6,9.8],[12.6,9.8]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),GF+CH,gGF); });
 
 /* --- pantry / laundry --- */
-fsolid(2.20,2.10,0.50, hx(12.3), GF+1.05, hz(10.9), MAT.wood, gGF);
-fsolid(0.62,0.85,0.62, hx(9.35), GF+0.42, hz(10.85), MAT.white, gGF);
-addBox(0.42,0.42,0.03, hx(9.35), GF+0.55, hz(10.53), MAT.carGlass, gGF, {});
+/* The pantry is a 5.00 x 1.30 m corridor with a door at each end - D8 from
+   the kitchen at u 9.00-10.00, GD3 to the yard at u 11.90-12.90 - and both
+   ends were built shut. The tall run stood 350 mm in front of GD3 and the
+   machine stood in the middle of D8. Everything is now on the v = 10.20 side,
+   which leaves an 800 mm lane the full length of the room. */
+fsolid(2.20,2.10,0.50, hx(12.30), GF+1.05, hz(10.47), MAT.wood, gGF);
+fsolid(0.62,0.85,0.62, hx(10.40), GF+0.42, hz(10.53), MAT.white, gGF);
+addBox(0.42,0.42,0.03, hx(10.40), GF+0.55, hz(10.85), MAT.carGlass, gGF, {});
 downlight(hx(10.8),hz(10.8),GF+CH,gGF);
 
 /* --- rear lobby / breakfast --- */
 /* a breakfast bar against the left wall keeps the run from the kitchen
    to the rear door completely clear */
 rugMat(hx(6.40), hz(8.6), GF, 1.8, 2.0, gGF, MAT.rug);
-fsolid(0.60, 0.78, 1.40, hx(5.45), GF+0.39, hz(8.45), MAT.woodDark, gGF);
-addBox(0.70, 0.06, 1.50, hx(5.45), GF+0.81, hz(8.45), MAT.counter, gGF, {furn:true});
-stool(hx(5.75), hz(8.10), GF, gGF);
-stool(hx(5.75), hz(8.80), GF, gGF);
-potPlant(hx(5.45), hz(11.0), GF, gGF, 1.1);
+/* "against the left wall" was the intention, but the left wall of this room
+   is D7 - a 2.30 m opening running v 8.30-10.60 - so the bar was standing in
+   the doorway to the dining room with its stools in the middle of it. It is
+   on the kitchen wall now, below D6, and the pot has come off the rear door
+   GD2 and gone into the one corner of the room nothing opens into. */
+fsolid(0.60, 0.78, 1.40, hx(8.20), GF+0.39, hz(10.30), MAT.woodDark, gGF);
+addBox(0.70, 0.06, 1.50, hx(8.20), GF+0.81, hz(10.30), MAT.counter, gGF, {furn:true});
+stool(hx(7.60), hz(9.95), GF, gGF);
+stool(hx(7.60), hz(10.65), GF, gGF);
+potPlant(hx(5.45), hz(7.90), GF, gGF, 1.1);
 downlight(hx(6.75),hz(8.2),GF+CH,gGF);
-pendant(hx(5.75), hz(8.45), GF+CH, gGF, 1.0);
+pendant(hx(7.90), hz(10.30), GF+CH, gGF, 1.0);
 
 /* --- porch --- */
 potPlant(hx(2.2), hz(-1.05), GF, gGF, 1.35);

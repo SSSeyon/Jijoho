@@ -169,11 +169,22 @@
       on-screen pad still work for fine positioning, and the old game-style mouse-look is still available on
       Shift+click for anyone who wants it.
       <br><br>
-      The double-click target is raycast into the scene and then tested against the same collision model the
-      walking uses: the surface has to be near-horizontal, the destination has to be clear of every collider, and
-      it has to be on the storey you are already standing on. If the exact point is occupied the search spirals
-      outward to the nearest legal standing spot, which is what stops a click on the arm of a sofa doing nothing
-      at all. The camera then eases to the target rather than snapping, so you keep your bearings on arrival.
+      <b>Double-click now works on anything.</b> It used to walk the hit list looking for the first
+      near-horizontal face and give up if it found none, on the reasoning that only a floor is a place to stand.
+      In practice that made most of the building undouble-clickable: aim at a wall, a wardrobe front, a sofa
+      back, a window, a car or the sky and nothing happened at all, with nothing on screen to say why. &ldquo;Take
+      me over there&rdquo; is the instruction, and the surface the cursor happens to be over is not a reason to
+      refuse it.
+      <br><br>
+      So the nearest hit is taken whatever it is, and the surface only decides where the destination sits
+      relative to it. A horizontal one &mdash; floor, lawn, a table top, a stair tread &mdash; you stand on.
+      Anything else you stand in <i>front</i> of, backed off 600&nbsp;mm along the ray, which is where you would
+      stand to look at the thing you just pointed at. With nothing under the cursor at all the ray is dropped
+      onto the ground plane you are on, so a click at the horizon still walks you out that way. The search then
+      spirals out to the nearest legal standing spot &mdash; to 4.2&nbsp;m now rather than 2.1&nbsp;m, because
+      the old radius was smaller than some of the things people aim at &mdash; so clicking the middle of the
+      kitchen island puts you beside the island rather than nowhere. The camera eases to the target rather than
+      snapping, so you keep your bearings on arrival.
       <br><br>
       It does <i>not</i> check that a walkable route exists. If you can see a patch of lawn through a window you
       can click it and you will be standing on it, without going round by the door &mdash; same as Street View.
@@ -186,6 +197,19 @@
       overlay, which means they are depth-tested against the building: a label behind a wall is hidden by that
       wall. That is the point &mdash; a name floating through the roof would be worse than no name. They are
       sized in screen space, not in metres, so they stay readable when you pull right back to see the whole plan.
+      <br><br>
+      <b>Click a label and you are standing in that room</b>, on foot &mdash; out of the dollhouse view if that
+      is where you were, because &ldquo;take me to the master bedroom&rdquo; means walk me into it, not centre
+      the doll&rsquo;s house on it. A label that names a room and cannot be clicked is a caption; this makes it a
+      control. Where you land is the hand-aimed viewpoint from the <b>Jump to&hellip;</b> list wherever the room
+      has one &mdash; each of those was found by sweeping the room for the point furthest from any collider and
+      then given a heading that faces the thing worth looking at, and no rule derived from a rectangle beats
+      that. Thirty-one of the forty labels match one; the nine that do not are small service rooms and outdoor
+      strips, and they fall back to the middle of the room facing along its long axis. Zone names and viewpoint
+      names are matched with the punctuation stripped out, so &ldquo;Driveway / carport&rdquo; finds
+      &ldquo;Driveway &amp; carport&rdquo; without a lookup table &mdash; but only in the direction where the
+      viewpoint <i>qualifies</i> the room, so asking for the Bedroom&nbsp;2 en-suite never lands you in
+      Bedroom&nbsp;2.
       <br><br>
       <b>Roof off</b> (<span class="k">R</span>) now lifts every roof on the plot, not just the house&rsquo;s. The
       carport canopy, the generator house&rsquo;s pitched roof and the games tent&rsquo;s canvas go with it, so
@@ -217,9 +241,9 @@
       plant &mdash; the restraint <i>is</i> the style, and one bright object undoes it.
     </div>
     <div class="kv">
-      <div>Seating</div><div>low modular, no visible legs, thin flat backs at 0.62&nbsp;m</div>
+      <div>Seating</div><div>dlX Velo &mdash; bent-ply shell on a white tube frame, grey wool</div>
       <div>Dining</div><div>round on a single fat pedestal for six or fewer; oval above that</div>
-      <div>Chairs</div><div>tubular cantilever sled, no back legs</div>
+      <div>Chairs</div><div>tubular cantilever sled, no back legs, white lacquer frame</div>
       <div>Tables</div><div>pale ash tops on chunky terrazzo bases; coffee tables at 0.32&nbsp;m</div>
       <div>Joinery</div><div>flat-slab handleless, matte, painted rather than timber</div>
       <div>Beds</div><div>low platform base, soft upholstered headboard</div>
@@ -241,6 +265,76 @@
       The box version is still built and still correct. It goes up immediately and is thrown away the moment the
       download lands, so there is no gap with an empty bedroom in it and no room that stops making sense if the
       network does.
+    </div>
+    <div class="note">
+      <b>The sofas, the armchairs and the planters are real models too now</b>, on the same machinery &mdash;
+      which is why the machinery moved out of the bed code and into one place. Every instance is queued as the
+      floors are built and placed once at the end, so each file is fetched exactly once however many rooms want
+      it, and the geometry and textures are shared across the clones.
+      <br><br>
+      <b>The sofa is the dlX Velo</b>, a 2.44&nbsp;m three-seater, scaled uniformly on its width to whatever the
+      plan asked for &mdash; 2.00&nbsp;m in the family room, 2.20&nbsp;m on the balcony, from one file. It is
+      aligned by its <i>back</i> rather than its centre, for the same reason the beds are aligned by the
+      headboard: the back is the edge that goes against the wall and it is the one the plan means.
+      <br><br>
+      <b>The armchairs are the outdoor lounge chair</b>, indoors as well as out, and that is a decision worth
+      being straight about. The Velo cannot be an armchair. Scaled uniformly down to the 0.92&nbsp;m an armchair
+      wants, a 2.44&nbsp;m three-seater stands 370&nbsp;mm high &mdash; a footstool; scaled to a sensible height
+      it is a three-seater again. The alternative is squashing one axis to fit, which is exactly what makes
+      downloaded furniture look subtly wrong without anyone being able to say why. The lounge chair is a metre
+      square and 0.98&nbsp;m high as authored, which is an armchair at armchair size, so it is used at its own
+      scale in both places. If you would rather the indoor chairs came from a matching indoor family, send one
+      and it drops into the same queue.
+      <br><br>
+      <b>The planters are one file at every size.</b> That is the whole point of scaling on a measured dimension:
+      the 0.90-scale pots beside the upstairs seating and the 1.35 ones flanking the front door are the same
+      asset, standing 1.00&nbsp;m and 1.49&nbsp;m tall because that is what the argument asked for. They are
+      scaled on <i>height</i>, not on spread &mdash; the foliage is half again as wide as the pot, and
+      normalising a planter on the width of its leaves gives you a thimble under a bush. Each one is rotated by
+      an angle derived from where it stands, so four pots in a row are not four identical pots and the same pot
+      is at the same angle on every reload.
+      <br><br>
+      One thing changed that is not a model: <b>the dining and desk chairs have white lacquer frames now, not
+      polished steel.</b> That was a free choice while every seat in the house was a box. It stopped being one
+      when the sofas became the Velo, whose frame is white powder-coated tube and whose only metal is white
+      &mdash; a chrome cantilever chair pulled up to a white-framed sofa is the one thing in the room that says
+      the furniture came from two places.
+    </div>
+
+    <h2>Things standing in doorways</h2>
+    <div class="note">
+      You were right, and there were more of them than the two you found. Twelve of the thirty-eight doors and
+      glazed screens in the house had a piece of furniture standing in them, and six rooms could not be reached
+      on foot at all: the pantry, bedroom&nbsp;3 with its bathroom and walk-in, the games tent and the rear
+      terrace. The guest cloakroom you could get one step into.
+      <br><br>
+      The worst of them were not near misses. The foyer console was laid out 1.30&nbsp;m along the wrong axis and
+      ran <i>across</i> door D2 rather than along a wall. The pantry is a 5.00&nbsp;&times;&nbsp;1.30&nbsp;m
+      corridor with a door at each end and both ends were built shut &mdash; the tall run stood 350&nbsp;mm in
+      front of the yard door, the washing machine stood in the middle of the kitchen door. The breakfast bar was
+      meant to sit &ldquo;against the left wall&rdquo;, but the left wall of that room is a 2.30&nbsp;m opening,
+      so the bar and both its stools were standing in the doorway to the dining room. In bedroom&nbsp;3&rsquo;s
+      bathroom every fitting was arranged along the wall the door is in: the bath ran 1.62&nbsp;m straight across
+      it, so the only way in was over the rim. The walk-in had a 1.00&nbsp;m island bench in a 1.04&nbsp;m aisle.
+      And on the balcony, four seats round a 1.08&nbsp;m table need 2.40&nbsp;m of depth where there is 2.20, so
+      two of the four chairs were standing in the master&rsquo;s sliding doors.
+      <br><br>
+      All of them are moved &mdash; the three bathroom fittings onto the three walls their door is not in, the
+      balcony down to two seats, which is the only round arrangement that fits 2.20&nbsp;m because it puts the
+      chairs either side of the table rather than fore and aft. The guest cloakroom is 1.85&nbsp;&times;&nbsp;1.80
+      and a WC and a basin correct at full size leave nobody anywhere to stand, so it gets the same treatment the
+      BQ bathrooms already had: the fittings stay drawn, you walk through them rather than into them.
+      <br><br>
+      Two zone boxes were stale as well &mdash; the terrace and the lawn had moved north with the house and the
+      boxes had not, so standing on the terrace told you you were in the rear lobby.
+      <br><br>
+      <b>There is now a doorway clearance check</b> in the drawings panel, next to the door swing check, because
+      this is not a thing to fix once. They are different questions and neither catches the other&rsquo;s
+      failures: a door with nothing in its arc can still have a washing machine standing half a metre inside it.
+      It sweeps the same 280&nbsp;mm body the walkthrough uses through every opening and 450&nbsp;mm either side
+      of it, and reports the widest gap that body can actually pass through. It works off the collision model
+      rather than the plan rectangles, because the things that block a door are not always things that got drawn
+      &mdash; a built-in cupboard, a bath, a wire chair. Everything in the house currently clears.
     </div>
 
     <h2>Room dimensions</h2>

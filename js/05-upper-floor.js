@@ -46,9 +46,14 @@ rail(hx(12.95),hz(UB), hx(12.95), hz(0.0), FF, gFF);
    "cantilever" rather than "covered porch". */
 /* balcony furniture - a sitting end, a dining end, and planting between */
 sofa(hx(2.60), hz(-1.55), FF, 2.2, 0, gFF, MAT.fabric2);
-armchair(hx(4.55), hz(-1.05), FF, 1, gFF);
+armchair(hx(4.75), hz(-1.45), FF, 1, gFF);
 coffeeTable(hx(3.10), hz(-0.95), FF, 1.0, 0.6, gFF);
-diningSet(hx(9.90), hz(-1.25), FF, 4, 0, gFF);
+/* Four seats round a 1.08 m table needs 2.40 m of depth and this balcony has
+   2.20 m, so two of the four chairs were standing in the master's sliding
+   doors. Two seats put the chairs either side of the table instead of fore
+   and aft, which is the only arrangement that fits, and it leaves 810 mm
+   between the chair backs and the threshold. */
+diningSet(hx(9.90), hz(-1.35), FF, 2, 0, gFF);
 potPlant(hx(1.20), hz(-1.95), FF, gFF, 1.15);
 potPlant(hx(6.75), hz(-2.00), FF, gFF, 1.25);
 potPlant(hx(12.40),hz(-1.95), FF, gFF, 1.15);
@@ -209,7 +214,7 @@ rugMat(hx(2.65), hz(2.90), FF, 3.6, 2.3, gFF);
 sofa(hx(0.53), hz(2.90), FF, 2.00, 3, gFF);
 coffeeTable(hx(2.30), hz(2.90), FF, 0.95, 0.55, gFF);
 tvUnit(hx(4.76), hz(3.20), FF, 1.10, 1, gFF);
-armchair(hx(1.15), hz(1.05), FF, 0, gFF);
+armchair(hx(1.15), hz(1.90), FF, 0, gFF);
 potPlant(hx(5.90), hz(2.10), FF, gFF, 1.0);
 potPlant(hx(0.55), hz(0.60), FF, gFF, 0.9);
 [[1.3,0.7],[4.6,0.7],[1.3,2.4],[3.6,1.5],[2.6,3.5]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
@@ -257,7 +262,7 @@ addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
    rear windows at v = 13.90 finally light something that is used. */
 rugMat(hx(6.70), hz(12.20), FF, 2.6, 2.4, gFF, MAT.fabric2);
 sofa(hx(7.80), hz(12.20), FF, 2.00, 1, gFF, MAT.fabric2);
-armchair(hx(5.55), hz(11.70), FF, 3, gFF);
+armchair(hx(5.55), hz(12.70), FF, 3, gFF);
 coffeeTable(hx(6.75), hz(12.20), FF, 0.90, 0.55, gFF);
 fsolid(1.10,0.78,0.36, hx(6.65), FF+0.39, hz(13.62), MAT.wood, gFF);
 potPlant(hx(5.45), hz(13.30), FF, gFF, 1.15);
@@ -317,7 +322,7 @@ picLight(hx(13.20), hz(6.00), FF+2.05, 0.9, 3, gFF);
 /* --- bedroom 2  (u 8.3..13.55, v 9.9..13.9  =  5.06 x 3.89 m) --- */
 rugMat(hx(10.90), hz(12.30), FF, 3.4, 2.8, gFF);
 bed(hx(10.90), hz(12.55), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
-desk(hx(13.14), hz(11.00), FF, 1.2, 1, gFF);
+desk(hx(13.14), hz(11.60), FF, 1.2, 1, gFF);
 wardrobe(hx(8.67), hz(12.50), FF, 2.0, 3, gFF);
 tvUnit(hx(10.75), hz(10.15), FF, 1.50, 0, gFF);
 downlight(hx(9.6),hz(10.8),FF+CH,gFF); downlight(hx(12.6),hz(10.8),FF+CH,gFF);
@@ -332,7 +337,7 @@ shower(hx(9.55), hz(8.60), hx(10.70), hz(9.60), FF, gFF);
 downlight(hx(9.55),hz(8.6),FF+CH,gFF);
 /* linen / plant store (u 10.8..13.55, v 7.65..9.9) */
 fsolid(2.55,2.20,0.50, hx(12.18), FF+1.10, hz(7.95), MAT.wood, gFF);
-fsolid(0.70,1.60,0.70, hx(11.30), FF+0.80, hz(9.45), MAT.steel, gFF);
+fsolid(0.70,1.60,0.70, hx(11.20), FF+0.80, hz(8.90), MAT.steel, gFF);
 downlight(hx(12.2),hz(8.8),FF+CH,gFF);
 
 /* --- bedroom 3  (u 0..5.0, v 10.2..13.9  =  4.81 x 3.55 m) ---
@@ -342,7 +347,7 @@ downlight(hx(12.2),hz(8.8),FF+CH,gFF);
    perfectly reasonable place to put a teenager or a long-staying guest. */
 rugMat(hx(2.40), hz(12.30), FF, 3.4, 2.8, gFF);
 bed(hx(2.40), hz(12.55), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
-desk(hx(0.41), hz(11.20), FF, 1.2, 3, gFF);
+desk(hx(0.41), hz(12.40), FF, 1.2, 3, gFF);
 tvUnit(hx(2.55), hz(10.45), FF, 1.50, 0, gFF);
 downlight(hx(1.4),hz(10.9),FF+CH,gFF); downlight(hx(3.8),hz(10.9),FF+CH,gFF);
 downlight(hx(2.4),hz(13.0),FF+CH,gFF);
@@ -355,18 +360,25 @@ potPlant(hx(4.55), hz(13.35), FF, gFF, 1.0);
    house with room for both a bath and a separate shower, and it is now the one
    the children use. */
 addBox(2.80,0.02,3.20, hx(1.40), FF+0.011, hz(8.60), MAT.tileWet, gFF, {cast:false});
-basin(hx(1.05), hz(7.25), FF, 0, gFF, 1.15);
-wc(hx(0.42), hz(9.70), FF, 2, gFF);
-bathtub(hx(1.62), hz(9.62), FF, 1.62, 0.75, gFF);
-shower(hx(2.02), hz(7.60), hx(2.72), hz(8.60), FF, gFF);
-downlight(hx(0.9),hz(7.8),FF+CH,gFF); downlight(hx(2.1),hz(9.4),FF+CH,gFF);
-picLight(hx(1.05), hz(7.12), FF+2.00, 0.9, 0, gFF);
+/* Everything used to be arranged along v = 9.6, which is the wall D108 is
+   in: the bath ran 1.62 m straight across the door and the WC stood beside
+   it, so the only way into the room was over the rim of the bath. The three
+   fittings now take the three walls the door is not in, and the entry strip
+   at v 9.5-10.2 is clear right across. */
+bathtub(hx(0.95), hz(7.42), FF, 1.70, 0.78, gFF);
+shower(hx(1.98), hz(7.03), hx(2.76), hz(8.55), FF, gFF);
+basin(hx(0.32), hz(8.85), FF, 3, gFF, 1.10);
+wc(hx(2.44), hz(9.15), FF, 1, gFF);
+downlight(hx(1.2),hz(7.7),FF+CH,gFF); downlight(hx(1.4),hz(9.4),FF+CH,gFF);
+picLight(hx(0.20), hz(8.85), FF+2.00, 0.9, 3, gFF);
 
 /* --- bedroom 3 walk-in  (u 2.8..5.0, v 7.0..10.2) --- */
 wardrobe(hx(3.95), hz(7.20), FF, 2.0, 0, gFF);
 wardrobe(hx(3.05), hz(8.90), FF, 2.4, 3, gFF);
 wardrobe(hx(4.80), hz(8.90), FF, 2.4, 1, gFF);
-fsolid(1.0,0.55,0.55, hx(3.95), FF+0.28, hz(9.20), MAT.wood, gFF);
+/* An island bench 1.00 m wide, in the 1.04 m aisle between two wardrobe
+   walls, directly inside door D109. There is no version of this room that
+   has both the third wardrobe and something standing in the middle of it. */
 downlight(hx(3.9),hz(8.6),FF+CH,gFF);
 
 /* the real beds and side tables, once every one of them has been queued */

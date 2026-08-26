@@ -208,6 +208,63 @@ var SWINGCLASH = (function(){
   return out;
 })();
 
+/* ---------- doorway clearance check ----------
+   The swing check above asks whether a leaf can open. This asks the question
+   that actually stops you: whether a person can get through the opening once
+   it has. They are not the same test and neither catches the other's failures
+   - a door with nothing in its arc can still have a washing machine standing
+   half a metre inside it, and that is exactly what the pantry had.
+
+   It works off COLLIDERS rather than the plan rectangles, because the things
+   that block a door are not always things that got drawn on the plan: a
+   built-in cupboard, a bath, a wire chair. For every door and glazed screen it
+   sweeps a 0.28 m body - the same radius the walk uses - across the opening
+   and 0.45 m either side of the wall, and reports the widest gap that body can
+   actually pass through. Under 0.60 m and you cannot get through it. */
+var DOORBLOCK = (function(){
+  var out = [];
+  var RAD = 0.28;
+  function blocked(u, v, y){
+    var x = hx(u), z = hz(v), lo = y + 0.38, hi = y + 1.75;
+    for(var i = 0; i < COLLIDERS.length; i++){
+      var c = COLLIDERS[i];
+      if(c.t && CTOFF[c.t]) continue;
+      if(c.y1 <= lo || c.y0 >= hi) continue;
+      var cx = Math.max(c.x0, Math.min(x, c.x1)), cz = Math.max(c.z0, Math.min(z, c.z1));
+      if((x-cx)*(x-cx) + (z-cz)*(z-cz) < RAD*RAD) return true;
+    }
+    return false;
+  }
+  OPENINGS.forEach(function(o){
+    if(o.kind === "window") return;
+    var N = 24, i, j, pass = [];
+    for(i = 0; i <= N; i++){
+      /* lateral position of the body centre, kept a body radius inside the
+         reveals: a walker cannot stand with their shoulder in the jamb */
+      var f = -(o.w/2 - RAD) + (o.w - 2*RAD) * (i/N);
+      var ok = true;
+      for(j = -1; j <= 1; j++){
+        var t = j * 0.45;
+        var u = o.horiz ? o.u + f : o.u + t;
+        var v = o.horiz ? o.v + t : o.v + f;
+        if(blocked(u, v, o.y)){ ok = false; break; }
+      }
+      pass.push(ok);
+    }
+    /* widest continuous run that a body can walk down */
+    var run = 0, bestRun = 0;
+    for(i = 0; i <= N; i++){
+      if(pass[i]){ run++; bestRun = Math.max(bestRun, run); } else run = 0;
+    }
+    var clear = bestRun ? (bestRun-1)/N * (o.w - 2*RAD) + 2*RAD : 0;
+    if(clear < 0.60){
+      out.push({ mark:o.mark, w:o.w, clear:clear,
+                 a:(o.zA ? o.zA.n : "outside"), b:(o.zB ? o.zB.n : "outside") });
+    }
+  });
+  return out;
+})();
+
 /* ---------- room schedule ----------
    Clear area, not the grid rectangle: each zone edge that has a wall on it
    gives up half that wall's thickness. Which is why the living room comes out
@@ -798,6 +855,22 @@ var PLANSVG = (function(){
            'rendering artefact.</p>';
       s += tbl(["Door","Room","Fouls"], SWINGCLASH.map(function(c){
         return [c.mark, c.room, c.hits.join(", ")];
+      }));
+    }
+
+    s += '<h2>Doorway clearance</h2>';
+    if(!DOORBLOCK.length){
+      s += '<p>Every door and glazed screen in the house has at least 600&nbsp;mm of '+
+           'clear width with the furniture where it stands. Measured by sweeping the same '+
+           '280&nbsp;mm body the walkthrough uses through each opening and 450&nbsp;mm '+
+           'either side of it &mdash; which is a different question from the swing check '+
+           'above, and the one that actually stops you: a door with nothing in its arc can '+
+           'still have a washing machine standing half a metre inside it.</p>';
+    } else {
+      s += '<p>Openings a person cannot get through. This is furniture standing in a '+
+           'doorway, not a fault in the plan &mdash; move the piece.</p>';
+      s += tbl(["Opening","Between","Width","Clear"], DOORBLOCK.map(function(c){
+        return [c.mark, c.a + " / " + c.b, c.w.toFixed(2), c.clear.toFixed(2)];
       }));
     }
 
