@@ -194,17 +194,32 @@ addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
    be placed here stood in exactly the same spots, so every bed in the house
    had four - two of them inside the other two. Same duplication in bedrooms 2
    and 3; removed in all three. */
-rugMat(hx(4.05), hz(12.10), FF, 4.6, 3.4, gFF);
-bed(hx(4.05), hz(11.70), FF, 2.00, 2.10, 0, gFF);
-tvUnit(hx(4.05), hz(13.62), FF, 2.0, 0, gFF);
+/* The bed has crossed the room to the rear wall. It used to stand against the
+   south wall with its head at v = 10.48 - and that wall carries three doors,
+   one of which (the walk-in closet, u 3.4-4.3) opened straight onto the
+   pillows. A wall with three openings in it is a circulation wall, not a bed
+   wall; the rear wall is 8.3 m of unbroken plaster with the window either
+   side of it, which is where a bed belongs. */
+rugMat(hx(4.05), hz(12.30), FF, 4.6, 3.0, gFF);
+bed(hx(4.05), hz(12.60), FF, 1.80, 2.05, 2, gFF);
+/* The west wall is a 2.40 m window from v = 10.8 to 13.2, so there is no wall
+   there to hang a screen on - the first attempt put the television squarely in
+   front of the glass. The south wall carries three doors and the only free
+   panel wide enough is u 6.5-8.3, which puts the screen at the foot corner
+   rather than square on to the bed. In a room 3.70 m deep that is not a
+   compromise, it is the only place a television goes. */
+tvUnit(hx(7.40), hz(10.45), FF, 1.5, 0, gFF);
 /* one reading chair by the window, not a pair flanking the bed */
-armchair(hx(7.30), hz(12.80), FF, 1, gFF);
-fsolid(0.44,0.42,0.44, hx(7.30), FF+0.21, hz(11.80), MAT.woodPale, gFF);
+armchair(hx(7.70), hz(12.80), FF, 1, gFF);
+fsolid(0.44,0.42,0.44, hx(7.70), FF+0.21, hz(11.85), MAT.woodPale, gFF);
 [[1.6,10.9],[6.4,10.9],[1.6,13.2],[6.4,13.2],[4.05,12.1]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
-wallLight(hx(0.20), hz(12.30), FF+1.95, 1, gFF);
-ac(hx(6.90), hz(10.42), FF+2.55, 0, gFF);
-artwork(hx(4.05), hz(10.45), FF+1.95, 1.5, 1.0, 0, gFF);
-picLight(hx(4.05), hz(10.52), FF+2.62, 1.4, 0, gFF);
+wallLight(hx(0.20), hz(10.50), FF+1.95, 1, gFF);
+ac(hx(8.11), hz(11.30), FF+2.55, 3, gFF);
+/* 1.10 m wide, on the 1.30 m of wall between the closet and landing doors.
+   The 1.50 m panel that used to hang here was centred on u = 4.05, which is
+   inside the closet doorway. */
+artwork(hx(4.95), hz(10.33), FF+1.90, 1.1, 0.85, 0, gFF);
+picLight(hx(4.95), hz(10.42), FF+2.45, 1.0, 0, gFF);
 
 /* --- master bathroom  (u 0..2.8, v 7.0..10.2) --- */
 addBox(2.80,0.02,3.20, hx(1.40), FF+0.011, hz(8.60), MAT.tileWet, gFF, {cast:false});
@@ -228,6 +243,10 @@ downlight(hx(3.9),hz(8.6),FF+CH,gFF);
 
 /* --- bedroom 2  (u 8.3..13.55, v 9.2..13.9) --- */
 rugMat(hx(10.80), hz(11.90), FF, 3.2, 2.8, gFF);
+/* The 1.2 m of floor between the headboard and the wall behind it is not
+   waste. The door into this room is on the west wall at v = 9.3-10.1, and
+   pulling the bed back to the wall would put the head of it immediately
+   beside the door you walk in through. */
 bed(hx(10.80), hz(11.55), FF, 1.60, 2.00, 0, gFF, MAT.fabric2);
 desk(hx(13.05), hz(12.80), FF, 1.2, 1, gFF);
 tvUnit(hx(10.80), hz(13.62), FF, 1.6, 0, gFF);
@@ -250,7 +269,8 @@ downlight(hx(12.2),hz(8.2),FF+CH,gFF);
 rugMat(hx(10.90), hz(2.55), FF, 3.2, 2.8, gFF);
 bed(hx(10.90), hz(2.70), FF, 1.60, 2.00, 2, gFF, MAT.fabric2);
 desk(hx(13.05), hz(1.55), FF, 1.2, 1, gFF);
-wardrobe(hx(9.25), hz(1.30), FF, 2.0, 3, gFF);
+/* clear of the bedroom door arc, which caught it at v = 1.30 */
+wardrobe(hx(9.25), hz(3.35), FF, 2.0, 3, gFF);
 downlight(hx(9.4),hz(1.2),FF+CH,gFF); downlight(hx(12.6),hz(3.6),FF+CH,gFF);
 wallLight(hx(8.50), hz(3.60), FF+1.95, 1, gFF);
 ac(hx(12.60), hz(4.38), FF+2.55, 2, gFF);

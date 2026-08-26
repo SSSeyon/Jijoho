@@ -37,6 +37,7 @@
   </select>
   <select class="b" id="goto"><option value="">Jump to&hellip;</option></select>
   <div class="spacer"></div>
+  <button class="b" id="btnPlans">2D plans</button>
   <button class="b" id="btnInfo">Specs &amp; costs</button>
 </div>
 
@@ -79,6 +80,20 @@
   <div id="where">&nbsp;</div>
 </div>
 
+<div id="planPanel">
+  <div id="planBar">
+    <div class="ttl">Drawings</div>
+    <button class="b on" data-plan="ground">Ground floor</button>
+    <button class="b" data-plan="first">First floor</button>
+    <button class="b" data-plan="site">Site</button>
+    <button class="b" data-plan="schedules">Schedules &amp; checks</button>
+    <div class="spacer"></div>
+    <button class="b" id="planDl">Download SVG</button>
+    <button class="b" id="planClose">&times;</button>
+  </div>
+  <div id="planView"></div>
+</div>
+
 <div id="infoPanel">
   <button id="infoClose">&times;</button>
   <div class="doc">
@@ -102,6 +117,17 @@
       <div>&nbsp;&nbsp;&mdash; paved hardstanding</div><div>&asymp; 144 m&sup2;</div>
       <div>&nbsp;&nbsp;&mdash; soft landscape</div><div>&asymp; 273 m&sup2;</div>
       <div>Total hard surface (roofs + paving)</div><div>&asymp; 58 %</div>
+    </div>
+    <div class="note">
+      <b>These are gross areas. The measured ones live under &ldquo;2D plans&rdquo;.</b>
+      Everything in the table above is taken to the structural grid, which is the right basis for
+      comparing floors and for a first pass at cost. It is not what you can lay a tile on. The
+      room schedule on the <b>Schedules &amp; checks</b> tab of the 2D plans is generated from the
+      model itself and gives <i>clear</i> areas, with each bounding wall&rsquo;s thickness deducted
+      &mdash; so the living room is 32.8&nbsp;m&sup2; there against the 35.0&nbsp;m&sup2; its
+      5.0&nbsp;&times;&nbsp;7.0&nbsp;m grid would suggest, and the master 28.5&nbsp;m&sup2; against
+      30.7. Those figures cannot drift, because they are computed from the same coordinates that
+      build the 3D. The ones in this document are typed, and can.
     </div>
     <div class="note">
       <b>What the bigger upper floor costs, stated plainly.</b>
@@ -559,6 +585,7 @@
 <script src="js/03-site.js"></script>
 <script src="js/04-ground-floor.js"></script>
 <script src="js/05-upper-floor.js"></script>
-<script src="js/06-controls.js"></script>
+<script src="js/06-plans.js"></script>
+<script src="js/07-controls.js"></script>
 </body>
 </html>

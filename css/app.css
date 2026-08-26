@@ -142,3 +142,28 @@
     #navLbl{bottom:178px}
     #mobileHelp{bottom:96px}
   }
+
+  /* ---------- 2D drawings panel ---------- */
+  #planPanel{position:fixed;inset:0;z-index:55;background:#0b1116;display:none;
+    flex-direction:column}
+  #planPanel.open{display:flex}
+  #planBar{display:flex;align-items:center;gap:8px;padding:10px 14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);background:var(--panel2)}
+  #planBar .ttl{font-size:12px;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--acc);margin-right:6px}
+  #planBar .spacer{flex:1}
+  #planBar button.b.on{border-color:var(--acc);color:var(--acc)}
+  #planView{flex:1;overflow:auto;padding:14px 16px 30px}
+  #planView svg{display:block;margin:0 auto;max-width:1500px}
+  #planView table{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:12.3px}
+  #planView th{text-align:left;color:var(--dim);font-weight:600;padding:7px 8px;
+    border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.08em;font-size:10.5px}
+  #planView td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.07);
+    vertical-align:top;color:#c8d4dd}
+  #planView td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  #planView .doc{max-width:900px;margin:0 auto}
+  @media (max-width:760px){
+    #planBar{padding:8px 10px;gap:6px}
+    #planBar .ttl{display:none}
+    #planView{padding:10px 8px 26px}
+  }

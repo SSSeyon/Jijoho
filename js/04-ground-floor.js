@@ -88,7 +88,11 @@ hwall(8.55,0,8.55,HD,{h:CH,t:INT.t,mat:INT.mat,y:GF,group:gGF,openings:[
   opV(1.4,2.3,0,2.20), opV(4.85,5.65,0,2.20), opV(7.4,9.4,0,2.45)
 ]});
 hwall(8.55,4.6,HW,4.6,{h:CH,t:INT.t,mat:INT.mat,y:GF,group:gGF});
-hwall(8.55,6.4,HW,6.4,{h:CH,t:INT.t,mat:INT.mat,y:GF,group:gGF,openings:[ opH(10.9,11.8,0,2.20) ]});
+/* The store door has moved 1.5 m east. It used to open at u 10.9-11.8, which
+   is the middle of the kitchen's main worktop run: the leaf swung straight into
+   the back of the counter and the cooker stood in the doorway. Nobody sees that
+   in a walkthrough, because you can walk through a worktop. */
+hwall(8.55,6.4,HW,6.4,{h:CH,t:INT.t,mat:INT.mat,y:GF,group:gGF,openings:[ opH(12.4,13.3,0,2.20) ]});
 hwall(10.4,4.6,10.4,6.4,{h:CH,t:INT.t,mat:INT.mat,y:GF,group:gGF});
 hwall(8.55,10.2,HW,10.2,{h:CH,t:INT.t,mat:INT.mat,y:GF,group:gGF,openings:[ opH(9.0,10.0,0,2.20) ]});
 
@@ -136,10 +140,10 @@ var RISERS = 18, STEPS = 17, RISE = (FF-GF)/RISERS, TREAD = 0.28, SW0 = 5.0, SW1
    only 4.81 m wide, and the gap left to walk between the seating and the TV
    was under 700 mm. */
 rugMat(hx(2.45), hz(3.5), GF, 3.2, 2.8, gGF);
-sofa(hx(1.00), hz(3.40), GF, 2.40, 3, gGF);
+sofa(hx(0.58), hz(3.40), GF, 2.40, 3, gGF);
 armchair(hx(2.75), hz(1.65), GF, 0, gGF);
 coffeeTable(hx(2.55), hz(3.50), GF, 0.95, 0.95, gGF);
-tvUnit(hx(4.60), hz(3.50), GF, 1.90, 1, gGF);
+tvUnit(hx(4.72), hz(3.50), GF, 1.90, 1, gGF);
 potPlant(hx(0.62), hz(6.35), GF, gGF, 1.15);
 artwork(hx(4.86), hz(1.6), GF+1.65, 1.2, 0.85, 1, gGF);
 picLight(hx(4.80), hz(1.6), GF+2.42, 1.1, 1, gGF);
@@ -188,8 +192,11 @@ bed(hx(12.25), hz(2.30), GF, 1.60, 2.00, 1, gGF, MAT.linen);
    own face, and 2.00 m wide rather than 2.40 - which also opens the gap
    between it and the foot of the bed from 0.94 m to a usable 1.25 m. */
 wardrobe(hx(10.30), hz(4.22), GF, 2.00, 2, gGF);
-armchair(hx(9.28), hz(1.30), GF, 1, gGF);
-fsolid(0.44,0.42,0.44, hx(9.28), GF+0.21, hz(2.15), MAT.woodPale, gGF);
+/* The reading chair used to stand at v = 1.30, directly in the arc of the
+   bedroom door - see the swing check in 06-plans.js, which is what found it.
+   Moved down the same wall, where it also gets the wall light above it. */
+armchair(hx(9.10), hz(3.30), GF, 3, gGF);
+fsolid(0.44,0.42,0.44, hx(10.05), GF+0.21, hz(3.30), MAT.woodPale, gGF);
 artwork(hx(11.30), hz(4.44), GF+1.70, 1.1, 0.8, 2, gGF);
 wallLight(hx(8.72), hz(3.30), GF+1.95, 1, gGF);
 downlight(hx(10.2),hz(1.6),GF+CH,gGF); downlight(hx(12.3),hz(3.4),GF+CH,gGF);
@@ -206,9 +213,9 @@ fsolid(2.90,2.10,0.45, hx(11.95), GF+1.05, hz(4.9), MAT.wood, gGF);
 
 /* --- kitchen --- */
 addBox(5.00,0.02,3.80, hx(11.05), GF+0.011, hz(8.3), MAT.tileWet, gGF, {cast:false});
-counterRun(hx(9.0), hz(6.75), hx(13.2), hz(6.75), GF, gGF, true);
-counterRun(hx(13.1), hz(7.3), hx(13.1), hz(9.0), GF, gGF, false);
-cooker(hx(11.4), hz(6.78), GF, 0, gGF);
+counterRun(hx(9.0), hz(6.75), hx(12.1), hz(6.75), GF, gGF, true);
+counterRun(hx(13.1), hz(7.45), hx(13.1), hz(9.0), GF, gGF, false);
+cooker(hx(10.6), hz(6.78), GF, 0, gGF);
 fridge(hx(12.85), hz(9.70), GF, 2, gGF);
 island(hx(10.9), hz(8.9), GF, 2.20, 0.95, gGF);
 pendant(hx(10.3), hz(8.85), GF+CH, gGF, 1.1);

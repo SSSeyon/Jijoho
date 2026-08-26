@@ -1424,7 +1424,93 @@ function wall(x0,z0,x1,z1,o){
     }
   });
 }
-function hwall(u0,v0,u1,v1,o){ wall(hx(u0),hz(v0),hx(u1),hz(v1),o); }
+/* ---------- rooms ----------
+   Lives here rather than with the controls that first used it, because the
+   plans, the room schedule and the door-swing logic all need it and all of
+   them are built before the controls file is parsed. 06-controls.js still
+   adds the garden and court zones to the end of this list. */
+function Z(name, y, x0,z0,x1,z1){ return {n:name, y:y, x0:Math.min(x0,x1), x1:Math.max(x0,x1), z0:Math.min(z0,z1), z1:Math.max(z0,z1)}; }
+var ZONES = [
+  /* ground floor */
+  Z("Living room", GF, hx(0),hz(0), hx(5.0),hz(7.0)),
+  Z("Dining room", GF, hx(0),hz(7.0), hx(5.0),hz(11.5)),
+  Z("Entrance foyer", GF, hx(5.0),hz(0), hx(8.55),hz(2.6)),
+  Z("Staircase", GF, hx(5.0),hz(2.6), hx(6.5),hz(7.36)),
+  Z("Stair hall", GF, hx(6.5),hz(2.6), hx(8.55),hz(7.36)),
+  Z("Rear lobby / breakfast", GF, hx(5.0),hz(7.36), hx(8.55),hz(11.5)),
+  Z("Guest bedroom", GF, hx(8.55),hz(0), hx(13.55),hz(4.6)),
+  Z("Guest cloakroom", GF, hx(8.55),hz(4.6), hx(10.4),hz(6.4)),
+  Z("Store", GF, hx(10.4),hz(4.6), hx(13.55),hz(6.4)),
+  Z("Kitchen", GF, hx(8.55),hz(6.4), hx(13.55),hz(10.2)),
+  Z("Pantry / laundry", GF, hx(8.55),hz(10.2), hx(13.55),hz(11.5)),
+  Z("Front porch", GF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
+  /* first floor */
+  Z("Family room", FF, hx(0),hz(0), hx(6.5),hz(2.6)),
+  Z("Study / library", FF, hx(0),hz(2.6), hx(5.0),hz(7.0)),
+  Z("Upstairs corridor", FF, hx(6.5),hz(0), hx(8.3),hz(7.36)),
+  Z("Upstairs landing", FF, hx(5.0),hz(7.36), hx(8.3),hz(10.2)),
+  Z("Master bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
+  Z("Walk-in closet", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
+  Z("Master bedroom", FF, hx(0),hz(10.2), hx(8.3),hz(13.9)),
+  Z("Bedroom 3", FF, hx(8.3),hz(0), hx(13.55),hz(4.6)),
+  Z("Linen / plant store", FF, hx(8.3),hz(4.6), hx(10.8),hz(6.9)),
+  Z("Bedroom 3 en-suite", FF, hx(10.8),hz(4.6), hx(13.55),hz(6.9)),
+  Z("Bedroom 2 en-suite", FF, hx(8.3),hz(6.9), hx(10.8),hz(9.2)),
+  Z("Bedroom 2 walk-in", FF, hx(10.8),hz(6.9), hx(13.55),hz(9.2)),
+  Z("Bedroom 2", FF, hx(8.3),hz(9.2), hx(13.55),hz(13.9)),
+  Z("Front balcony", FF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
+  /* games tent - in the garden, so it goes with the garden */
+  Z("Games tent", 0, -8.40, 11.10, -3.20, 14.70),
+  /* outdoors */
+  Z("Driveway / carport", 0, -9.6,-16.7, -1.1,-11.2),
+  Z("Front garden", 0, 0.2,-16.7, 9.7,-11.2),
+  Z("Rear terrace", 0, -1.3,1.7, 4.9,4.2),
+  Z("Rear lawn", 0, -9.7,1.7, 9.7,6.7),
+  Z("Utility yard", 0, -9.7,15.0, 9.7,16.8),
+  Z("West garden walk", 0, -9.7,-11.3, -6.8,7.8),
+  Z("East service path", 0, 6.8,-11.3, 9.7,14.7)
+];
+
+/* ---------- the plan registry ----------
+   Every wall the house is built from is recorded here as it is built, in the
+   same u/v coordinates the call site used. The 2D drawings are generated from
+   this list, which is the whole point: there is no second description of the
+   building to fall out of step with the first. Move a wall in 04/05 and the
+   plan, the door schedule and the quantities all move with it.
+
+   Openings arrive from opH/opV in world coordinates, so they are converted
+   back to local u/v on the way in. */
+var PLAN = { walls: [], furn: [] };
+
+function hwall(u0,v0,u1,v1,o){
+  o = o || {};
+  var horiz = Math.abs(v1 - v0) < 1e-6;
+  PLAN.walls.push({
+    u0:u0, v0:v0, u1:u1, v1:v1,
+    horiz : horiz,
+    t     : o.t != null ? o.t : 0.20,
+    h     : o.h != null ? o.h : CH,
+    y     : o.y != null ? o.y : GF,
+    ext   : o.mat === MAT.wallExt,
+    ops   : (o.openings || []).map(function(op){
+      return { a    : op.a - (horiz ? HX : HZ),
+               b    : op.b - (horiz ? HX : HZ),
+               sill : op.sill || 0,
+               top  : op.top != null ? op.top : 2.35,
+               glass: op.glass === true };
+    })
+  });
+  wall(hx(u0),hz(v0),hx(u1),hz(v1),o);
+}
+
+/* Fixed furniture and sanitaryware register their footprint so the plans can
+   draw them and the door swings can be checked against them. w/d are the
+   unrotated footprint; rq turns it the same way dims() does. */
+function planFurn(kind, cx, cz, w, d, rq, y){
+  var D = (rq === 1 || rq === 3) ? [d, w] : [w, d];
+  PLAN.furn.push({ k:kind, u:cx - HX, v:cz - HZ, w:D[0], d:D[1],
+                   y: y != null ? y : GF });
+}
 
 /* ---------- hip roof ---------- */
 function hipRoof(x0,z0,x1,z1,baseY,height,over,mat,group){

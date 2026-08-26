@@ -177,48 +177,7 @@ if(typeof MODELS !== "undefined" && MODELS.whenReady){
   });
 }
 
-/* ---------- rooms for the location readout ---------- */
-function Z(name, y, x0,z0,x1,z1){ return {n:name, y:y, x0:Math.min(x0,x1), x1:Math.max(x0,x1), z0:Math.min(z0,z1), z1:Math.max(z0,z1)}; }
-var ZONES = [
-  /* ground floor */
-  Z("Living room", GF, hx(0),hz(0), hx(5.0),hz(7.0)),
-  Z("Dining room", GF, hx(0),hz(7.0), hx(5.0),hz(11.5)),
-  Z("Entrance foyer", GF, hx(5.0),hz(0), hx(8.55),hz(2.6)),
-  Z("Staircase", GF, hx(5.0),hz(2.6), hx(6.5),hz(7.36)),
-  Z("Stair hall", GF, hx(6.5),hz(2.6), hx(8.55),hz(7.36)),
-  Z("Rear lobby / breakfast", GF, hx(5.0),hz(7.36), hx(8.55),hz(11.5)),
-  Z("Guest bedroom", GF, hx(8.55),hz(0), hx(13.55),hz(4.6)),
-  Z("Guest cloakroom", GF, hx(8.55),hz(4.6), hx(10.4),hz(6.4)),
-  Z("Store", GF, hx(10.4),hz(4.6), hx(13.55),hz(6.4)),
-  Z("Kitchen", GF, hx(8.55),hz(6.4), hx(13.55),hz(10.2)),
-  Z("Pantry / laundry", GF, hx(8.55),hz(10.2), hx(13.55),hz(11.5)),
-  Z("Front porch", GF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
-  /* first floor */
-  Z("Family room", FF, hx(0),hz(0), hx(6.5),hz(2.6)),
-  Z("Study / library", FF, hx(0),hz(2.6), hx(5.0),hz(7.0)),
-  Z("Upstairs corridor", FF, hx(6.5),hz(0), hx(8.3),hz(7.36)),
-  Z("Upstairs landing", FF, hx(5.0),hz(7.36), hx(8.3),hz(10.2)),
-  Z("Master bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
-  Z("Walk-in closet", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
-  Z("Master bedroom", FF, hx(0),hz(10.2), hx(8.3),hz(13.9)),
-  Z("Bedroom 3", FF, hx(8.3),hz(0), hx(13.55),hz(4.6)),
-  Z("Linen / plant store", FF, hx(8.3),hz(4.6), hx(10.8),hz(6.9)),
-  Z("Bedroom 3 en-suite", FF, hx(10.8),hz(4.6), hx(13.55),hz(6.9)),
-  Z("Bedroom 2 en-suite", FF, hx(8.3),hz(6.9), hx(10.8),hz(9.2)),
-  Z("Bedroom 2 walk-in", FF, hx(10.8),hz(6.9), hx(13.55),hz(9.2)),
-  Z("Bedroom 2", FF, hx(8.3),hz(9.2), hx(13.55),hz(13.9)),
-  Z("Front balcony", FF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
-  /* games tent - in the garden, so it goes with the garden */
-  Z("Games tent", 0, -8.40, 11.10, -3.20, 14.70),
-  /* outdoors */
-  Z("Driveway / carport", 0, -9.6,-16.7, -1.1,-11.2),
-  Z("Front garden", 0, 0.2,-16.7, 9.7,-11.2),
-  Z("Rear terrace", 0, -1.3,1.7, 4.9,4.2),
-  Z("Rear lawn", 0, -9.7,1.7, 9.7,6.7),
-  Z("Utility yard", 0, -9.7,15.0, 9.7,16.8),
-  Z("West garden walk", 0, -9.7,-11.3, -6.8,7.8),
-  Z("East service path", 0, 6.8,-11.3, 9.7,14.7)
-];
+/* ZONES and Z() moved to 01-core.js - see the note there. */
 /* The rear of the plot reads differently depending on which option is up, so
    the zones for each are tagged and filtered the same way the colliders are. */
 /* Listed broadest first: each unshift pushes in front of the last, so the
@@ -297,6 +256,7 @@ document.addEventListener("keydown", function(e){
   if(e.code==="KeyG"){ setGlass(MAT.glass.transmission > 0 ? false : true); }
   if(e.code==="KeyR"){ toggleBtn("btnRoof"); }
   if(e.code==="KeyF"){ toggleBtn("btnFloor"); }
+  if(e.code==="Escape" && document.getElementById("planPanel").classList.contains("open")) closePlans();
   if(e.code==="Escape" && document.getElementById("infoPanel").classList.contains("open")) closeInfo();
 });
 document.addEventListener("keyup", function(e){ keys[e.code]=false; });
@@ -869,10 +829,14 @@ var SPOTS = [
   ["Study / library",                 -3.27, FF,    -1.64, Math.PI/2],
   ["Upstairs corridor",                0.72, FF,    -1.54, 0],
   ["Upstairs landing",                -0.38, FF,     1.46, 0],
-  ["Master bedroom",                  -0.08, FF,     4.16, Math.PI/2],
+  /* Re-aimed. The bed has moved to the rear wall, so the view that shows the
+     room is the long diagonal across it rather than the axis west. */
+  ["Master bedroom",                   0.83, FF,     3.76, 1.99],
   ["Walk-in closet",                  -2.87, FF,     0.86, 0],
   ["Master bathroom",                 -5.78, FF,     1.16, Math.PI],
-  ["Bedroom 2",                        2.52, FF,     5.66, Math.PI],
+  /* Was standing 0.9 m from the rear wall facing it, with the whole room and
+     the bed behind the camera. Turned round and moved into the corner. */
+  ["Bedroom 2",                        2.23, FF,     6.06, -0.80],
   ["Bedroom 3",                        4.72, FF,    -6.64, 0],
   ["Rear terrace (covered)",           3.16, 0,      5.56, 0],
   ["Rear lawn (looking at the house)",-1.68, 0,      8.72, Math.PI],
