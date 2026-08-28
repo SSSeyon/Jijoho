@@ -187,7 +187,8 @@ if(typeof MODELS !== "undefined" && MODELS.whenReady){
   Z("Garden path", 0, 5.9,6.7, 8.1,15.0),
   Z("Kitchen garden", 0, -8.3,13.2, 3.2,15.0),
   Z("Outdoor kitchen", 0, 0.3,6.55, 4.9,9.35),
-  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8)
+  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8),
+  Z("Mini gym", 0.12, -1.1,10.1, 3.0,12.9)
 ].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
 /* The Courtside / Sports court / Basketball key zones went with the court. */
 
@@ -308,7 +309,14 @@ function zoneAt(x,z,y){
 
 /* ---------- player ---------- */
 var player = { x:-0.45, y:0, z:-20.0, yaw:Math.PI, pitch:-0.03, vy:0 };
-var EYE = 1.62, RAD = 0.28;
+/* RAD is the walker's collision radius. It was 0.28 - a 560 mm wide person -
+   which is honest but unwalkable: a 900 mm door with a lining in the reveal
+   leaves a 320 mm clear band, so getting through one meant lining the door up
+   to within 40 mm on each side and approaching it square. 0.20 gives the same
+   door a 500 mm band, which you can walk through at an angle without feeling
+   the frame at all. Furniture is still solid; you just stop wearing the
+   building on your shoulders. */
+var EYE = 1.62, RAD = 0.20;
 
 var STEP = 0.40;                 /* tallest thing you can step up onto */
 function collides(x,z,y){
@@ -1097,6 +1105,7 @@ var SPOTS = [
   ["Outdoor kitchen",                  3.56, 0,      7.86, 0.10,  "garden"],
   ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
   ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
+  ["Mini gym",                         0.95, 0.12,  10.75, Math.PI, "garden"],
   /* the six court viewpoints went out with the court */
   /* No extra driveway spot: "Driveway & carport" at (-4.16, -10.40) already
      stands clear of all three bays, and the obvious alternative in front of

@@ -152,52 +152,141 @@ function bed(cx,cz,y,w,d,rq,g,linenMat){
   g.add(grp);
   bedProc(cx,cz,y,w,d,rq,grp,linenMat);
   BEDQ.push({cx:cx, cz:cz, y:y, w:w, d:d, rq:rq, g:g, proc:grp});
+  /* Side tables go in g, the permanent group - NOT grp, which dropProc()
+     deletes the moment bed.glb lands. They used to be safe in there because
+     bedside.glb put its own back; now that the tables are procedural for good,
+     anything drawn inside grp would vanish as soon as the bed downloaded. */
+  var s1 = place(rq,cx,cz,-w/2-0.41,-d/2+0.26);
+  bedsideProc(s1[0], s1[1], y, rq, g);
+  if(w>1.3){
+    var s2 = place(rq,cx,cz, w/2+0.41,-d/2+0.26);
+    bedsideProc(s2[0], s2[1], y, rq, g);
+  }
   planFurn("bed", cx, cz, w, d + 0.14, rq, y);
 }
 
-/* ---- procedural bed: w x d footprint, headboard at local -Z ---- */
+/* ---- bedside table ----
+   bedside.glb was 21,692 triangles and there are eight of them in the house,
+   which came to 9% of the scene for a box with two drawers in it. This is the
+   same piece at about 220: a painted carcass on a recessed plinth, a pale ash
+   top, two drawer fronts held proud so the reveals read as shadow lines, and a
+   lamp. The reveals are the whole trick - a drawer front flush with its
+   carcass is invisible, and one held 6 mm out is unmistakable.
+
+   0.42 x 0.36 with the top at 0.46, which is where it belongs beside a
+   mattress topping out at 0.52. */
+function bedsideProc(cx, cz, y, rq, g){
+  var W = 0.42, D = 0.36, i, p, dd;
+  /* recessed plinth, so the floor runs visibly under it */
+  dd = dims(rq, W-0.10, D-0.10);
+  fsolid(dd[0], 0.06, dd[1], cx, y+0.03, cz, MAT.black, g);
+  /* carcass and a pale ash top that oversails it slightly on every side */
+  dd = dims(rq, W, D);
+  fsolid(dd[0], 0.34, dd[1], cx, y+0.23, cz, MAT.joinery, g);
+  dd = dims(rq, W+0.03, D+0.03);
+  fbox(dd[0], 0.03, dd[1], cx, y+0.415, cz, MAT.woodPale, g);
+  /* two drawer fronts, 6 mm proud of the carcass face, with a 10 mm gap
+     between them. Front of the piece is local +Z, away from the headboard. */
+  for(i=0;i<2;i++){
+    p  = place(rq, cx, cz, 0, D/2+0.003);
+    dd = dims(rq, W-0.05, 0.012);
+    fbox(dd[0], 0.145, dd[1], p[0], y+0.115+i*0.155, p[1], MAT.joinery, g);
+    /* a slim pull rather than a knob - the house is handleless everywhere else */
+    p  = place(rq, cx, cz, 0, D/2+0.012);
+    dd = dims(rq, 0.16, 0.014);
+    fbox(dd[0], 0.014, dd[1], p[0], y+0.168+i*0.155, p[1], MAT.steel, g);
+  }
+  /* lamp: base, stem, shade. A cone shade, not a cylinder - the taper is the
+     only thing that says lamp at this size. */
+  addCyl(0.075, 0.085, 0.022, cx, y+0.442, cz, MAT.black, g, 12, {furn:true});
+  addCyl(0.010, 0.010, 0.20,  cx, y+0.553, cz, MAT.black, g, 6,  {furn:true});
+  addCyl(0.105, 0.068, 0.155, cx, y+0.730, cz, MAT.lamp,  g, 12, {furn:true});
+  /* one book, which is the whole of the styling */
+  p  = place(rq, cx, cz, 0.11, 0.06);
+  dd = dims(rq, 0.13, 0.17);
+  fbox(dd[0], 0.028, dd[1], p[0], y+0.444, p[1], MAT.cushion, g);
+}
+
+/* ---- procedural bed: w x d footprint, headboard at local -Z ----
+   Platform base, mattress oversailing it on all four sides, and a slim
+   upholstered headboard hung clear of the floor. Both in the same family as
+   the walls - the reference has no dark timber anywhere. Everything here is
+   the fallback that goes up before bed.glb lands, and dropProc() throws the
+   whole group away the moment it does - which is exactly why the side tables
+   are NOT drawn here any more but in bed(), into the permanent group. They
+   used to be safe inside this one because bedside.glb put its own back; that
+   file is gone, so anything drawn here would vanish when the bed arrives. */
 function bedProc(cx,cz,y,w,d,rq,g,linenMat){
-  /* Low platform base, inset so the mattress oversails it on all four sides,
-     and a slim upholstered headboard hung clear of the floor. Both in the same
-     family as the walls - the reference has no dark timber anywhere. */
   var D  = dims(rq,w,d);
   var Di = dims(rq,w-0.20,d-0.20);
-  fsolid(Di[0], 0.20, Di[1], cx, y+0.10, cz, MAT.joinery, g);
-  /* mattress + duvet: top at 0.50, not the 0.60 it used to be */
-  fbox(D[0], 0.24, D[1], cx, y+0.32, cz, linenMat||MAT.linen, g);
+  var p, dd;
+  /* base is 0.30 tall so the mattress lands straight on it - a base stopping
+     short of the mattress leaves a lit gap that no amount of drapery hides */
+  fbox(Di[0], 0.30, Di[1], cx, y+0.15, cz, MAT.joinery, g);
+  /* mattress: top at 0.52, oversailing the base by 0.10 all round */
+  fbox(D[0], 0.22, D[1], cx, y+0.41, cz, linenMat||MAT.linen, g);
+
+  /* headboard: 0.85 tall, hung with a 0.10 shadow gap under it, and a panel
+     held 12 mm proud of the face - one shadow line is the whole difference
+     between an upholstered headboard and a slab of foam */
+  p  = place(rq,cx,cz,0,-d/2-0.045);
+  dd = dims(rq, w+0.10, 0.09);
+  fsolid(dd[0], 0.85, dd[1], p[0], y+0.525, p[1], MAT.fabric, g);
+  p  = place(rq,cx,cz,0,-d/2-0.012);
+  dd = dims(rq, w-0.06, 0.02);
+  fbox(dd[0], 0.74, dd[1], p[0], y+0.53, p[1], MAT.fabric, g);
+
+  /* duvet, pulled to the foot and cascading over three edges. The drapes are
+     what stop the bed reading as two stacked boxes from across the room. */
+  var z0 = -d/2+0.55, z1 = d/2-0.01, zc = (z0+z1)/2, zl = z1-z0;
+  p  = place(rq,cx,cz,0,zc);
+  dd = dims(rq, w+0.04, zl);
+  fbox(dd[0], 0.065, dd[1], p[0], y+0.5525, p[1], linenMat||MAT.linen, g);
+  for(var s=-1;s<=1;s+=2){
+    p  = place(rq,cx,cz, s*(w/2+0.015), zc);
+    dd = dims(rq, 0.03, zl-0.04);
+    fbox(dd[0], 0.25, dd[1], p[0], y+0.425, p[1], linenMat||MAT.linen, g);
+  }
+  p  = place(rq,cx,cz,0,d/2-0.02);
+  dd = dims(rq, w+0.04, 0.04);
+  fbox(dd[0], 0.25, dd[1], p[0], y+0.425, p[1], linenMat||MAT.linen, g);
+
   /* the turned-back top sheet, which is the one detail that stops a bed
      reading as a foam block with a cloth over it */
-  var sp = place(rq,cx,cz,0,-d*0.5+0.62);
-  var sd = dims(rq, w-0.02, 0.30);
-  fbox(sd[0],0.035,sd[1], sp[0], y+0.455, sp[1], MAT.white, g);
-  /* headboard: 0.85 m tall, hung with a shadow gap under it */
-  var hp = place(rq,cx,cz,0,-d/2-0.05);
-  var hd = dims(rq, w+0.10, 0.09);
-  fsolid(hd[0], 0.85, hd[1], hp[0], y+0.72, hp[1], MAT.fabric, g);
+  p  = place(rq,cx,cz,0,-d/2+0.62);
+  dd = dims(rq, w-0.02, 0.24);
+  fbox(dd[0], 0.03, dd[1], p[0], y+0.60, p[1], MAT.white, g);
+
   // pillows
-  var p1 = place(rq,cx,cz,-w*0.23,-d/2+0.34);
-  var p2 = place(rq,cx,cz, w*0.23,-d/2+0.34);
   var pd = dims(rq, w*0.40, 0.30);
-  fbox(pd[0],0.13,pd[1], p1[0], y+0.505, p1[1], MAT.white, g);
-  if(w>1.3) fbox(pd[0],0.13,pd[1], p2[0], y+0.505, p2[1], MAT.white, g);
+  var p1 = place(rq,cx,cz,-w*0.23,-d/2+0.34);
+  fbox(pd[0], 0.13, pd[1], p1[0], y+0.585, p1[1], MAT.white, g);
+  if(w>1.3){
+    var p2 = place(rq,cx,cz, w*0.23,-d/2+0.34);
+    fbox(pd[0], 0.13, pd[1], p2[0], y+0.585, p2[1], MAT.white, g);
+  }
+  // the one saturated thing on the bed
+  p  = place(rq,cx,cz,0,-d/2+0.50);
+  dd = dims(rq, 0.36, 0.18);
+  fbox(dd[0], 0.15, dd[1], p[0], y+0.63, p[1], MAT.cushion, g);
   // throw at foot
-  var tp = place(rq,cx,cz,0,d*0.31);
-  var td = dims(rq, w-0.06, d*0.26);
-  fbox(td[0],0.05,td[1], tp[0], y+0.465, tp[1], MAT.fabric2, g);
+  p  = place(rq,cx,cz,0,d*0.31);
+  dd = dims(rq, w-0.06, d*0.20);
+  fbox(dd[0], 0.045, dd[1], p[0], y+0.607, p[1], MAT.fabric2, g);
+
   /* Side tables. 0.42 x 0.36 set 0.20 clear of the mattress, where they used
      to be 0.50 x 0.42 set 0.32 clear: the pair used to add 1.64 m to the bed's
      overall width and now add 1.24. Against a 3.2 m wall that is the
      difference between a bed with tables and a wall of furniture. */
-  var sd2 = dims(rq,0.42,0.36);
-  var s1 = place(rq,cx,cz,-w/2-0.41,-d/2+0.26);
-  onPlinth(sd2[0],0.42,sd2[1], s1[0], y, s1[1], MAT.joinery, g, 0.045, 0.06);
-  addCyl(0.09,0.115,0.22, s1[0], y+0.53, s1[1], MAT.lamp, g, 10, {furn:true});
-  if(w>1.3){
-    var s2 = place(rq,cx,cz, w/2+0.41,-d/2+0.26);
-    onPlinth(sd2[0],0.42,sd2[1], s2[0], y, s2[1], MAT.joinery, g, 0.045, 0.06);
-    addCyl(0.09,0.115,0.22, s2[0], y+0.53, s2[1], MAT.lamp, g, 10, {furn:true});
-  }
+  /* The base and mattress are both fbox, so the only thing stopping a walker
+     is this: one collider on the real footprint, turned with the bed. The
+     headboard carries its own. Nothing below y+0.38 is tested at all - see
+     collides() - so the mattress top is what the height has to reach. */
+  addCollider(cx-D[0]/2, cx+D[0]/2, cz-D[1]/2, cz+D[1]/2, y, y+0.52);
+  /* no planFurn here: bed() already registers the plan symbol, headboard
+     included, and a second entry draws the rectangle twice */
 }
+
 
 /* ---------- placing the downloaded pieces ----------
    Called once, after every floor has been built and every instance queued. */
@@ -229,27 +318,10 @@ function placeModels(){
   });
 
   /* ---- bedside tables ----
-     A nightstand stands against the same wall the headboard does, so its LONG
-     axis runs parallel to the bed's width - local X - and its short one runs
-     away from the wall. Getting that round the wrong way is what drove the
-     first attempt 95 mm into the external wall. 0.95 m overall height puts the
-     top at about 0.52 m, which is where it belongs beside a 0.55 m mattress. */
-  if(BEDQ.length) loadModel("bedside.glb", function(src){
-    for(var i=0; i<BEDQ.length; i++){
-      var q = BEDQ[i];
-      dropProc(q);
-      var off = [-q.w/2 - 0.41];
-      if(q.w > 1.3) off.push(q.w/2 + 0.41);
-      for(var j=0; j<off.length; j++){
-        var t = fitModel(src, 0.95, "h", "x");
-        var td = t.userData.size.z;
-        var p = place(q.rq, q.cx, q.cz, off[j], -q.d/2 + td/2);
-        t.position.set(p[0], q.y, p[1]);
-        t.rotation.y = -q.rq * Math.PI/2;
-        q.g.add(t); FURN.push(t);
-      }
-    }
-  });
+     bedside.glb is gone. It was 21,692 triangles a copy and there are eight
+     of them, which bought 9% of the scene's entire triangle budget for a box
+     with two drawers in it. bedsideProc() draws the same piece for about 220
+     and is built with the bed, so there is nothing to place here any more. */
 
   /* ---- sofas ----
      Aligned by their BACK rather than their centre, for the same reason the
@@ -269,20 +341,9 @@ function placeModels(){
   });
 
   /* ---- planters ----
-     One file at every size, which is the whole point of scaling on a measured
-     dimension: the 0.90 scale pots beside the upstairs seating and the 1.35
-     ones flanking the front door are the same asset, and they are 1.00 m and
-     1.49 m tall respectively because that is what the argument asked for. */
-  if(POTQ.length) loadModel("pot.glb", function(src){
-    for(var i=0; i<POTQ.length; i++){
-      var q = POTQ[i];
-      dropProc(q);
-      var m = fitModel(src, 1.10*q.s, "h", null);
-      m.position.set(q.x, q.y, q.z);
-      m.rotation.y = q.rot;
-      q.g.add(m); FURN.push(m);
-    }
-  });
+     pot.glb is gone too, and it was the worst of them: 72,912 triangles,
+     nineteen copies, 75% of everything in the scene. potPlant() lathes the
+     same turned form for 440 and caches it per size - see the note there. */
 }
 /* the old name, still called from the end of the first floor */
 function placeBeds(){ placeModels(); }
@@ -322,68 +383,155 @@ function sofa(cx,cz,y,w,rq,g,mat){
   }
   sofaProc(cx,cz,y,w,rq,g,mat);
 }
+/* ---- procedural sofa ----
+   Low modular upholstery on a floating base. Three things carry it: the
+   shadow slab under the plinth, the 12 mm gaps between cushion modules, and
+   the seat cushion built as two boxes so the front edge reads as rolled
+   rather than as a 90 degree corner. */
 function sofaProc(cx,cz,y,w,rq,g,mat){
   mat = mat||MAT.fabric;
   var d = 0.84;
-  /* plinth: the whole footprint, 60 mm off the floor, so the seat appears to
-     float the way an upholstered platform does */
+  var armW = 0.17, baseH = 0.20, seatY = 0.40, backY = 0.60;
+  var i, f, p, dd;
   var D = dims(rq,w,d);
-  fsolid(D[0],0.29,D[1], cx, y+0.205, cz, mat, g);
-  /* seat cushions, split into modules - a modular sofa's tell is the gaps */
-  var n = Math.max(1, Math.round(w/0.85));
-  var i, f, cp, cd;
-  for(i=0;i<n;i++){
-    f = -w/2 + w*(i+0.5)/n;
-    cp = place(rq,cx,cz,f,0.07);
-    cd = dims(rq, w/n-0.05, d-0.30);
-    fbox(cd[0],0.15,cd[1], cp[0], y+0.425, cp[1], mat, g);
-  }
+
+  /* plinth: 20 mm off the floor over a recessed dark slab, so the whole piece
+     floats the way an upholstered platform does */
+  dd = dims(rq, w-0.10, d-0.10);
+  fbox(dd[0], 0.02, dd[1], cx, y+0.01, cz, MAT.black, g);
+  fbox(D[0], baseH-0.02, D[1], cx, y+0.02+(baseH-0.02)/2, cz, mat, g);
+
   /* back: thin, flat, stopping at 0.60 - low enough to see over */
-  var bp = place(rq,cx,cz,0,-d/2+0.10);
-  var bd = dims(rq,w,0.19);
-  fsolid(bd[0],0.30,bd[1], bp[0], y+0.455, bp[1], mat, g);
-  for(i=0;i<n;i++){
-    f = -w/2 + w*(i+0.5)/n;
-    cp = place(rq,cx,cz,f,-d/2+0.11);
-    cd = dims(rq, w/n-0.05, 0.16);
-    fbox(cd[0],0.29,cd[1], cp[0], y+0.60, cp[1], mat, g);
+  p  = place(rq,cx,cz,0,-d/2+0.08);
+  dd = dims(rq, w, 0.16);
+  fbox(dd[0], backY-baseH, dd[1], p[0], y+baseH+(backY-baseH)/2, p[1], mat, g);
+
+  /* arms, capped with a narrower box to fake a chamfer on the top edge */
+  for(i=-1;i<=1;i+=2){
+    p  = place(rq,cx,cz, i*(w/2-armW/2), 0);
+    dd = dims(rq, armW, d);
+    fbox(dd[0], 0.32, dd[1], p[0], y+0.36, p[1], mat, g);
+    dd = dims(rq, armW-0.03, d-0.03);
+    fbox(dd[0], 0.04, dd[1], p[0], y+0.54, p[1], mat, g);
   }
-  /* arms only on a sofa wide enough to have them; a 0.92 m armchair keeps them */
-  var ad = dims(rq,0.14,d);
-  var a1 = place(rq,cx,cz,-w/2+0.07,0), a2 = place(rq,cx,cz, w/2-0.07,0);
-  fsolid(ad[0],0.50,ad[1], a1[0], y+0.25, a1[1], mat, g);
-  fsolid(ad[0],0.50,ad[1], a2[0], y+0.25, a2[1], mat, g);
+
+  /* cushion modules. The back cushions sit 120 mm PROUD of the backrest face
+     at z = -0.26: tucked level with it they are geometry you pay for and
+     never see. */
+  var innerW = w - armW*2;
+  var n  = Math.max(1, Math.round(innerW/0.75));
+  var mw = innerW/n;
+  for(i=0;i<n;i++){
+    f = -innerW/2 + mw*(i+0.5);
+    var cw  = mw - 0.012;                     /* the gap is the modular tell */
+    var jog = (i%2) ? -0.006 : 0.006;         /* nothing upholstered is regular */
+    p  = place(rq,cx,cz, f, 0.13+jog);
+    dd = dims(rq, cw, 0.54);
+    fbox(dd[0], 0.135, dd[1], p[0], y+baseH+0.0675, p[1], mat, g);
+    p  = place(rq,cx,cz, f, 0.118+jog);
+    dd = dims(rq, cw-0.01, 0.516);
+    fbox(dd[0], 0.065, dd[1], p[0], y+seatY-0.0325, p[1], mat, g);
+    p  = place(rq,cx,cz, f, -0.20);
+    dd = dims(rq, cw, 0.12);
+    fbox(dd[0], 0.14, dd[1], p[0], y+0.45, p[1], mat, g);
+    p  = place(rq,cx,cz, f, -0.215);
+    dd = dims(rq, cw-0.012, 0.10);
+    fbox(dd[0], 0.07, dd[1], p[0], y+0.555, p[1], mat, g);
+  }
+
   /* One accent cushion, muted, and only on a full sofa. Putting one on every
      armchair as well meant four of them in a room the reference furnishes with
      two, and repetition is what kills a restrained palette. */
   if(w > 1.4){
-    var kp = place(rq,cx,cz,-w/2+0.42,-0.06);
-    addSphere(0.17, kp[0], y+0.61, kp[1], MAT.cushion, g, {furn:true});
+    p  = place(rq,cx,cz,-w/2+0.46,-0.09);
+    dd = dims(rq, 0.40, 0.13);
+    fbox(dd[0], 0.32, dd[1], p[0], y+0.54, p[1], MAT.cushion, g);
+    /* a thinner box set back and up is the slump at the top of a cushion
+       propped against a back - a sphere here read as a ball left on the sofa */
+    p  = place(rq,cx,cz,-w/2+0.46,-0.12);
+    dd = dims(rq, 0.36, 0.10);
+    fbox(dd[0], 0.05, dd[1], p[0], y+0.715, p[1], MAT.cushion, g);
   }
-  addCollider(cx-(rq===1||rq===3?d:w)/2, cx+(rq===1||rq===3?d:w)/2,
-              cz-(rq===1||rq===3?w:d)/2, cz+(rq===1||rq===3?w:d)/2, y, y+0.60);
+
+  /* Every box above is fbox, so this is the only thing you can bump into.
+     collides() ignores anything topping out below y+0.38, which is why it has
+     to run to the back height and not to the plinth. */
+  addCollider(cx-D[0]/2, cx+D[0]/2, cz-D[1]/2, cz+D[1]/2, y, y+backY);
   planFurn(w>1.4?"sofa":"chair", cx, cz, w, d, rq, y);
 }
-function armchair(cx,cz,y,rq,g,mat){ sofa(cx,cz,y,0.92,rq,g,mat||MAT.fabric2); }
 
-/* ---- round coffee table: pale top on a chunky speckled-stone base ----
-   The reference table is a disc of pale ash on three fat terrazzo blocks, and
-   it is very low - 0.32 m, not the 0.44 m the old box-on-four-black-legs was.
-   w is taken as the diameter; d is ignored and kept only so existing calls
-   still work. */
-function coffeeTable(cx,cz,y,w,d,g){
-  var r = w/2;
-  addCyl(r, r, 0.06, cx, y+0.325, cz, MAT.woodPale, g, 28, {furn:true});
-  for(var i=0;i<3;i++){
-    var a = i*2.0944 + 0.5;
-    fbox(0.15,0.29,0.15, cx+Math.cos(a)*r*0.55, y+0.145, cz+Math.sin(a)*r*0.55, MAT.terrazzo, g);
+/* ---- armchair ----
+   Its own piece rather than a 0.92 m sofa. A thin deck on tapered steel pins
+   with a loose cushion on top reads as a chair; the same upholstery language
+   as the sofa at chair scale reads as a sofa someone cut in half. */
+function armchair(cx,cz,y,rq,g,mat){
+  mat = mat||MAT.fabric2;
+  var w = 0.86, d = 0.82, deckY = 0.24, seatY = 0.44, backY = 0.68;
+  var lx = w/2-0.09, lz = d/2-0.09;
+  var LEG = [[-lx,-lz],[lx,-lz],[-lx,lz],[lx,lz]];
+  var i, p, dd;
+
+  /* pin legs, tapering to a 20 mm foot */
+  for(i=0;i<4;i++){
+    p = place(rq,cx,cz,LEG[i][0],LEG[i][1]);
+    addCyl(0.016, 0.010, 0.21, p[0], y+0.105, p[1], MAT.steel, g, 8, {furn:true});
   }
+  /* the deck: thin and rigid, the opposite of the sofa's plinth */
+  dd = dims(rq, w, d);
+  fbox(dd[0], 0.05, dd[1], cx, y+deckY-0.025, cz, mat, g);
+
+  /* slim arms, held well inside the seat width */
+  for(i=-1;i<=1;i+=2){
+    p  = place(rq,cx,cz, i*(w/2-0.04), 0);
+    dd = dims(rq, 0.08, d);
+    fbox(dd[0], 0.34, dd[1], p[0], y+0.41, p[1], mat, g);
+  }
+  /* back frame, stopping at 0.68 - taller than the sofa, still under eye */
+  p  = place(rq,cx,cz,0,-d/2+0.045);
+  dd = dims(rq, w-0.16, 0.09);
+  fbox(dd[0], backY-deckY, dd[1], p[0], y+deckY+(backY-deckY)/2, p[1], mat, g);
+
+  /* loose seat cushion: bulk plus a set-back puff, overhanging the deck */
+  dd = dims(rq, w-0.13, d-0.10);
+  p  = place(rq,cx,cz,0,0.03);
+  fbox(dd[0], 0.16, dd[1], p[0], y+0.32, p[1], mat, g);
+  dd = dims(rq, w-0.16, d-0.14);
+  p  = place(rq,cx,cz,0,0.02);
+  fbox(dd[0], 0.04, dd[1], p[0], y+0.42, p[1], mat, g);
+
+  /* loose back pillow, proud of the frame */
+  p  = place(rq,cx,cz,0,-d/2+0.16);
+  dd = dims(rq, w-0.18, 0.14);
+  fbox(dd[0], 0.24, dd[1], p[0], y+0.54, p[1], mat, g);
+
+  addCollider(cx-dims(rq,w,d)[0]/2, cx+dims(rq,w,d)[0]/2,
+              cz-dims(rq,w,d)[1]/2, cz+dims(rq,w,d)[1]/2, y, y+0.60);
+  planFurn("chair", cx, cz, w, d, rq, y);
+}
+
+
+/* ---- round coffee table: pale top on a turned terrazzo pedestal ----
+   The reference table is very low - 0.32 m, not the 0.44 m a box on four black
+   legs wants to be. w is taken as the diameter; d is ignored and kept only so
+   existing calls still work. */
+function coffeeTable(cx,cz,y,w,d,g){
+  var r = w/2, h = 0.32;
+  /* base in three parts - foot, waist, collar - so it reads as turned stone
+     rather than as a pipe */
+  addCyl(r*0.40, r*0.46, 0.06, cx, y+0.03, cz, MAT.terrazzo, g, 16, {furn:true});
+  addCyl(r*0.26, r*0.36, h-0.08, cx, y+0.06+(h-0.08)/2, cz, MAT.terrazzo, g, 16, {furn:true});
+  addCyl(r*0.36, r*0.26, 0.02, cx, y+h-0.01, cz, MAT.terrazzo, g, 16, {furn:true});
+  /* top in two discs: the lower one steps back sharply, which is a bevelled
+     edge from every angle you actually see the table from */
+  addCyl(r*0.95, r*0.80, 0.015, cx, y+h-0.0075, cz, MAT.woodPale, g, 24, {furn:true});
+  addCyl(r, r*0.95, 0.015, cx, y+h+0.0075, cz, MAT.woodPale, g, 24, {furn:true});
   /* a shallow bowl with two stones in it, which is the whole of the styling */
-  addCyl(0.15,0.11,0.06, cx, y+0.385, cz, MAT.woodDark, g, 16, {furn:true});
-  addSphere(0.05, cx-0.03, y+0.415, cz+0.02, MAT.stone, g, {furn:true});
-  addCollider(cx-r, cx+r, cz-r, cz+r, y, y+0.36);
+  addCyl(0.15,0.11,0.06, cx, y+h+0.045, cz, MAT.woodDark, g, 16, {furn:true});
+  addSphere(0.05, cx-0.03, y+h+0.075, cz+0.02, MAT.stone, g, {furn:true, seg:10});
+  addCollider(cx-r, cx+r, cz-r, cz+r, y, y+h);
   planFurn("table", cx, cz, w, w, 0, y);
 }
+
 function rugMat(cx,cz,y,w,d,g,mat){ addBox(w,0.02,d,cx,y+0.011,cz,mat||MAT.rug,g,{cast:false,furn:true}); }
 
 /* ---- TV unit ----
@@ -446,36 +594,55 @@ function desk(cx,cz,y,w,rq,g){
   chair(cp[0],cp[1],y,(rq+2)%4,g);
   planFurn("desk", cx, cz, w, 0.58, rq, y);
 }
-/* ---- cantilever chair ----
-   The reference chairs are the classic tubular sled: a single bent tube
-   running under the seat and up the back, no back legs at all. Modelled as the
-   two side frames plus the seat and back pads. 0.42 m square seat, 0.45 high.
-
-   The frame is white lacquer, not the polished steel it used to be. That was a
-   free choice while every seat in the house was a box; it stopped being one
-   when the sofas became the Velo, whose frame is white powder-coated tube and
-   whose only metal is white. A chrome cantilever chair pulled up to a
-   white-framed sofa is the one thing in the room that says the furniture came
-   from two places. Nothing else about the chair changes. */
+/* ---- dining chair ----
+   Four tapered legs, an upholstered pad, and a back built as a five step
+   faceted arc. There is no arbitrary rotation in this model - every box is
+   axis aligned - so a curved shell has to be stepped, and five 20 mm steps
+   read as a curve from anywhere in the room. The two stiles are not optional:
+   without them the back floats off the seat with nothing carrying it. */
 function chair(cx,cz,y,rq,g){
-  var FR = MAT.white;
-  var s;
-  for(s=-1;s<=1;s+=2){
-    var side = place(rq,cx,cz,s*0.20,0);
-    /* the runner on the floor and the one under the seat */
-    var rd = dims(rq,0.032,0.44);
-    fbox(rd[0],0.032,rd[1], side[0], y+0.02, side[1], FR, g);
-    fbox(rd[0],0.032,rd[1], side[0], y+0.42, side[1], FR, g);
-    /* the front bend that carries the load, and the back upright */
-    var fp = place(rq,cx,cz,s*0.20,0.20), bp2 = place(rq,cx,cz,s*0.20,-0.20);
-    addCyl(0.017,0.017,0.42, fp[0], y+0.22, fp[1], FR, g, 8, {furn:true});
-    addCyl(0.017,0.017,0.40, bp2[0], y+0.62, bp2[1], FR, g, 8, {furn:true});
+  var W = 0.44, D = 0.50;
+  var lx = W/2-0.035, lz = D/2-0.045;
+  var LEG = [[-lx,-lz],[lx,-lz],[-lx,lz],[lx,lz]];
+  var i, s, p, dd;
+
+  for(i=0;i<4;i++){
+    p = place(rq,cx,cz,LEG[i][0],LEG[i][1]);
+    addCyl(0.020, 0.013, 0.375, p[0], y+0.1875, p[1], MAT.woodPale, g, 8, {furn:true});
   }
-  fsolid(dims(rq,0.42,0.42)[0], 0.06, dims(rq,0.42,0.42)[1], cx, y+0.465, cz, MAT.fabric2, g);
-  var bp = place(rq,cx,cz,0,-0.20);
-  var bd = dims(rq,0.40,0.06);
-  fbox(bd[0],0.29,bd[1], bp[0], y+0.70, bp[1], MAT.fabric2, g);
+  /* timber deck, then the pad on top of it - the 30 mm reveal between the two
+     is what tells you the seat is upholstered and not painted */
+  dd = dims(rq, W, D-0.06);
+  fbox(dd[0], 0.03, dd[1], cx, y+0.39, cz, MAT.woodPale, g);
+  dd = dims(rq, W-0.02, D-0.08);
+  fsolid(dd[0], 0.045, dd[1], cx, y+0.4275, cz, MAT.fabric2, g);
+  /* rolled front edge */
+  p  = place(rq,cx,cz,0,(D-0.08)/2-0.005);
+  dd = dims(rq, W-0.03, 0.03);
+  fbox(dd[0], 0.03, dd[1], p[0], y+0.408, p[1], MAT.fabric2, g);
+
+  /* stiles carrying the back up to 0.80 - above the 0.76 dining top, so the
+     backs still read against the room instead of vanishing behind the table */
+  for(s=-1;s<=1;s+=2){
+    p = place(rq,cx,cz, s*0.19, -D/2+0.045);
+    addCyl(0.017, 0.017, 0.425, p[0], y+0.5875, p[1], MAT.woodPale, g, 8, {furn:true});
+  }
+  /* the shell: centre panel, then two pairs stepped forward and narrowing */
+  p  = place(rq,cx,cz,0,-D/2+0.038);
+  dd = dims(rq, 0.20, 0.022);
+  fbox(dd[0], 0.24, dd[1], p[0], y+0.68, p[1], MAT.fabric2, g);
+  for(s=-1;s<=1;s+=2){
+    p  = place(rq,cx,cz, s*0.145, -D/2+0.052);
+    dd = dims(rq, 0.09, 0.028);
+    fbox(dd[0], 0.235, dd[1], p[0], y+0.6775, p[1], MAT.fabric2, g);
+    p  = place(rq,cx,cz, s*0.195, -D/2+0.070);
+    dd = dims(rq, 0.05, 0.030);
+    fbox(dd[0], 0.225, dd[1], p[0], y+0.6725, p[1], MAT.fabric2, g);
+  }
+  /* no planFurn: six chair rectangles round every table turned the plans into
+     a diagram of chairs. The table symbol carries the setting. */
 }
+
 
 /* ---- dining ----
    Round for six or fewer, on a single fat plaster pedestal, which is what the

@@ -48,13 +48,21 @@ slab(hx(0.6),hz(-2.20),hx(12.95),hz(0), GF, 0.10, MAT.paverWarm, gGF, {cast:fals
 });
 addBox(12.35, 0.04, 2.20, hx(6.75), GF+CH-0.02, hz(-1.10), MAT.ceiling, gFF, {cast:false});
 /* both live in the first-floor group so "Upper floor off" lifts the ceiling too */
-/* entrance steps - 400 mm treads, deep enough to stand on */
+/* entrance steps - 400 mm treads, deep enough to stand on
+   Both treads sit OUTSIDE the porch slab, whose collider face is at v = -2.20
+   and whose top is the 0.60 podium. They used to be pushed 400 mm further in,
+   which put the upper tread inside the slab: you climbed onto the 0.20 tread,
+   and from there the podium was a 400 mm wall your 200 mm radius met before
+   your centre ever reached the 0.40 floor rectangle. floorAt() still read 0.20
+   under you, so the step-up retry had nothing higher to offer and the move was
+   refused - you could not walk in the front door. Now the 0.40 tread runs
+   right up to the slab face, exactly as the rear terrace steps already did. */
 (function(){
   var x0=hx(4.85), x1=hx(9.15);
-  addBox(x1-x0,0.40,0.40,(x0+x1)/2,0.20,hz(-2.00),MAT.stone,gGF,{});
-  addFloor(x0,x1,hz(-2.20),hz(-1.80),0.40);
-  addBox(x1-x0,0.20,0.40,(x0+x1)/2,0.10,hz(-2.40),MAT.stone,gGF,{});
-  addFloor(x0,x1,hz(-2.60),hz(-2.20),0.20);
+  addBox(x1-x0,0.40,0.40,(x0+x1)/2,0.20,hz(-2.40),MAT.stone,gGF,{});
+  addFloor(x0,x1,hz(-2.60),hz(-2.20),0.40);
+  addBox(x1-x0,0.20,0.40,(x0+x1)/2,0.10,hz(-2.80),MAT.stone,gGF,{});
+  addFloor(x0,x1,hz(-3.00),hz(-2.60),0.20);
 })();
 /* rear steps to terrace */
 (function(){

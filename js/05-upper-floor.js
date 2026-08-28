@@ -607,6 +607,135 @@ CTAG = "garden";
     addBox(0.06, 1.30, 0.06, kx, 1.85, kz+1.28, MAT.steel, gGarden, {});
   })();
 
+  /* ---------- mini gym pavilion ----------
+     A 4.10 x 2.80 block building on the one piece of the garden nothing else
+     wanted: east of the games tent, north of the outdoor kitchen, west of the
+     path, and clear of the hedge run at x = 3.40 and the flower bed at
+     z = 13.30. That envelope is why it is 4.10 wide and not 5 - the gap is
+     the gap, and a gym you have to walk round the hedge to reach is worse
+     than a small one you do not.
+
+     Built as a real building rather than a tent: the pergola and the tent
+     already carry the light structures back here, and a third one would have
+     made the garden read as a campsite. Walls, a flat roof and white trim, in
+     the same plaster as the house.
+
+     The door is on the EAST elevation, onto the path. It was drawn on the
+     south first, which put it 750 mm from the back of the outdoor kitchen's
+     screen wall - a slot you could stand in but not walk through. The path is
+     the only side with room to arrive from. */
+  (function(){
+    var AX0 = -1.10, AX1 = 3.00, AZ0 = 10.10, AZ1 = 12.90;
+    var FY = 0.12, H = 2.55, T = 0.15;
+    var cx = (AX0+AX1)/2, cz = (AZ0+AZ1)/2, W = AX1-AX0, D = AZ1-AZ0;
+
+    /* apron, wider on the east so the door has something to arrive at. One
+       120 mm step up off the lawn - under the 400 mm the walker can climb, so
+       you never have to look for a ramp. */
+    surf(AX0-0.35, AZ0-0.35, AX1+0.85, AZ1+0.35, MAT.paverWarm, FY, gGarden);
+    addFloor(AX0-0.35, AX1+0.85, AZ0-0.35, AZ1+0.35, FY);
+    /* a spur of slabs out to the main path, laid the same way it is */
+    for(var sx = 3.95; sx < 6.20; sx += 0.78){
+      surf(sx, 11.05, sx+0.56, 11.61, MAT.paverWarm, 0.035, gGarden);
+    }
+    /* the floor inside: boards, not the tile the house uses. A gym floor that
+       matches a bathroom floor looks like a bathroom. */
+    surf(AX0+0.08, AZ0+0.08, AX1-0.08, AZ1-0.08, MAT.parquet, FY+0.008, gGarden);
+
+    /* ---- shell ----
+       East is the entrance elevation: a 1.50 m doorway onto the path, with a
+       window beside it. South takes a high window over the outdoor kitchen,
+       west a clerestory - that is the elevation the pergola looks straight at,
+       and a full window would have been a window into someone's workout.
+       North is solid: it carries the mirror. */
+    wall(AX1, AZ0, AX1, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:1,
+      openings:[{a:10.60, b:12.10, sill:0, top:2.10},
+                {a:12.32, b:12.76, sill:0.95, top:2.10, glass:true}]});
+    wall(AX0, AZ0, AX1, AZ0, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:-1,
+      openings:[{a:0.30, b:2.30, sill:1.05, top:2.15, glass:true}]});
+    wall(AX0, AZ1, AX1, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:1});
+    wall(AX0, AZ0, AX0, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:-1,
+      openings:[{a:11.05, b:12.25, sill:1.75, top:2.30, glass:true}]});
+
+    /* lining and an open leaf, so the doorway reads as a door from the path.
+       Hinge at the south jamb, leaf running along +z, which is what dx/dz = 0/1
+       means for a wall on this axis. */
+    doorLining(AX1, 11.35, 1.50, false, T, FY, gGarden);
+    doorLeaf(AX1, 10.60, 0, 1, 1.50, 1.15, 1, FY, gGarden);
+
+    /* ---- roof: a flat slab on a fascia band, the house's language at 1/8 the
+       span. No hip - a hipped roof on a 4 m building reads as a shed. */
+    addBox(W+0.50, 0.16, D+0.50, cx, FY+H+0.08, cz, MAT.roof, gGarden, {});
+    addBox(W+0.54, 0.22, 0.06, cx, FY+H-0.11, AZ0-0.27, MAT.fascia, gGarden, {});
+    addBox(W+0.54, 0.22, 0.06, cx, FY+H-0.11, AZ1+0.27, MAT.fascia, gGarden, {});
+    addBox(0.06, 0.22, D+0.54, AX0-0.27, FY+H-0.11, cz, MAT.fascia, gGarden, {});
+    addBox(0.06, 0.22, D+0.54, AX1+0.27, FY+H-0.11, cz, MAT.fascia, gGarden, {});
+    addBox(W-0.16, 0.04, D-0.16, cx, FY+H-0.02, cz, MAT.ceiling, gGarden, {cast:false});
+
+    /* the mirror, most of the north wall. MAT.steel rather than glass:
+       transmissive glass here would show you the flower bed behind the wall. */
+    addBox(W-0.80, 1.80, 0.02, cx, FY+1.24, AZ1-0.09, MAT.steel, gGarden, {cast:false});
+
+    downlight(0.10, 11.20, FY+H, gGarden);
+    downlight(1.85, 12.35, FY+H, gGarden);
+
+    /* ---- treadmill, west end, facing the mirror ---- */
+    (function(){
+      var tx = -0.35, tz = 11.95, s;
+      fsolid(0.78, 0.14, 1.72, tx, FY+0.07, tz, MAT.black, gGarden);
+      fbox(0.52, 0.03, 1.52, tx, FY+0.155, tz, MAT.asphalt, gGarden);
+      for(s=-1;s<=1;s+=2){
+        fbox(0.12, 0.05, 1.52, tx+s*0.32, FY+0.165, tz, MAT.white, gGarden);
+        addCyl(0.026,0.026,1.02, tx+s*0.30, FY+0.62, tz-0.72, MAT.steel, gGarden, 8, {furn:true});
+        fbox(0.055, 0.05, 0.40, tx+s*0.30, FY+1.00, tz-0.53, MAT.steel, gGarden);
+      }
+      fbox(0.64, 0.28, 0.10, tx, FY+1.20, tz-0.76, MAT.black, gGarden);
+      fbox(0.44, 0.18, 0.02, tx, FY+1.22, tz-0.70, MAT.accent, gGarden);
+    })();
+
+    /* ---- flat bench under a two-post rack ---- */
+    (function(){
+      var bx = 1.55, bz = 12.05, i;
+      fsolid(0.32, 0.11, 1.22, bx, FY+0.455, bz, MAT.black, gGarden);
+      fbox(0.14, 0.34, 0.86, bx, FY+0.23, bz, MAT.steel, gGarden);
+      for(i=-1;i<=1;i+=2) fbox(0.44, 0.06, 0.10, bx, FY+0.03, bz+i*0.54, MAT.black, gGarden);
+      /* the rack: two posts and a loaded bar, which is the whole silhouette */
+      for(i=-1;i<=1;i+=2){
+        addCyl(0.034,0.040,1.22, bx+i*0.46, FY+0.61, bz+0.42, MAT.steel, gGarden, 8, {furn:true});
+        fbox(0.10,0.09,0.16, bx+i*0.46, FY+1.20, bz+0.36, MAT.black, gGarden);
+      }
+      var bar = addCyl(0.017,0.017,1.62, bx, FY+1.24, bz+0.42, MAT.steel, gGarden, 8, {furn:true});
+      bar.rotation.z = Math.PI/2;
+      [0.60, 0.68].forEach(function(o){
+        for(i=-1;i<=1;i+=2){
+          var pl = addCyl(0.21,0.21,0.045, bx+i*o, FY+1.24, bz+0.42, MAT.black, gGarden, 14, {furn:true});
+          pl.rotation.z = Math.PI/2;
+        }
+      });
+    })();
+
+    /* ---- dumbbell rack along the south wall ---- */
+    (function(){
+      var dx = 0.35, dz = 10.42, i, s;
+      fsolid(0.92, 0.56, 0.34, dx, FY+0.28, dz, MAT.black, gGarden);
+      fbox(0.98, 0.04, 0.40, dx, FY+0.58, dz, MAT.steel, gGarden);
+      for(i=0;i<3;i++){
+        var px = dx - 0.32 + i*0.32, r = 0.075 - i*0.008;
+        var hb = addCyl(0.022,0.022,0.30, px, FY+0.66, dz, MAT.steel, gGarden, 6, {furn:true});
+        hb.rotation.x = Math.PI/2;
+        for(s=-1;s<=1;s+=2){
+          var e = addCyl(r,r,0.08, px, FY+0.66, dz+s*0.13, MAT.black, gGarden, 10, {furn:true});
+          e.rotation.x = Math.PI/2;
+        }
+      }
+    })();
+
+    /* ---- mat and two medicine balls, which is the whole of the styling ---- */
+    fbox(1.70, 0.02, 0.64, 1.55, FY+0.019, 10.72, MAT.cushion, gGarden, {cast:false});
+    addSphere(0.15, 2.55, FY+0.15, 12.45, MAT.black, gGarden, {furn:true, seg:12});
+    addSphere(0.12, 2.62, FY+0.12, 12.12, MAT.cushion, gGarden, {furn:true, seg:12});
+  })();
+
   /* ---------- kitchen garden: raised beds along the rear ---------- */
   (function(){
     var bz = GZ1 - 0.60;   /* clear of the generator house behind */
@@ -637,8 +766,8 @@ CTAG = "garden";
   palm( 5.60, 14.10, 5.9);
   /* the two that used to stand at (-6.90, 12.90) and (-4.20, 13.60) are gone:
      the games tent is on that ground now */
-  [[-3.60, 8.10],[-1.20, 7.30],[0.70, 9.90],[6.90, 7.20],
-   [3.10, 13.10],[8.60, 9.60],[-8.40, 9.90]].forEach(function(p){
+  [[-3.60, 8.10],[-1.20, 7.30],[0.70, 8.85],[6.90, 7.20],
+   [4.40, 13.35],[8.60, 9.60],[-8.40, 9.90]].forEach(function(p){
     shrub(p[0], p[1], 0.85 + ((p[0]*7+p[1]*3)%5)/9);
   });
 

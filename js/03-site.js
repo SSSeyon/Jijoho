@@ -666,31 +666,88 @@ function flowerBed(x0,z0,x1,z1){
   addCollider(cx-w/2-KB, cx+w/2+KB, cz-d/2-KB, cz+d/2+KB, 0, 0.55);
 }
 /* ---- potted plant ----
-   Every one of these is the same downloaded planter at a different size, which
-   is what s is for: s = 0.90 beside the upstairs seating, s = 1.35 flanking
-   the front door, and the model is scaled to 1.10 * s metres tall in each
-   case. Scaling on height rather than on width matters here for the same
-   reason it does on the bedside tables - the foliage is half again as wide as
-   the pot, and normalising a planter on the spread of its leaves gives you a
-   thimble under a bush.
+   The planter was a downloaded model - 72,912 triangles of it, nineteen times
+   over, which was 75% of everything in the scene. The whole rest of the house,
+   both floors, every wall, all the furniture, the cars and every tree, came to
+   15%. A plant pot cost more than the ground floor.
 
-   The turned cone and blob of canopy below still go up first and are still
-   what you see if the download fails. The rotation is derived from the
-   position so that four pots in a row are not four identical pots, and so
-   that the same pot is at the same angle on every reload. */
-function potPlant(x,z,y,g,s){
-  s=s||1;
-  var grp = new T.Group();
-  grp.userData.noMerge = true;
-  g.add(grp);
-  addCyl(0.24*s,0.19*s,0.44*s,x,y+0.22*s,z,MAT.planter,grp,14,{furn:true});
-  var pc = canopy(x, y+0.74*s, z, 0.38*s, 0.32*s, 5, MAT.foliageLo, grp, Math.floor(x*7+z*13)+3);
-  FURN.push(pc);
-  addCollider(x-0.3*s,x+0.3*s,z-0.3*s,z+0.3*s,y,y+0.6*s);
-  if(MODELS.ok)
-    POTQ.push({x:x, z:z, y:y, s:s, g:g, proc:grp,
-               rot:((Math.abs(x)*37 + Math.abs(z)*61) % 6.2832)});
+   It is a turned form, so it is a lathe: twelve profile points swept 20 ways
+   gives 440 triangles with a real foot, belly and rim. Cached by scale, since
+   the house asks for the same handful of sizes over and over.
+
+   Two things about the first attempt were wrong and are worth writing down.
+   MAT.planter is the stone pattern at a 0.8 m repeat, which on a 0.44 m pot
+   put one and a half courses of blockwork round the belly - it read as a
+   barrel built out of bricks. It is plaster now, at under one repeat, so the
+   pattern is grain rather than masonry. And the plant was two canopy blobs,
+   which is the right call for a shrub in a garden bed and completely wrong at
+   arm's length indoors, where it read as a cartoon bush.
+
+   What is there instead is a sansevieria: upright blades, no mass. It suits a
+   warm-minimal room far better than anything round does, it is the one plant
+   that actually looks architectural, and a flat blade is 12 triangles. */
+var POTGEO = {};
+function potGeo(s){
+  var k = s.toFixed(2);
+  if(POTGEO[k]) return POTGEO[k];
+  /* radius, height. Out to the belly, in to the neck, out again to the rim,
+     then back over the rim so it has a thickness you can see into. */
+  var P = [[0.000,0.000],[0.152,0.000],[0.163,0.022],[0.148,0.055],
+           [0.203,0.175],[0.224,0.278],[0.210,0.380],[0.197,0.440],
+           [0.222,0.464],[0.217,0.486],[0.193,0.486],[0.185,0.436]];
+  var pts = P.map(function(p){ return new T.Vector2(p[0]*s, p[1]*s); });
+  var g = new T.LatheGeometry(pts, 20);
+  /* MAT.plaster carries userData.tile - the metres one repeat covers - and
+     only addBox() knows how to honour it, so do the same rescale by hand or
+     the pattern smears once round the whole pot. Under one repeat each way is
+     deliberate: at this size the texture should be grain, not pattern. */
+  var tile = (MAT.plaster.userData && MAT.plaster.userData.tile) || 1.4;
+  var uv = g.attributes.uv, around = 2*Math.PI*0.21*s/tile, up = 0.486*s/tile;
+  for(var i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*around, uv.getY(i)*up);
+  uv.needsUpdate = true;
+  g.computeVertexNormals();
+  POTGEO[k] = g;
+  return g;
 }
+function potPlant(x,z,y,g,s){
+  s = s||1;
+  /* No wrapper Group. An unmarked Group is merged as its own domain, and a
+     domain of a few meshes in a few materials is a few buckets of one - and a
+     bucket of one never merges. The group existed so dropProc() could remove
+     the pot when pot.glb arrived; nothing arrives now. */
+  var m = new T.Mesh(potGeo(s), MAT.plaster);
+  m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  g.add(m); FURN.push(m);
+  /* soil, sunk just under the rim */
+  addCyl(0.180*s, 0.180*s, 0.03*s, x, y+0.458*s, z, MAT.soil, g, 14, {furn:true, cast:false});
+
+  /* the blades. Seeded off the position so the same pot is the same plant on
+     every reload, and so no two pots in a row are identical. */
+  var r = PRNG(Math.floor(Math.abs(x)*137 + Math.abs(z)*61) + 5);
+  var n = 9 + Math.floor(r()*3), i;
+  for(i=0;i<n;i++){
+    /* the golden angle again - it is what stops the blades bunching on one
+       side, the same reason canopyGeo() uses it for its cards */
+    var a    = i*2.399 + r()*0.30;
+    var lean = 0.09 + r()*0.30;            /* radians off vertical */
+    var h    = (0.40 + r()*0.34) * s;
+    var w    = (0.050 + r()*0.028) * s;
+    var br   = 0.055 * s;                  /* how far off centre it starts */
+    var sl = Math.sin(lean), cl = Math.cos(lean);
+    var bx = x + Math.sin(a)*br, bz = z + Math.cos(a)*br, by = y + 0.452*s;
+    var b = new T.Mesh(BOXG, (i % 3 === 2) ? MAT.foliage2 : MAT.leaf);
+    b.scale.set(w, h, 0.011*s);
+    b.position.set(bx + Math.sin(a)*sl*h/2, by + cl*h/2, bz + Math.cos(a)*sl*h/2);
+    b.rotation.order = "YXZ";
+    b.rotation.y = a; b.rotation.x = lean;
+    b.castShadow = true; b.receiveShadow = true;
+    g.add(b); FURN.push(b);
+  }
+  addCollider(x-0.28*s, x+0.28*s, z-0.28*s, z+0.28*s, y, y+0.6*s);
+}
+
+
 
 /* ---------- front garden: planting on the edges, the lawn left open ---------- */
 palm(8.55,-15.90,5.4); palm(6.60,-16.15,6.0);

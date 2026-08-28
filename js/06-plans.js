@@ -345,9 +345,15 @@ var PLANNING = (function(){
   var west  = (hx(0) - X0);
   var east  = (X1 - hx(HW));
 
-  var tent = null;
-  ZONES.forEach(function(z){ if(z.n === "Games tent") tent = z; });
-  var tentA = tent ? (tent.x1-tent.x0)*(tent.z1-tent.z0) : 0;
+  /* Roofed things standing outside the house outline still count against
+     site coverage. The tent is canvas and arguably should not, but it was
+     already being counted and the gym pavilion is a block building with a
+     concrete roof, so it certainly does. */
+  var outA = 0;
+  ZONES.forEach(function(z){
+    if(z.n === "Games tent" || z.n === "Mini gym") outA += (z.x1-z.x0)*(z.z1-z.z0);
+  });
+  var tentA = outA;
   /* coverage is measured on the outline built over, so the first floor - not
      the smaller ground floor - is the number that counts, and the balcony
      counts with it because it is roofed */
