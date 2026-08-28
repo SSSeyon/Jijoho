@@ -267,7 +267,7 @@
       network does.
     </div>
     <div class="note">
-      <b>The sofas, the armchairs and the planters are real models too now</b>, on the same machinery &mdash;
+      <b>The sofas and the planters are real models too now</b>, on the same machinery &mdash;
       which is why the machinery moved out of the bed code and into one place. Every instance is queued as the
       floors are built and placed once at the end, so each file is fetched exactly once however many rooms want
       it, and the geometry and textures are shared across the clones.
@@ -277,14 +277,23 @@
       aligned by its <i>back</i> rather than its centre, for the same reason the beds are aligned by the
       headboard: the back is the edge that goes against the wall and it is the one the plan means.
       <br><br>
-      <b>The armchairs are the outdoor lounge chair</b>, indoors as well as out, and that is a decision worth
-      being straight about. The Velo cannot be an armchair. Scaled uniformly down to the 0.92&nbsp;m an armchair
-      wants, a 2.44&nbsp;m three-seater stands 370&nbsp;mm high &mdash; a footstool; scaled to a sensible height
-      it is a three-seater again. The alternative is squashing one axis to fit, which is exactly what makes
-      downloaded furniture look subtly wrong without anyone being able to say why. The lounge chair is a metre
-      square and 0.98&nbsp;m high as authored, which is an armchair at armchair size, so it is used at its own
-      scale in both places. If you would rather the indoor chairs came from a matching indoor family, send one
-      and it drops into the same queue.
+      <b>The armchairs went back to being built here</b>, and that is a correction, not a preference. They were
+      briefly <code>outchair.glb</code>. Its top-level bounding box is a plausible 1.14&nbsp;&times;&nbsp;0.98
+      &times;&nbsp;1.17&nbsp;m &mdash; which is all that got checked &mdash; but inside it is a Sketchfab scene
+      rather than a chair. Twelve meshes, of which two share a material and occupy the same volume: coincident
+      copies of the same shell, both double-sided, z-fighting against each other. Nothing touches the floor
+      except two small parts in diagonally opposite corners, so the shell hangs in mid-air. And normalising the
+      whole <i>assembly</i> to 0.92&nbsp;m puts the seat somewhere other than where the plan asked for a chair,
+      which is why they turned up in odd positions.
+      <br><br>
+      It was also 207,000 triangles. Twelve of them came to 2.49&nbsp;million &mdash; 55&nbsp;% of the entire
+      model, against 580,000 for the building itself. This project merges 2,525 draw calls down to 438 on
+      purpose, and that much geometry went in without being measured.
+      <br><br>
+      Note what the Velo cannot do either: scaled uniformly down to the 0.92&nbsp;m an armchair wants, a
+      2.44&nbsp;m three-seater stands 370&nbsp;mm high. One file cannot be both. So the armchairs are the
+      cantilever chair again until there is an asset that is one chair, and a lounge chair that is genuinely a
+      single object drops straight into the same queue.
       <br><br>
       <b>The planters are one file at every size.</b> That is the whole point of scaling on a measured dimension:
       the 0.90-scale pots beside the upstairs seating and the 1.35 ones flanking the front door are the same
@@ -293,6 +302,13 @@
       normalising a planter on the width of its leaves gives you a thimble under a bush. Each one is rotated by
       an angle derived from where it stands, so four pots in a row are not four identical pots and the same pot
       is at the same angle on every reload.
+      <br><br>
+      <b>The planters are the remaining weight, and they are heavy.</b> The file is 72,912 triangles &mdash; a
+      25,600-triangle cylinder for the pot alone &mdash; and there are nineteen of them, so they are 1.39&nbsp;M
+      of the model&rsquo;s 1.83&nbsp;M triangles: nearly four times the entire building and site put together.
+      They measure correct and they sit correctly, so nothing about them is broken, but that is not a sensible
+      budget for a decorative pot and it is worth deciding what to spend instead &mdash; fewer of them, a lighter
+      asset, or the built version back in the smaller sizes.
       <br><br>
       One thing changed that is not a model: <b>the dining and desk chairs have white lacquer frames now, not
       polished steel.</b> That was a free choice while every seat in the house was a box. It stopped being one

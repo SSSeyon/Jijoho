@@ -251,31 +251,21 @@ function placeModels(){
     }
   });
 
-  /* ---- sofas and armchairs ----
-     Two different files, because they are two different pieces of furniture
-     and no amount of scaling turns one into the other. The Velo is a 2.44 m
-     three-seater: scaled uniformly down to a 0.92 m armchair it would stand
-     370 mm high, which is a footstool. The lounge chair is a metre square, so
-     scaled up to a 2.00 m sofa it would stand 1.72 m high, which is a wall.
-     Each is used at the size it was drawn at.
-
-     Both are aligned by their BACK rather than their centre, for the same
-     reason the beds are aligned by the headboard: the back is the edge that
-     goes against the wall, and it is the one the plan means. */
-  [["sofa.glb", SOFAQ], ["outchair.glb", CHAIRQ]].forEach(function(job){
-    if(!job[1].length) return;
-    loadModel(job[0], function(src){
-      for(var i=0; i<job[1].length; i++){
-        var q = job[1][i];
-        dropProc(q);
-        var m = fitModel(src, q.w, "w", q.turn);
-        var dep = m.userData.size.z;
-        m.children[0].position.z -= (q.d - dep) / (2 * m.scale.z);
-        m.position.set(q.cx, q.y, q.cz);
-        m.rotation.y = -q.rq * Math.PI/2;
-        q.g.add(m); FURN.push(m);
-      }
-    });
+  /* ---- sofas ----
+     Aligned by their BACK rather than their centre, for the same reason the
+     beds are aligned by the headboard: the back is the edge that goes against
+     the wall, and it is the one the plan means. */
+  if(SOFAQ.length) loadModel("sofa.glb", function(src){
+    for(var i=0; i<SOFAQ.length; i++){
+      var q = SOFAQ[i];
+      dropProc(q);
+      var m = fitModel(src, q.w, "w", q.turn);
+      var dep = m.userData.size.z;
+      m.children[0].position.z -= (q.d - dep) / (2 * m.scale.z);
+      m.position.set(q.cx, q.y, q.cz);
+      m.rotation.y = -q.rq * Math.PI/2;
+      q.g.add(m); FURN.push(m);
+    }
   });
 
   /* ---- planters ----
@@ -301,23 +291,33 @@ function placeBeds(){ placeModels(); }
    Modelled on the loft reference: a low modular seat that sits almost on the
    floor with no visible legs, a thin flat back cushion rather than a bolstered
    roll, and arms that stop level with the back. */
-var SOFAQ = [], CHAIRQ = [], POTQ = [];
-/* Real sofas and real armchairs, with the box version below still built as the
-   stand-in. w decides which of the two files a piece is: anything 1.40 m or
-   wider is a sofa, anything narrower is a chair. */
+var SOFAQ = [], POTQ = [];
+/* Sofas are the downloaded Velo; armchairs are built here.
+
+   The armchairs WERE outchair.glb, and that was wrong. Its top-level bounding
+   box is a plausible 1.14 x 0.98 x 1.17 m, which is all I checked, but inside
+   it is a Sketchfab scene rather than a chair: twelve meshes, of which
+   Object_4 (12,800 verts) and Object_24 (65,532 verts) share a material and
+   occupy the same volume - two coincident copies of the same shell, both
+   double-sided, which z-fight against each other. Nothing touches the floor
+   except two small parts in diagonally opposite corners, so the shell reads as
+   hanging in mid-air; and normalising the whole ASSEMBLY to 0.92 m puts the
+   seat somewhere other than where the plan asked for a chair.
+
+   It also costs 207,000 triangles. Twelve of them came to 2.49 million - 55 %
+   of the entire model, against 580,000 for the building itself. This project
+   merges 2,525 draw calls down to 438 on purpose; adding that much geometry
+   without measuring it was the second mistake.
+
+   So the cantilever chair is back until there is an asset that is one chair. */
 function sofa(cx,cz,y,w,rq,g,mat){
-  if(MODELS.ok){
+  if(MODELS.ok && w >= 1.4){
     var grp = new T.Group();
     grp.userData.noMerge = true;
     g.add(grp);
     sofaProc(cx,cz,y,w,rq,grp,mat);
-    /* The Velo's long axis is authored on X and the lounge chair is square in
-       plan, so only the sofa gets turned; asking fit to orient a 1.14 x 1.17 m
-       chair by "which axis is longer" would swing it 90 degrees on a 20 mm
-       difference. */
-    var q = {cx:cx, cz:cz, y:y, w:w, d:0.84, rq:rq, g:g, proc:grp,
-             turn:(w >= 1.4) ? "x" : null};
-    (w >= 1.4 ? SOFAQ : CHAIRQ).push(q);
+    /* the Velo's long axis is authored on X, so it is turned onto the plan's */
+    SOFAQ.push({cx:cx, cz:cz, y:y, w:w, d:0.84, rq:rq, g:g, proc:grp, turn:"x"});
     return;
   }
   sofaProc(cx,cz,y,w,rq,g,mat);
