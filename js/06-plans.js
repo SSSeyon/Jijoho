@@ -228,7 +228,6 @@ var DOORBLOCK = (function(){
     var x = hx(u), z = hz(v), lo = y + 0.38, hi = y + 1.75;
     for(var i = 0; i < COLLIDERS.length; i++){
       var c = COLLIDERS[i];
-      if(c.t && CTOFF[c.t]) continue;
       if(c.y1 <= lo || c.y0 >= hi) continue;
       var cx = Math.max(c.x0, Math.min(x, c.x1)), cz = Math.max(c.z0, Math.min(z, c.z1));
       if((x-cx)*(x-cx) + (z-cz)*(z-cz) < RAD*RAD) return true;

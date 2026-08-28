@@ -437,8 +437,8 @@ addBox(12.95, 0.07, 0.15, hx(6.75), RF-0.015, hz(UB), MAT.accent, gRoof, {});
    The rear third of the plot, z 6.7 .. 15.0, roughly 19.5 x 8.3 m of it,
    laid out as a garden rather than left as the mown strip it used to be:
    a shaped lawn, deep planting on three sides, a paved path that actually
-   goes somewhere, a pergola to sit under, an outdoor kitchen, and raised
-   vegetable beds along the rear.
+   goes somewhere, a pergola to sit under, and raised vegetable beds along
+   the rear.
 
    Tagged "garden" so its paving, planting and structures leave the collision
    model together when the court replaces them.
@@ -580,40 +580,30 @@ CTAG = "garden";
     var tl = addCyl(0.14,0.07,0.16, tx, ridge-0.16, tz, MAT.lamp, gGarden, 12); tl.castShadow = false;
   })();
 
-  /* ---------- outdoor kitchen, east of the pergola ---------- */
-  (function(){
-    var kx = 2.60, kz = 7.90;
-    surf(kx-2.30, kz-0.95, kx+2.30, kz+1.45, MAT.paver, 0.09, gGarden);
-    addFloor(kx-2.30, kx+2.30, kz-0.95, kz+1.45, 0.09);
-    /* masonry counter run against a low screen wall */
-    addBox(4.40, 0.30, 0.24, kx, 1.55, kz+1.33, MAT.wallExt, gGarden, {solid:true});
-    addBox(4.40, 1.40, 0.24, kx, 0.70, kz+1.33, MAT.stone, gGarden, {solid:true});
-    addBox(4.30, 0.92, 0.68, kx, 0.55, kz+0.86, MAT.wallExt, gGarden, {solid:true});
-    addBox(4.44, 0.07, 0.76, kx, 1.05, kz+0.86, MAT.counter, gGarden, {});
-    /* the grill, sunk into the run */
-    addBox(1.05, 0.10, 0.62, kx-1.20, 1.10, kz+0.86, MAT.black, gGarden, {});
-    addBox(0.98, 0.03, 0.55, kx-1.20, 1.14, kz+0.86, MAT.steel, gGarden, {cast:false});
-    addBox(1.10, 0.55, 0.10, kx-1.20, 1.42, kz+1.18, MAT.steel, gGarden, {cast:false});
-    /* sink and a couple of doors */
-    addBox(0.60, 0.04, 0.44, kx+1.05, 1.07, kz+0.86, MAT.steel, gGarden, {cast:false});
-    [-0.20, 0.55, 1.85].forEach(function(d){
-      addBox(0.68, 0.72, 0.03, kx+d, 0.60, kz+0.52, MAT.woodDark, gGarden, {});
-    });
-    /* breakfast bar and stools on the garden side */
-    addBox(4.10, 0.07, 0.62, kx, 1.06, kz-0.10, MAT.wood, gGarden, {});
-    [-1.45, -0.48, 0.48, 1.45].forEach(function(d){ stool(kx+d, kz-0.62, 0.09, gGarden); });
-    /* and a light over it */
-    var kl = addCyl(0.14,0.07,0.16, kx, 2.35, kz+0.60, MAT.lamp, gGarden, 12); kl.castShadow = false;
-    addBox(0.06, 1.30, 0.06, kx, 1.85, kz+1.28, MAT.steel, gGarden, {});
-  })();
+  /* The outdoor kitchen has been taken out. It stood at x 0.30..4.90,
+     z 6.95..9.35 - a 4.40 m masonry counter run, a grill, a sink, a screen
+     wall and a four-stool breakfast bar on 11 m2 of paving, twelve metres from
+     a real kitchen that has an island and a rear door onto the terrace. It was
+     the fourth structure in an 8.3 m deep garden strip, and it was the one
+     with the least to do: the barbecue against the house wall at (4.80, 4.78)
+     already covers cooking outside, and it is under the rear cantilever, which
+     the outdoor kitchen was not.
+
+     Two things it was carrying for other people, now that it is gone:
+       - the ground it stood on returns to lawn, which puts a clear 3.4 m of
+         grass between the rear hedge run at z = 6.85 and the gym's apron;
+       - the gym's south window and east door were both positioned against it
+         (see below), and both stay where they are - the reasoning has changed
+         but the answers have not. */
 
   /* ---------- mini gym pavilion ----------
-     A 4.10 x 2.80 block building on the one piece of the garden nothing else
-     wanted: east of the games tent, north of the outdoor kitchen, west of the
-     path, and clear of the hedge run at x = 3.40 and the flower bed at
-     z = 13.30. That envelope is why it is 4.10 wide and not 5 - the gap is
-     the gap, and a gym you have to walk round the hedge to reach is worse
-     than a small one you do not.
+     A 4.10 x 2.80 block building east of the games tent and west of the path,
+     clear of the hedge run at x = 3.40 and the flower bed at z = 13.30. It was
+     sized to the gap left between those and the outdoor kitchen, which is why
+     it is 4.10 wide and not 5. With the kitchen gone there is now room to grow
+     it south - but 4.10 x 2.80 is a working footprint, and taking more of the
+     lawn back for a room that already fits its equipment would be spending the
+     ground the kitchen just handed over.
 
      Built as a real building rather than a tent: the pergola and the tent
      already carry the light structures back here, and a third one would have
@@ -622,8 +612,10 @@ CTAG = "garden";
 
      The door is on the EAST elevation, onto the path. It was drawn on the
      south first, which put it 750 mm from the back of the outdoor kitchen's
-     screen wall - a slot you could stand in but not walk through. The path is
-     the only side with room to arrive from. */
+     screen wall - a slot you could stand in but not walk through. That wall
+     has gone, so the south face is open ground again; the door stays east
+     anyway, because the path is the side you actually arrive from and a door
+     onto open lawn is a door with no route to it. */
   (function(){
     var AX0 = -1.10, AX1 = 3.00, AZ0 = 10.10, AZ1 = 12.90;
     var FY = 0.12, H = 2.55, T = 0.15;
@@ -644,8 +636,11 @@ CTAG = "garden";
 
     /* ---- shell ----
        East is the entrance elevation: a 1.50 m doorway onto the path, with a
-       window beside it. South takes a high window over the outdoor kitchen,
-       west a clerestory - that is the elevation the pergola looks straight at,
+       window beside it. South takes a high window - it used to look over the
+       outdoor kitchen's screen wall and now looks down the lawn, and the high
+       sill still earns its keep: it is the wall the dumbbell rack stands
+       against. West is a clerestory - that is the elevation the pergola looks
+       straight at,
        and a full window would have been a window into someone's workout.
        North is solid: it carries the mirror. */
     wall(AX1, AZ0, AX1, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:1,

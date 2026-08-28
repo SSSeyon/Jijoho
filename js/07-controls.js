@@ -186,7 +186,6 @@ if(typeof MODELS !== "undefined" && MODELS.whenReady){
 [ Z("Rear garden", 0.012, -9.2,6.7, 9.2,15.0),
   Z("Garden path", 0, 5.9,6.7, 8.1,15.0),
   Z("Kitchen garden", 0, -8.3,13.2, 3.2,15.0),
-  Z("Outdoor kitchen", 0, 0.3,6.55, 4.9,9.35),
   Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8),
   Z("Mini gym", 0.12, -1.1,10.1, 3.0,12.9)
 ].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
@@ -299,7 +298,6 @@ function zoneAt(x,z,y){
   var best=null;
   for(var i=0;i<ZONES.length;i++){
     var Zi=ZONES[i];
-    if(Zi.t && CTOFF[Zi.t]) continue;
     if(x>=Zi.x0&&x<=Zi.x1&&z>=Zi.z0&&z<=Zi.z1&&Math.abs(Zi.y-y)<0.75){ best=Zi; break; }
   }
   if(best) return best.n;
@@ -323,7 +321,6 @@ function collides(x,z,y){
   var lo = y+0.38, hi = y+1.75;
   for(var i=0;i<COLLIDERS.length;i++){
     var c=COLLIDERS[i];
-    if(c.t && CTOFF[c.t]) continue;
     if(c.y1<=lo || c.y0>=hi) continue;
     var cx = Math.max(c.x0, Math.min(x, c.x1));
     var cz = Math.max(c.z0, Math.min(z, c.z1));
@@ -336,7 +333,6 @@ function floorAt(x,z,y){
   var best = -999, lim = y+STEP;
   for(var i=0;i<FLOORS.length;i++){
     var f=FLOORS[i];
-    if(f.t && CTOFF[f.t]) continue;
     if(x<f.x0||x>f.x1||z<f.z0||z>f.z1) continue;
     if(f.y<=lim && f.y>best) best=f.y;
   }
@@ -532,7 +528,6 @@ var ROOMSPOT = { "Staircase":"Foot of the stairs", "Stair hall":"Foot of the sta
 function gotoRoom(name, zone){
   var i, s = null, key = norm(ROOMSPOT[name] || name);
   for(i=0;i<SPOTS.length;i++){
-    if(SPOTS[i][5] && CTOFF[SPOTS[i][5]]) continue;
     var sk = norm(SPOTS[i][0]);
     if(sk.indexOf(key) !== 0) continue;
     if(!s || sk.length < norm(s[0]).length) s = SPOTS[i];
@@ -818,13 +813,10 @@ document.getElementById("btnFurn").onclick = function(){
   this.classList.toggle("on", on);
   for(var i=0;i<FURN.length;i++) FURN[i].visible = !on;
 };
-/* ---------- garden or sports court ---------- */
-/* setRear() and the Garden / Sports court switch have gone with the court.
-   The rear of the plot is the garden, always, so there is nothing left to
-   choose between. The stub stays only because the debug handle at the bottom
-   of this file exports it. */
-var rearBlock = "garden";
-function setRear(){ /* nothing to switch any more */ }
+/* The Garden / Sports court switch, setRear(), rearBlock and CTOFF have all
+   gone. The rear of the plot is the garden, always, so there was nothing left
+   to choose between; the stub survived only because the debug handle at the
+   bottom of this file exported it, and that reference has gone too. */
 
 /* every distinct standard material in the scene, with its authored reflection
    strength, so the whole model's specular can be dimmed in one pass */
@@ -1102,7 +1094,6 @@ var SPOTS = [
   ["Games tent (at the table)",       -5.32, 0.08,  11.40, 0,     "garden"],
   ["Games tent (from the lawn)",      -3.10, 0,     10.60, 2.40,  "garden"],
   ["Pergola",                         -3.68, 0.10,   9.24, 3.10,  "garden"],
-  ["Outdoor kitchen",                  3.56, 0,      7.86, 0.10,  "garden"],
   ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
   ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
   ["Mini gym",                         0.95, 0.12,  10.75, Math.PI, "garden"],
@@ -1117,7 +1108,6 @@ function buildGoto(){
   var sel = document.getElementById("goto");
   while(sel.options.length > 1) sel.remove(1);
   SPOTS.forEach(function(s,i){
-    if(s[5] && CTOFF[s[5]]) return;
     var o=document.createElement("option"); o.value=i; o.textContent=s[0]; sel.appendChild(o);
   });
 }
@@ -1523,5 +1513,5 @@ window.__J = { scene:scene, camera:camera, renderer:renderer, player:player, orb
   setMode:function(m){ setMode(m); }, zoneAt:zoneAt, floorAt:floorAt, collides:collides,
   COLLIDERS:COLLIDERS, FLOORS:FLOORS,
   groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden},
-  setRear:setRear, rear:function(){ return rearBlock; }, CTOFF:CTOFF, MAT:MAT, SPOTS:SPOTS,
+  MAT:MAT, SPOTS:SPOTS,
   hx:hx, hz:hz, EYE:EYE, MERGED:MERGED };

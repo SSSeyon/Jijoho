@@ -1243,19 +1243,27 @@ var MODELS = (function(){
 /* ---------- collision + floor registries ---------- */
 var COLLIDERS = [];
 var FLOORS    = [];
-/* Colliders and floors carry the tag that was current when they were built.
-   The BQ and the sports court are mutually exclusive, so their physics has to
-   switch with them - otherwise you walk into a wall that isn't drawn. */
 /* Which group new planting is added to. The five planting helpers below were
-   written straight into gSite because everything green was permanent; now that
-   the garden is one of two mutually exclusive rear options, the same helpers
-   have to be able to build into gGarden instead. Same trick as CTAG. */
+   written straight into gSite because everything green was permanent; the
+   garden needs them to build into gGarden instead, so the target group is a
+   parameter rather than a constant. */
 var PGRP = null;                                 /* null means gSite */
 function planting(g, fn){ var p = PGRP; PGRP = g; fn(); PGRP = p; }
 
+/* CTOFF is gone. It was a tag -> bool map that let a whole rear option -
+   the sports court, and before that the BQ - have its colliders, floors,
+   room labels and viewpoints switched off in step with its geometry, so you
+   never walked into a wall that was not drawn. Both options were removed,
+   nothing ever wrote to the map again, and the six `if(x.t && CTOFF[x.t])
+   continue;` guards that read it had been dead branches ever since.
+   `tagged()` went with it: it was the helper that set CTAG for a block, and
+   it had no callers left either.
+
+   CTAG survives as a plain label. Colliders, floors, zones and viewpoints
+   built inside the garden still carry t:"garden", which nothing currently
+   reads - it is there so that if a rear option is ever reintroduced, the
+   things it would have to switch are already marked. */
 var CTAG = null;
-var CTOFF = {};                                  /* tag -> true when disabled */
-function tagged(fn, tag){ var p = CTAG; CTAG = tag; fn(); CTAG = p; }
 /* Returns the collider it just pushed. Anything that moves after the model is
    built - the cars, the gate leaves - keeps that reference and edits it in
    place, so the thing you can walk into always matches the thing you can see. */
