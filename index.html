@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Jijoho Residence &mdash; 3D Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -15,44 +18,87 @@
   <div class="t">building the model</div>
 </div>
 
-<div id="bar">
-  <div class="brand">JIJOHO RESIDENCE <span>&nbsp;&middot;&nbsp; 4-bed duplex + games tent &nbsp;&middot;&nbsp; 655 m&sup2;</span></div>
-  <div class="grp">
-    <button class="b on" id="btnWalk">Walk</button>
-    <button class="b" id="btnOrbit">Dollhouse</button>
-  </div>
-  <button class="b" id="btnRoof">Roof off</button>
-  <button class="b" id="btnFloor">Upper floor off</button>
-  <button class="b" id="btnFurn">Empty</button>
-  <button class="b" id="btnLabels">Room labels</button>
-  <div class="tod" title="Time of day - drag for the sun angle">
-    <span class="sunico">&#9788;</span>
-    <input type="range" id="tod" min="5.0" max="21.5" step="0.1" value="17.3">
-    <span id="todLbl">17:06</span>
-  </div>
-  <select class="b" id="qual" title="Graphics quality">
-    <option value="low">Low</option>
-    <option value="medium">Medium</option>
-    <option value="high">High</option>
-    <option value="ultra">Ultra</option>
-  </select>
-  <select class="b" id="goto"><option value="">Jump to&hellip;</option></select>
-  <div class="spacer"></div>
-  <button class="b" id="btnPlans">2D plans</button>
-  <button class="b" id="btnInfo">Specs &amp; costs</button>
+<div id="hdr">
+  <div class="hdr-name">Jijoho Residence</div>
+  <div class="hdr-facts"><span>655 m&sup2;</span><span>Badagry axis</span></div>
 </div>
 
 <div id="cross"></div>
-<div id="hint">
-  <b>Drag to look &nbsp;&middot;&nbsp; double-click the floor to walk there</b><br>
-  <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> move &nbsp;&middot;&nbsp;
-  <span class="k">Shift</span> run &nbsp;&middot;&nbsp; <span class="k">V</span> dollhouse &nbsp;&middot;&nbsp;
-  <span class="k">R</span> roof &nbsp;&middot;&nbsp; <span class="k">L</span> room labels &nbsp;&middot;&nbsp; <span class="k">G</span> glass<br>
-  <span class="k">Shift</span>+click for game-style mouse-look &nbsp;&middot;&nbsp; <span class="k">Esc</span> to leave it
+
+<div id="capsule">
+  <div class="cap-ghost" id="capGhost">Drag to look &middot; double-click the floor to walk there</div>
+  <div class="cap-row cap-secondary" id="capSecondary">
+    <button class="cap-chip" id="btnRoof">Roof off</button>
+    <button class="cap-chip" id="btnFloor">Upper floor</button>
+    <button class="cap-chip" id="btnFurn">Empty</button>
+    <button class="cap-chip" id="btnLabels">Labels</button>
+    <button class="cap-chip" id="btnGlass">Glass</button>
+    <span class="cap-div"></span>
+    <span class="cap-label">Quality</span>
+    <button class="cap-chip qual-chip" data-q="low">Low</button>
+    <button class="cap-chip qual-chip" data-q="medium">Med</button>
+    <button class="cap-chip qual-chip on" data-q="high">High</button>
+    <button class="cap-chip qual-chip" data-q="ultra">Ultra</button>
+    <span class="cap-div" id="driveDiv"></span>
+    <div class="cap-drive" id="driveGrp"></div>
+  </div>
+  <div class="cap-row cap-primary">
+    <div class="cap-seg">
+      <button class="cap-chip cap-seg-btn on" id="btnWalk">Walk</button>
+      <button class="cap-chip cap-seg-btn" id="btnOrbit">Dollhouse</button>
+    </div>
+    <span class="cap-div"></span>
+    <div class="cap-tod" title="Time of day - drag for the sun angle">
+      <span class="sunico">&#9788;</span>
+      <span id="todLbl">17:06</span>
+      <input type="range" id="tod" min="5.0" max="21.5" step="0.1" value="17.3">
+    </div>
+    <span class="cap-div"></span>
+    <button class="cap-chip cap-accent" id="btnRooms">Walk me to&hellip;</button>
+    <button class="cap-chip" id="btnPlans">Plans</button>
+    <button class="cap-chip" id="btnInfo">Specs</button>
+  </div>
 </div>
 
 <div id="stick"><div id="knob"></div></div>
-<div id="mobileHelp">Left half: joystick &middot; right half: drag to look &middot; double-tap to walk there</div>
+
+<div id="roomIndex">
+  <div class="ri-sheet">
+    <div class="ri-head">
+      <div class="ri-title">Walk me to&hellip;</div>
+      <div class="ri-tabs">
+        <button class="ri-tab on" data-lvl="Ground">Ground</button>
+        <button class="ri-tab" data-lvl="First">First</button>
+        <button class="ri-tab" data-lvl="Outside">Outside</button>
+      </div>
+    </div>
+    <div class="ri-grid" id="roomGrid"></div>
+    <div class="ri-foot">
+      <span>Clicking a name walks you in on foot, from the hand-aimed viewpoint.</span>
+      <span class="ri-esc">Esc to close</span>
+    </div>
+  </div>
+</div>
+
+<div id="helpOverlay">
+  <div class="ho-sheet">
+    <div class="ho-eyebrow">Getting around</div>
+    <h3>It works the way Street View does</h3>
+    <p>Press and drag anywhere to look. Double-click the floor to walk there &mdash; or anything else, and you will be standing in front of it.</p>
+    <div class="ho-keys">
+      <div class="ho-row"><span class="ho-kgrp"><span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span></span><span>Move &middot; hold Shift to run</span></div>
+      <div class="ho-row"><span class="k">V</span><span>Dollhouse view</span></div>
+      <div class="ho-row"><span class="k">R</span><span>Lift every roof on the plot</span></div>
+      <div class="ho-row"><span class="k">L</span><span>Room labels &mdash; click one to walk in</span></div>
+      <div class="ho-row"><span class="k">G</span><span>Force refracting glass on or off</span></div>
+      <div class="ho-row"><span class="k">Shift &#43; click</span><span>Game-style mouse-look &middot; Esc to leave it</span></div>
+    </div>
+    <div class="ho-foot">
+      <span>Shown once. After that it is the one ghost line above the capsule.</span>
+      <button class="ho-got" id="helpGotIt">Got it</button>
+    </div>
+  </div>
+</div>
 
 <div id="navLbl">move &nbsp;&middot;&nbsp; look &amp; zoom</div>
 <div id="nav">
@@ -97,6 +143,9 @@
 
 <div id="infoPanel">
   <button id="infoClose">&times;</button>
+  <div class="doc-jump">
+    <a href="#tab-areas">Areas</a><a href="#tab-materials">Materials</a><a href="#tab-cost">Cost</a><a href="#tab-site">Site</a>
+  </div>
   <div class="doc">
     <h1>Jijoho Residence</h1>
     <div class="sub">
@@ -104,7 +153,7 @@
       Plot 19.55&nbsp;m &times; 33.52&nbsp;m &mdash; 655.1&nbsp;m&sup2; &middot; 6.418988&deg;N, 2.893992&deg;E (Badagry axis, Lagos State).
     </div>
 
-    <h2>Schedule of areas</h2>
+    <h2 id="tab-areas">Schedule of areas</h2>
     <div class="kv">
       <div>Plot area</div><div>655.1 m&sup2;</div>
       <div>Ground floor footprint</div><div>155.8 m&sup2;</div>
@@ -591,7 +640,7 @@
       of the garden. The ground is still there if you change your mind.
     </div>
 
-    <h2>Site strategy</h2>
+    <h2 id="tab-site">Site strategy</h2>
     <ul>
       <li><b>Setbacks:</b> 10.4&nbsp;m front to the main wall (8.2&nbsp;m to the balcony edge), 3.0&nbsp;m both sides, 3.02&nbsp;m rear. Confirm the exact requirement for your street with the Lagos State Physical Planning Permit Authority before drawings go in.</li>
       <li><b>Building coverage 36.3 %</b> &mdash; up from 26.9 % now that the enlarged first floor, not the ground floor, sets the footprint. Still inside the residential limit normally applied, but confirm it. Total hard surface including paving is about 58 %.</li>
@@ -602,7 +651,7 @@
       <li><b>Drainage:</b> septic tank and soakaway in the rear utility yard, at the maximum practical distance from the borehole, with a perimeter drain running to a rear soakaway pit.</li>
     </ul>
 
-    <h2>Materials &amp; finishes</h2>
+    <h2 id="tab-materials">Materials &amp; finishes</h2>
     <table>
       <tr><th>Element</th><th>Specification</th></tr>
       <tr><td>Foundation</td><td>Reinforced concrete raft, 150&nbsp;mm blinding, 1000-gauge DPM, sand fill compacted in 225&nbsp;mm layers</td></tr>
@@ -625,7 +674,7 @@
       <tr><td>Water</td><td>Borehole with treatment; two overhead tanks <b>on the roof deck</b> behind the parapet, on a low plinth with an access ladder; plus an underground reservoir. The roof gives about 7.2&nbsp;m of head against the 3.2&nbsp;m the old ground-level tower gave &mdash; roughly 0.75&nbsp;bar at the ground-floor taps and 0.4&nbsp;bar at the first-floor showers</td></tr>
     </table>
 
-    <h2>Indicative cost</h2>
+    <h2 id="tab-cost">Indicative cost</h2>
     <div class="note">
       <b>Priced August 2026. Check the date before you use any of it.</b> Nigerian building costs move fast
       enough that these figures have a shelf life measured in months, not years &mdash; cement and rebar alone

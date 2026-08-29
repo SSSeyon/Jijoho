@@ -366,6 +366,8 @@ document.addEventListener("keydown", function(e){
   if(e.code==="KeyF"){ toggleBtn("btnFloor"); }
   if(e.code==="Escape" && document.getElementById("planPanel").classList.contains("open")) closePlans();
   if(e.code==="Escape" && document.getElementById("infoPanel").classList.contains("open")) closeInfo();
+  if(e.code==="Escape" && document.getElementById("roomIndex").classList.contains("open")) closeRoomIndex();
+  if(e.code==="Escape" && !hintGone) dismissHint();
 });
 document.addEventListener("keyup", function(e){ keys[e.code]=false; });
 
@@ -588,15 +590,18 @@ canvas.addEventListener("mousedown", function(e){
   look.down = true; look.lx = e.clientX; look.ly = e.clientY;
   dismissHint();
 });
-/* The hint used to disappear when pointer lock engaged. There is no lock to
-   engage now, so it goes on the first thing you do with the view instead. */
+/* The one-time help overlay used to be a hint box that faded on the first
+   thing you did with the view. It is now a full sheet, shown once and closed
+   explicitly - "Got it", Esc, or a click on the scrim - after which only the
+   ghost line above the capsule remains. dismissHint() keeps its old name and
+   call sites (every gesture that used to fade the hint still calls it) but
+   now just closes that sheet. */
 var hintGone = false;
 function dismissHint(){
   if(hintGone) return;
   hintGone = true;
-  var h = document.getElementById("hint");
-  h.style.transition = "opacity .5s"; h.style.opacity = "0";
-  setTimeout(function(){ h.style.display = "none"; }, 520);
+  var h = document.getElementById("helpOverlay");
+  h.classList.remove("open");
 }
 window.addEventListener("mouseup", function(){
   look.down = false;
@@ -782,10 +787,12 @@ function setMode(m){
   mode = m;
   document.getElementById("btnWalk").classList.toggle("on", m==="walk");
   document.getElementById("btnOrbit").classList.toggle("on", m==="orbit");
-  document.getElementById("hint").style.display = (m==="walk" && !hintGone && !isTouch) ? "block" : "none";
+  var ghost = document.getElementById("capGhost");
+  ghost.textContent = (m==="walk")
+    ? "Drag to look · double-click the floor to walk there"
+    : "Drag to orbit · scroll to zoom · right-drag to pan";
   document.getElementById("cross").style.display = (m==="walk" && locked) ? "block" : "none";
   canvas.style.cursor = (m==="walk" && !locked) ? "grab" : "";
-  document.getElementById("mobileHelp").style.display = (isTouch) ? "block" : "none";
   document.getElementById("navLbl").textContent = (m==="walk")
     ? "move · look & zoom" : "pan · orbit & zoom";
   fov = FOV0; camera.fov = fov; camera.updateProjectionMatrix();
@@ -904,8 +911,8 @@ function setQuality(name){
     if(tx[i].anisotropy !== a){ tx[i].anisotropy = a; tx[i].needsUpdate = true; }
   }
 
-  var sel = document.getElementById("qual");
-  if(sel && sel.value !== name) sel.value = name;
+  var chips = document.querySelectorAll(".qual-chip");
+  for(var c=0;c<chips.length;c++) chips[c].classList.toggle("on", chips[c].getAttribute("data-q")===name);
 }
 
 /* ---------- time of day ----------
@@ -1104,24 +1111,75 @@ var SPOTS = [
      is scaled to its real 5.89 m. */
   ["Utility yard / generator",        -2.30, 0,     15.70, -Math.PI/2]
 ];
-function buildGoto(){
-  var sel = document.getElementById("goto");
-  while(sel.options.length > 1) sel.remove(1);
-  SPOTS.forEach(function(s,i){
-    var o=document.createElement("option"); o.value=i; o.textContent=s[0]; sel.appendChild(o);
+/* ---------- room index ("Walk me to...") ----------
+   Ground and First come straight off ROOMS (js/06-plans.js) - the same net
+   clear-area figures the 2D schedules print, so the numbers here cannot
+   drift from what is printed elsewhere. Outside is everything else in ZONES.
+   Both are deduped by name, larger rectangle wins, the same rule gLabels
+   above already uses for a room that is more than one box (the family room
+   wraps the stairwell, the rear garden has sub-zones cut into it). */
+function buildRoomIndex(){
+  function dedupe(items, getName, getArea){
+    var best = {};
+    items.forEach(function(it){
+      var n = getName(it), a = getArea(it);
+      if(!best[n] || a > best[n].a) best[n] = {n:n, area:a};
+    });
+    return Object.keys(best).map(function(k){ return best[k]; })
+      .sort(function(p,q){ return p.n.localeCompare(q.n); });
+  }
+  var byLvl = { Ground:[], First:[] };
+  ["Ground","First"].forEach(function(lvl){
+    byLvl[lvl] = dedupe(ROOMS.filter(function(r){ return r.lvl===lvl; }),
+      function(r){ return r.n; }, function(r){ return r.area; });
+  });
+  var have = {};
+  ROOMS.forEach(function(r){ have[r.n] = true; });
+  var outside = dedupe(ZONES.filter(function(z){ return !have[z.n]; }),
+    function(z){ return z.n; }, function(z){ return (z.x1-z.x0)*(z.z1-z.z0); });
+  return { Ground: byLvl.Ground, First: byLvl.First, Outside: outside };
+}
+var ROOM_INDEX = null, riLvl = "Ground";
+function renderRoomIndex(){
+  if(!ROOM_INDEX) ROOM_INDEX = buildRoomIndex();
+  var grid = document.getElementById("roomGrid");
+  grid.innerHTML = "";
+  var list = ROOM_INDEX[riLvl] || [];
+  list.forEach(function(r){
+    var row = document.createElement("button");
+    row.className = "ri-row";
+    row.innerHTML = '<span class="n"></span><span class="a"></span><span class="m"></span>';
+    row.querySelector(".n").textContent = r.n;
+    row.querySelector(".m").textContent = r.area.toFixed(1) + " m²";
+    row.onclick = function(){
+      var zone = null;
+      for(var i=0;i<ZONES.length;i++){ if(ZONES[i].n === r.n){ zone = ZONES[i]; break; } }
+      gotoRoom(r.n, zone);
+      closeRoomIndex();
+    };
+    grid.appendChild(row);
   });
 }
+function openRoomIndex(){
+  document.getElementById("roomIndex").classList.add("open");
+  renderRoomIndex();
+  if(locked) document.exitPointerLock();
+}
+function closeRoomIndex(){ document.getElementById("roomIndex").classList.remove("open"); }
+document.getElementById("btnRooms").onclick = openRoomIndex;
+document.getElementById("roomIndex").addEventListener("click", function(e){
+  if(e.target === this) closeRoomIndex();
+});
 (function(){
-  var sel = document.getElementById("goto");
-  buildGoto();
-  sel.onchange = function(){
-    var s = SPOTS[parseInt(this.value,10)];
-    if(!s) return;
-    player.x=s[1]; player.y=s[2]; player.z=s[3]; player.yaw=s[4]; player.pitch=-0.03;
-    orbit.tx=s[1]; orbit.ty=s[2]+2.0; orbit.tz=s[3];
-    if(mode==="orbit") orbit.dist=Math.min(orbit.dist, 26);
-    this.selectedIndex=0; this.blur();
-  };
+  var tabs = document.querySelectorAll(".ri-tab");
+  for(var i=0;i<tabs.length;i++){
+    tabs[i].addEventListener("click", function(){
+      for(var j=0;j<tabs.length;j++) tabs[j].classList.remove("on");
+      this.classList.add("on");
+      riLvl = this.getAttribute("data-lvl");
+      renderRoomIndex();
+    });
+  }
 })();
 
 /* info panel */
@@ -1268,23 +1326,20 @@ function refreshCarButtons(){
 
 /* ---------- toolbar ---------- */
 (function(){
-  var bar = document.getElementById("bar");
-  if(!bar) return;
-  var host = document.createElement("div");
-  host.className = "grp";
-  host.id = "driveGrp";
+  var host = document.getElementById("driveGrp");
+  if(!host) return;
+  document.getElementById("driveDiv").classList.add("show");
   var g = document.createElement("button");
-  g.className = "b"; g.id = "btnGate"; g.textContent = "Open gate";
+  g.className = "cap-chip"; g.id = "btnGate"; g.textContent = "Open gate";
   g.onclick = function(){ setGate(!GATE.open); };
   host.appendChild(g);
-  bar.insertBefore(host, document.getElementById("btnRoof"));
 
   /* one button per vehicle, filled in once the models have arrived */
   MODELS.whenReady(function(){
     for(var i=0;i<VEHICLES.length;i++){
       (function(idx){
         var b = document.createElement("button");
-        b.className = "b"; b.id = "car" + idx;
+        b.className = "cap-chip"; b.id = "car" + idx;
         b.textContent = VEHICLES[idx].name.split(" ")[0];
         b.onclick = function(){ toggleCar(idx); };
         host.appendChild(b);
@@ -1459,6 +1514,8 @@ function setGlass(on, quiet){
     g.roughness = 0.06; g.envMapIntensity = 2.6;
   }
   g.needsUpdate = true;
+  var chip = document.getElementById("btnGlass");
+  if(chip) chip.classList.toggle("on", on);
   if(quiet) return;                     /* the quality preset sets this too */
   var el = document.getElementById("where");
   if(el) el.textContent = on ? "refracting glass on" : "refracting glass off";
@@ -1501,11 +1558,53 @@ window.addEventListener("resize", function(){
    the picker is right there, and the frame-rate watchdog still runs. */
 var touchy = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 setQuality(touchy ? (window.devicePixelRatio >= 2 ? "medium" : "low") : "high");
-document.getElementById("qual").onchange = function(){ gw.user = true; setQuality(this.value); };
+(function(){
+  var chips = document.querySelectorAll(".qual-chip");
+  for(var i=0;i<chips.length;i++){
+    chips[i].onclick = function(){ gw.user = true; setQuality(this.getAttribute("data-q")); };
+  }
+})();
+document.getElementById("btnGlass").onclick = function(){
+  var on = !this.classList.contains("on");
+  this.classList.toggle("on", on);
+  setGlass(on);
+};
 wireTOD();
+
+/* ---------- capsule reveal ----------
+   The capsule sits dim and condensed until the pointer comes looking for it,
+   the same way the mockup describes: "50% opacity and 88% scale until the
+   pointer enters the bottom third, then it comes up to full and the
+   secondary row unfolds above it." Touch has no hover, so it stays fully
+   revealed there - the phone frame in the mockup shows the same rows always
+   up, not a two-stage reveal that needs a hover it can never get. */
+(function(){
+  var cap = document.getElementById("capsule");
+  if(isTouch){ cap.classList.add("revealed"); return; }
+  window.addEventListener("mousemove", function(e){
+    var near = e.clientY > window.innerHeight * 0.66;
+    cap.classList.toggle("revealed", near);
+  });
+  cap.addEventListener("mouseleave", function(){
+    cap.classList.remove("revealed");
+  });
+  cap.addEventListener("mouseenter", function(){
+    cap.classList.add("revealed");
+  });
+})();
+
+/* ---------- one-time help overlay ----------
+   Shown once, right after the model appears; "Got it", Esc or a click on the
+   scrim all dismiss it via dismissHint() (old name, new job - see above),
+   after which only the ghost line above the capsule remains. */
+document.getElementById("helpGotIt").onclick = dismissHint;
+document.getElementById("helpOverlay").addEventListener("click", function(e){
+  if(e.target === this) dismissHint();
+});
 
 setMode("walk");
 document.getElementById("loading").style.display = "none";
+document.getElementById("helpOverlay").classList.add("open");
 animate();
 
 /* debug handle */
