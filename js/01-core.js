@@ -1482,7 +1482,7 @@ var ZONES = [
   Z("Study / library", FF, hx(0),hz(4.0), hx(5.0),hz(7.0)),
   Z("Upstairs corridor", FF, hx(6.5),hz(0), hx(8.3),hz(7.36)),
   Z("Upstairs landing", FF, hx(5.0),hz(7.36), hx(8.3),hz(10.2)),
-  Z("Upstairs sitting area", FF, hx(5.0),hz(10.2), hx(8.3),hz(13.9)),
+  Z("Upstairs gym", FF, hx(5.0),hz(10.2), hx(8.3),hz(13.9)),
   Z("Bedroom 3 bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
   Z("Bedroom 3 walk-in", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
   Z("Bedroom 3", FF, hx(0),hz(10.2), hx(5.0),hz(13.9)),

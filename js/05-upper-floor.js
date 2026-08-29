@@ -255,19 +255,93 @@ addBox(0.04,0.75,1.6, hx(6.5), FF+2.45, hz(4.6), MAT.glass, gFF, {cast:false});
    teleporting to it. The void's other three edges (u = 5.0, u = 6.5, v = 2.60)
    are all closed by real walls, so nothing here is unguarded. */
 
-/* --- upstairs sitting area  (u 5.0..8.3, v 10.2..13.9  =  3.15 x 3.55 m) ---
-   The corner the master used to occupy and does not need. It is open to the
-   landing rather than walled off, so what you get at the head of the stairs is
-   a room with a view of the garden instead of a turn in a corridor - and the
-   rear windows at v = 13.90 finally light something that is used. */
-rugMat(hx(6.70), hz(12.20), FF, 2.6, 2.4, gFF, MAT.fabric2);
-sofa(hx(7.80), hz(12.20), FF, 2.00, 1, gFF, MAT.fabric2);
-armchair(hx(5.55), hz(12.70), FF, 3, gFF);
-coffeeTable(hx(6.75), hz(12.20), FF, 0.90, 0.55, gFF);
-fsolid(1.10,0.78,0.36, hx(6.65), FF+0.39, hz(13.62), MAT.wood, gFF);
-potPlant(hx(5.45), hz(13.30), FF, gFF, 1.15);
+/* --- upstairs gym  (u 5.0..8.3, v 10.2..13.9  =  3.15 x 3.55 m  =  11.2 m2) ---
+   This was an open sitting area at the head of the stairs, and before that it
+   was the corner the master used to occupy. It is the gym now, and the gym is
+   no longer a block building in the garden - see the note where that pavilion
+   stood. 11.2 m2 against the pavilion's 11.5 is the same room, minus a
+   foundation, a roof slab, four walls and a walk through the rain.
+
+   What it gives up is real and worth stating: this was the one soft, open
+   space on the floor, and the rear windows at v = 13.90 now light a treadmill
+   rather than a sofa. The family room at 23.9 m2 and the balcony are what is
+   left to sit in upstairs, which is enough, but it is one fewer place to sit.
+
+   It stays open to the landing rather than being walled off - a gym you can
+   see into is a gym that gets used, and a door here would need a wall that
+   does not exist.
+
+   The mirror goes on the east wall: it is the only run in the room long enough
+   at 2.8 m clear (the corridor door stops at v = 11.10) and it is the wall
+   with no glass in it. The treadmill therefore runs east-west and faces it. */
+/* mirror, east wall, clear of the corridor door */
+addBox(0.03, 1.90, 2.10, hx(8.24), FF+1.22, hz(12.55), MAT.steel, gFF, {cast:false});
+/* rubber gym matting, which is what actually goes down under free weights.
+   MAT.black rather than MAT.asphalt: asphalt's texture is sized for a
+   driveway and at 2.8 m across it reads as a bed of gravel indoors. */
+rugMat(hx(6.60), hz(12.30), FF, 2.80, 2.90, gFF, MAT.black);
+
+/* ---- treadmill, running east-west so it faces the mirror ---- */
+(function(){
+  var tx = hx(6.30), tz = hz(13.10), s;
+  fsolid(1.72, 0.14, 0.78, tx, FF+0.07, tz, MAT.black, gFF);
+  fbox(1.52, 0.03, 0.52, tx, FF+0.155, tz, MAT.asphalt, gFF);
+  for(s=-1;s<=1;s+=2){
+    fbox(1.52, 0.05, 0.12, tx, FF+0.165, tz+s*0.32, MAT.white, gFF);
+    addCyl(0.026,0.026,1.02, tx+0.72, FF+0.62, tz+s*0.30, MAT.steel, gFF, 8, {furn:true});
+    fbox(0.40, 0.05, 0.055, tx+0.53, FF+1.00, tz+s*0.30, MAT.steel, gFF);
+  }
+  /* console at the east end, so you run looking at the mirror */
+  fbox(0.10, 0.28, 0.64, tx+0.76, FF+1.20, tz, MAT.black, gFF);
+  fbox(0.02, 0.18, 0.44, tx+0.70, FF+1.22, tz, MAT.accent, gFF);
+})();
+
+/* ---- flat bench under a two-post rack, south end of the room ---- */
+(function(){
+  var bx = hx(6.10), bz = hz(11.30), i;
+  fsolid(0.32, 0.11, 1.22, bx, FF+0.455, bz, MAT.black, gFF);
+  fbox(0.14, 0.34, 0.86, bx, FF+0.23, bz, MAT.steel, gFF);
+  for(i=-1;i<=1;i+=2) fbox(0.44, 0.06, 0.10, bx, FF+0.03, bz+i*0.54, MAT.black, gFF);
+  for(i=-1;i<=1;i+=2){
+    addCyl(0.034,0.040,1.22, bx+i*0.46, FF+0.61, bz+0.42, MAT.steel, gFF, 8, {furn:true});
+    fbox(0.10,0.09,0.16, bx+i*0.46, FF+1.20, bz+0.36, MAT.black, gFF);
+  }
+  var bar = addCyl(0.017,0.017,1.62, bx, FF+1.24, bz+0.42, MAT.steel, gFF, 8, {furn:true});
+  bar.rotation.z = Math.PI/2;
+  [0.60, 0.68].forEach(function(o){
+    for(i=-1;i<=1;i+=2){
+      var pl = addCyl(0.21,0.21,0.045, bx+i*o, FF+1.24, bz+0.42, MAT.black, gFF, 14, {furn:true});
+      pl.rotation.z = Math.PI/2;
+    }
+  });
+})();
+
+/* ---- dumbbell rack against the west wall, north of bedroom 3's door ---- */
+(function(){
+  var dx = hx(5.35), dz = hz(12.80), i, s;
+  fsolid(0.34, 0.56, 0.92, dx, FF+0.28, dz, MAT.black, gFF);
+  fbox(0.40, 0.04, 0.98, dx, FF+0.58, dz, MAT.steel, gFF);
+  for(i=0;i<3;i++){
+    var pz = dz - 0.32 + i*0.32, r = 0.075 - i*0.008;
+    var hb = addCyl(0.022,0.022,0.30, dx, FF+0.66, pz, MAT.steel, gFF, 6, {furn:true});
+    hb.rotation.z = Math.PI/2;
+    for(s=-1;s<=1;s+=2){
+      var e = addCyl(r,r,0.08, dx+s*0.13, FF+0.66, pz, MAT.black, gFF, 10, {furn:true});
+      e.rotation.z = Math.PI/2;
+    }
+  }
+})();
+
+/* two medicine balls, which is the whole of the styling */
+addSphere(0.15, hx(7.85), FF+0.15, hz(11.05), MAT.black, gFF, {furn:true, seg:12});
+addSphere(0.12, hx(7.88), FF+0.12, hz(11.38), MAT.cushion, gFF, {furn:true, seg:12});
+
 [[6.0,11.0],[7.6,11.0],[6.0,13.2],[7.6,13.2]].forEach(function(p){ downlight(hx(p[0]),hz(p[1]),FF+CH,gFF); });
-pendant(hx(6.70), hz(12.20), FF+CH, gFF, 0.90);
+/* The pendant that used to hang over the coffee table has gone. A pendant on a
+   900 mm drop over a room where somebody is pressing a bar overhead is a
+   pendant somebody hits. Downlights only, and the room is a gym now. */
+/* a gym in Lagos without air conditioning is a room nobody trains in twice */
+ac(hx(8.18), hz(11.35), FF+2.55, 3, gFF);
 
 /* --- master bedroom  (u 8.3..13.55, v 0..5.25  =  5.06 x 5.06 m  =  25.6 m2) ---
    Square, and on the entrance side: the balcony doors at u 9.60-12.60 are its
@@ -495,7 +569,12 @@ CTAG = "garden";
     armchair(gx-1.25, gz+0.90, 0.10, 1, gGarden);
     armchair(gx+1.25, gz+0.90, 0.10, 3, gGarden);
     coffeeTable(gx, gz+0.40, 0.10, 1.0, 0.6, gGarden);
-    var pl = addCyl(0.15,0.08,0.18, gx, 3.02, gz, MAT.lamp, gGarden, 12); pl.castShadow = false;
+    /* hung from the underside of the rafters, not balanced on top of them.
+       The rafters sit at 2.86 and are 110 mm deep, so their soffit is 2.805;
+       a 300 mm drop puts the shade at about 2.40, which is clear of anybody
+       walking under it and still up in the structure where a pergola light
+       belongs. */
+    hangLight(gx, gz, 2.805, 0.30, gGarden);
   })();
 
   /* ---------- games tent ----------
@@ -577,7 +656,8 @@ CTAG = "garden";
     /* two chairs and a drinks table at the end of the tent */
     armchair(tx-2.05, tz+1.25, 0.08, 1, gGarden);
     armchair(tx+2.05, tz+1.25, 0.08, 3, gGarden);
-    var tl = addCyl(0.14,0.07,0.16, tx, ridge-0.16, tz, MAT.lamp, gGarden, 12); tl.castShadow = false;
+    /* hung off the ridge bar rather than hovering 35 mm under it */
+    hangLight(tx, tz, ridge - 0.045, 0.22, gGarden, 0.14);
   })();
 
   /* The outdoor kitchen has been taken out. It stood at x 0.30..4.90,
@@ -596,140 +676,19 @@ CTAG = "garden";
          (see below), and both stay where they are - the reasoning has changed
          but the answers have not. */
 
-  /* ---------- mini gym pavilion ----------
-     A 4.10 x 2.80 block building east of the games tent and west of the path,
-     clear of the hedge run at x = 3.40 and the flower bed at z = 13.30. It was
-     sized to the gap left between those and the outdoor kitchen, which is why
-     it is 4.10 wide and not 5. With the kitchen gone there is now room to grow
-     it south - but 4.10 x 2.80 is a working footprint, and taking more of the
-     lawn back for a room that already fits its equipment would be spending the
-     ground the kitchen just handed over.
+  /* The mini gym pavilion stood here - a 4.10 x 2.80 block building with
+     walls, a flat roof slab, its own foundation and a mirror, put up for a
+     treadmill and a bench. It has gone indoors, to what was the upstairs
+     sitting area, because it was an entire building envelope wrapped around
+     11.5 m2 the house already had spare, it needed its own split AC and the
+     generator load with it to be usable at all, and it was the fourth
+     structure in an 8.3 m deep garden strip.
 
-     Built as a real building rather than a tent: the pergola and the tent
-     already carry the light structures back here, and a third one would have
-     made the garden read as a campsite. Walls, a flat roof and white trim, in
-     the same plaster as the house.
-
-     The door is on the EAST elevation, onto the path. It was drawn on the
-     south first, which put it 750 mm from the back of the outdoor kitchen's
-     screen wall - a slot you could stand in but not walk through. That wall
-     has gone, so the south face is open ground again; the door stays east
-     anyway, because the path is the side you actually arrive from and a door
-     onto open lawn is a door with no route to it. */
-  (function(){
-    var AX0 = -1.10, AX1 = 3.00, AZ0 = 10.10, AZ1 = 12.90;
-    var FY = 0.12, H = 2.55, T = 0.15;
-    var cx = (AX0+AX1)/2, cz = (AZ0+AZ1)/2, W = AX1-AX0, D = AZ1-AZ0;
-
-    /* apron, wider on the east so the door has something to arrive at. One
-       120 mm step up off the lawn - under the 400 mm the walker can climb, so
-       you never have to look for a ramp. */
-    surf(AX0-0.35, AZ0-0.35, AX1+0.85, AZ1+0.35, MAT.paverWarm, FY, gGarden);
-    addFloor(AX0-0.35, AX1+0.85, AZ0-0.35, AZ1+0.35, FY);
-    /* a spur of slabs out to the main path, laid the same way it is */
-    for(var sx = 3.95; sx < 6.20; sx += 0.78){
-      surf(sx, 11.05, sx+0.56, 11.61, MAT.paverWarm, 0.035, gGarden);
-    }
-    /* the floor inside: boards, not the tile the house uses. A gym floor that
-       matches a bathroom floor looks like a bathroom. */
-    surf(AX0+0.08, AZ0+0.08, AX1-0.08, AZ1-0.08, MAT.parquet, FY+0.008, gGarden);
-
-    /* ---- shell ----
-       East is the entrance elevation: a 1.50 m doorway onto the path, with a
-       window beside it. South takes a high window - it used to look over the
-       outdoor kitchen's screen wall and now looks down the lawn, and the high
-       sill still earns its keep: it is the wall the dumbbell rack stands
-       against. West is a clerestory - that is the elevation the pergola looks
-       straight at,
-       and a full window would have been a window into someone's workout.
-       North is solid: it carries the mirror. */
-    wall(AX1, AZ0, AX1, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:1,
-      openings:[{a:10.60, b:12.10, sill:0, top:2.10},
-                {a:12.32, b:12.76, sill:0.95, top:2.10, glass:true}]});
-    wall(AX0, AZ0, AX1, AZ0, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:-1,
-      openings:[{a:0.30, b:2.30, sill:1.05, top:2.15, glass:true}]});
-    wall(AX0, AZ1, AX1, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:1});
-    wall(AX0, AZ0, AX0, AZ1, {h:H, t:T, y:FY, mat:MAT.wallExt, group:gGarden, trim:-1,
-      openings:[{a:11.05, b:12.25, sill:1.75, top:2.30, glass:true}]});
-
-    /* lining and an open leaf, so the doorway reads as a door from the path.
-       Hinge at the south jamb, leaf running along +z, which is what dx/dz = 0/1
-       means for a wall on this axis. */
-    doorLining(AX1, 11.35, 1.50, false, T, FY, gGarden);
-    doorLeaf(AX1, 10.60, 0, 1, 1.50, 1.15, 1, FY, gGarden);
-
-    /* ---- roof: a flat slab on a fascia band, the house's language at 1/8 the
-       span. No hip - a hipped roof on a 4 m building reads as a shed. */
-    addBox(W+0.50, 0.16, D+0.50, cx, FY+H+0.08, cz, MAT.roof, gGarden, {});
-    addBox(W+0.54, 0.22, 0.06, cx, FY+H-0.11, AZ0-0.27, MAT.fascia, gGarden, {});
-    addBox(W+0.54, 0.22, 0.06, cx, FY+H-0.11, AZ1+0.27, MAT.fascia, gGarden, {});
-    addBox(0.06, 0.22, D+0.54, AX0-0.27, FY+H-0.11, cz, MAT.fascia, gGarden, {});
-    addBox(0.06, 0.22, D+0.54, AX1+0.27, FY+H-0.11, cz, MAT.fascia, gGarden, {});
-    addBox(W-0.16, 0.04, D-0.16, cx, FY+H-0.02, cz, MAT.ceiling, gGarden, {cast:false});
-
-    /* the mirror, most of the north wall. MAT.steel rather than glass:
-       transmissive glass here would show you the flower bed behind the wall. */
-    addBox(W-0.80, 1.80, 0.02, cx, FY+1.24, AZ1-0.09, MAT.steel, gGarden, {cast:false});
-
-    downlight(0.10, 11.20, FY+H, gGarden);
-    downlight(1.85, 12.35, FY+H, gGarden);
-
-    /* ---- treadmill, west end, facing the mirror ---- */
-    (function(){
-      var tx = -0.35, tz = 11.95, s;
-      fsolid(0.78, 0.14, 1.72, tx, FY+0.07, tz, MAT.black, gGarden);
-      fbox(0.52, 0.03, 1.52, tx, FY+0.155, tz, MAT.asphalt, gGarden);
-      for(s=-1;s<=1;s+=2){
-        fbox(0.12, 0.05, 1.52, tx+s*0.32, FY+0.165, tz, MAT.white, gGarden);
-        addCyl(0.026,0.026,1.02, tx+s*0.30, FY+0.62, tz-0.72, MAT.steel, gGarden, 8, {furn:true});
-        fbox(0.055, 0.05, 0.40, tx+s*0.30, FY+1.00, tz-0.53, MAT.steel, gGarden);
-      }
-      fbox(0.64, 0.28, 0.10, tx, FY+1.20, tz-0.76, MAT.black, gGarden);
-      fbox(0.44, 0.18, 0.02, tx, FY+1.22, tz-0.70, MAT.accent, gGarden);
-    })();
-
-    /* ---- flat bench under a two-post rack ---- */
-    (function(){
-      var bx = 1.55, bz = 12.05, i;
-      fsolid(0.32, 0.11, 1.22, bx, FY+0.455, bz, MAT.black, gGarden);
-      fbox(0.14, 0.34, 0.86, bx, FY+0.23, bz, MAT.steel, gGarden);
-      for(i=-1;i<=1;i+=2) fbox(0.44, 0.06, 0.10, bx, FY+0.03, bz+i*0.54, MAT.black, gGarden);
-      /* the rack: two posts and a loaded bar, which is the whole silhouette */
-      for(i=-1;i<=1;i+=2){
-        addCyl(0.034,0.040,1.22, bx+i*0.46, FY+0.61, bz+0.42, MAT.steel, gGarden, 8, {furn:true});
-        fbox(0.10,0.09,0.16, bx+i*0.46, FY+1.20, bz+0.36, MAT.black, gGarden);
-      }
-      var bar = addCyl(0.017,0.017,1.62, bx, FY+1.24, bz+0.42, MAT.steel, gGarden, 8, {furn:true});
-      bar.rotation.z = Math.PI/2;
-      [0.60, 0.68].forEach(function(o){
-        for(i=-1;i<=1;i+=2){
-          var pl = addCyl(0.21,0.21,0.045, bx+i*o, FY+1.24, bz+0.42, MAT.black, gGarden, 14, {furn:true});
-          pl.rotation.z = Math.PI/2;
-        }
-      });
-    })();
-
-    /* ---- dumbbell rack along the south wall ---- */
-    (function(){
-      var dx = 0.35, dz = 10.42, i, s;
-      fsolid(0.92, 0.56, 0.34, dx, FY+0.28, dz, MAT.black, gGarden);
-      fbox(0.98, 0.04, 0.40, dx, FY+0.58, dz, MAT.steel, gGarden);
-      for(i=0;i<3;i++){
-        var px = dx - 0.32 + i*0.32, r = 0.075 - i*0.008;
-        var hb = addCyl(0.022,0.022,0.30, px, FY+0.66, dz, MAT.steel, gGarden, 6, {furn:true});
-        hb.rotation.x = Math.PI/2;
-        for(s=-1;s<=1;s+=2){
-          var e = addCyl(r,r,0.08, px, FY+0.66, dz+s*0.13, MAT.black, gGarden, 10, {furn:true});
-          e.rotation.x = Math.PI/2;
-        }
-      }
-    })();
-
-    /* ---- mat and two medicine balls, which is the whole of the styling ---- */
-    fbox(1.70, 0.02, 0.64, 1.55, FY+0.019, 10.72, MAT.cushion, gGarden, {cast:false});
-    addSphere(0.15, 2.55, FY+0.15, 12.45, MAT.black, gGarden, {furn:true, seg:12});
-    addSphere(0.12, 2.62, FY+0.12, 12.12, MAT.cushion, gGarden, {furn:true, seg:12});
-  })();
+     Its ground, and the outdoor kitchen's next to it, go back to lawn. A
+     playground was drawn on them and taken out again; nothing is built here
+     now, which leaves about 5.5 x 5.5 m of open grass between the pergola,
+     the path and the kitchen garden - the largest unbroken piece of the rear
+     garden, and the one place back here a child can actually run. */
 
   /* ---------- kitchen garden: raised beds along the rear ---------- */
   (function(){

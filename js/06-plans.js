@@ -346,11 +346,15 @@ var PLANNING = (function(){
 
   /* Roofed things standing outside the house outline still count against
      site coverage. The tent is canvas and arguably should not, but it was
-     already being counted and the gym pavilion is a block building with a
-     concrete roof, so it certainly does. */
+     already being counted, so it stays counted.
+
+     The gym pavilion is gone - it was a block building with a concrete roof
+     and it was the one out here that certainly did count, and taking it down
+     is worth about 11.5 m2 off the coverage figure. Nothing replaced it; that
+     ground is lawn. */
   var outA = 0;
   ZONES.forEach(function(z){
-    if(z.n === "Games tent" || z.n === "Mini gym") outA += (z.x1-z.x0)*(z.z1-z.z0);
+    if(z.n === "Games tent") outA += (z.x1-z.x0)*(z.z1-z.z0);
   });
   var tentA = outA;
   /* coverage is measured on the outline built over, so the first floor - not

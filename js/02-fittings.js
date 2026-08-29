@@ -815,6 +815,26 @@ function pendant(cx,cz,y,g,drop){
   var m=addCyl(0.20,0.09,0.22,cx,y-drop-0.11,cz,MAT.lamp,g,12,{furn:true});
   m.castShadow=false;
 }
+/* ---- outdoor hanging light ----
+   The garden fittings under the pergola and the tent were bare shades placed
+   at a height with nothing holding them up: the pergola's sat ABOVE its own
+   rafters, so it read as a lamp floating over the roof rather than hanging
+   under it. A light has to be attached to something. This takes the height of
+   the member it hangs FROM - the underside of a rafter, the underside of the
+   ridge bar - and drops a rod from it to the shade, which is the whole
+   difference between a fitting and a floating object.
+
+   Not furn:true, for the same reason extLight() is not: a light screwed to a
+   structure is not furniture, and the Empty toggle should not strip the
+   garden's lighting out along with the sofa cushions. */
+function hangLight(cx, cz, fromY, drop, g, rad){
+  rad = rad || 0.15;
+  var rod = addCyl(0.010, 0.010, drop, cx, fromY - drop/2, cz, MAT.black, g, 6);
+  rod.castShadow = false;
+  var m = addCyl(rad, rad*0.55, rad*1.15, cx, fromY - drop - rad*0.575, cz, MAT.lamp, g, 12);
+  m.castShadow = false;
+  return m;
+}
 /* ---- split-unit AC, high on a wall ----
    A 1.0 m indoor unit: the body, the return grille across the top face and the
    angled discharge louvre along the bottom edge. rq gives the wall it backs

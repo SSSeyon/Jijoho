@@ -192,17 +192,33 @@
     .cap-row{font-size:11px;padding:5px 6px}
     .cap-chip{font-size:11px;padding:5px 9px}
     .cap-secondary{width:94vw;max-width:420px;white-space:normal;flex-wrap:wrap;justify-content:center}
-    .cap-primary{max-width:94vw;overflow-x:auto}
+    /* both rows wrap rather than scroll: a row that runs off the right edge
+       hides Plans and Specs behind a gesture nobody knows is there */
+    .cap-primary{width:94vw;max-width:420px;white-space:normal;flex-wrap:wrap;justify-content:center;
+      border-radius:22px}
+    .cap-primary .cap-div{display:none}
     .cap-tod{gap:4px}
     #tod{width:44px}
     .cap-label{display:none}
     .doc{padding:16px 18px 60px}
     #infoPanel .doc-jump{padding:16px 18px 0}
-    #pad{grid-template-columns:repeat(3,38px);grid-template-rows:repeat(2,38px);gap:4px}
+    /* The capsule now runs the full width of the bottom of the screen, so the
+       navigation pad cannot stay in the bottom-right corner - the two were
+       drawn on top of each other. The directional pad goes entirely: on a
+       touch screen the joystick already drives movement and dragging already
+       turns you, so it was three ways to do one thing sitting on top of a
+       fourth. What is left - zoom, look up/down, run, reset - has no touch
+       gesture behind it, so it moves to the right edge at mid-height, clear
+       of both the capsule below and the thumb joystick on the left. */
+    #pad{display:none}
+    #nav{right:8px;bottom:auto;top:50%;transform:translateY(-50%)}
     .vcol{grid-template-rows:repeat(4,38px);gap:4px}
     .nb{width:38px;height:38px;font-size:15px;border-radius:9px}
     .nb.sm{font-size:9.5px}
-    #navLbl{bottom:178px}
+    /* the location readout moves out from under the capsule to just below the
+       wordmark, which is the other place nothing is competing for */
+    #foot{left:16px;bottom:auto;top:52px}
+    #navLbl{display:none}
     .ri-sheet,.ho-sheet{width:94vw;padding:22px 20px}
     .ri-grid{grid-template-columns:1fr}
   }

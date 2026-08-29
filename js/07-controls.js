@@ -186,8 +186,10 @@ if(typeof MODELS !== "undefined" && MODELS.whenReady){
 [ Z("Rear garden", 0.012, -9.2,6.7, 9.2,15.0),
   Z("Garden path", 0, 5.9,6.7, 8.1,15.0),
   Z("Kitchen garden", 0, -8.3,13.2, 3.2,15.0),
-  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8),
-  Z("Mini gym", 0.12, -1.1,10.1, 3.0,12.9)
+  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8)
+  /* The "Mini gym" zone went with the building when the gym moved indoors,
+     and nothing replaced it - that ground is open lawn now, so it falls
+     through to the general "Rear garden" rectangle above, which is correct. */
 ].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
 /* The Courtside / Sports court / Basketball key zones went with the court. */
 
@@ -1087,7 +1089,7 @@ var SPOTS = [
   ["Study / library",                 -2.88, FF,    -1.34, 1.44],
   ["Upstairs corridor",                0.72, FF,    -1.54, 0],
   ["Upstairs landing",                -0.38, FF,     1.46, 0],
-  ["Upstairs sitting area",           -0.18, FF,     3.16, Math.PI],
+  ["Upstairs gym",                    -0.18, FF,     3.16, Math.PI],
   ["Master bedroom",                   2.33, FF,    -2.64, -0.98],
   ["Walk-in closet",                   2.78, FF,    -1.64, Math.PI],
   ["Master bathroom",                  5.18, FF,    -1.64, 2.85],
@@ -1103,7 +1105,9 @@ var SPOTS = [
   ["Pergola",                         -3.68, 0.10,   9.24, 3.10,  "garden"],
   ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
   ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
-  ["Mini gym",                         0.95, 0.12,  10.75, Math.PI, "garden"],
+  /* The "Mini gym" viewpoint went with the pavilion. Nothing replaced it:
+     "Rear lawn (looking at the house)" above already stands on that ground
+     and a second viewpoint on open grass is a second name for one place. */
   /* the six court viewpoints went out with the court */
   /* No extra driveway spot: "Driveway & carport" at (-4.16, -10.40) already
      stands clear of all three bays, and the obvious alternative in front of
