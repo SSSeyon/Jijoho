@@ -324,6 +324,7 @@ function collides(x,z,y){
   for(var i=0;i<COLLIDERS.length;i++){
     var c=COLLIDERS[i];
     if(c.y1<=lo || c.y0>=hi) continue;
+    if(c.t === "fence" && !FENCE_ON) continue;   /* the wall is out - see gFence */
     var cx = Math.max(c.x0, Math.min(x, c.x1));
     var cz = Math.max(c.z0, Math.min(z, c.z1));
     var dx = x-cx, dz = z-cz;
@@ -1275,7 +1276,8 @@ function updateCars(dt){
     var target = v.out ? 1 : 0;
     if(v.t === target){ v.moving = false; continue; }
     /* a car will not drive through a shut gate; it waits for it */
-    if(GATE.t < 0.75){ v.moving = false; continue; }
+    /* with the boundary wall out there is no gate to wait for */
+    if(FENCE_ON && GATE.t < 0.75){ v.moving = false; continue; }
     v.moving = true;
     v.t += Math.sign(target - v.t) * Math.min(Math.abs(target - v.t), CAR_SPEED * dt);
     var r = carPath(v, v.t);
@@ -1573,6 +1575,18 @@ document.getElementById("btnGlass").onclick = function(){
   this.classList.toggle("on", on);
   setGlass(on);
 };
+/* Boundary wall in or out. With it out the Open gate chip has nothing to
+   open, so it goes with it; the vehicle chips stay, because the cars still
+   drive out to the street - they just do not stop at a gate on the way. */
+function setFence(on){
+  FENCE_ON = on;
+  gFence.visible = on;
+  document.getElementById("btnFence").classList.toggle("on", on);
+  var g = document.getElementById("btnGate");
+  if(g) g.style.display = on ? "" : "none";
+}
+document.getElementById("btnFence").onclick = function(){ setFence(!FENCE_ON); };
+setFence(FENCE_ON);
 wireTOD();
 
 /* ---------- capsule reveal ----------

@@ -69,22 +69,39 @@ surf(-1.20,4.26,5.60,6.66, MAT.paverWarm, 0.02);
 surf(-6.60,15.10,-3.20,16.50, MAT.paver, 0.02);
 surf(-0.60,15.10, 4.20,16.50, MAT.paver, 0.02);
 
-/* ---------- perimeter fence ---------- */
+/* ---------- perimeter fence ----------
+   Everything that belongs to the boundary wall - the runs, the stone piers,
+   both gates, the house-number plaque and the bulkheads on either face of it -
+   is built into gFence rather than straight into gSite, so the whole wall can
+   be taken out in one move and the house seen as a building on open ground.
+
+   It is a child group of gSite, so the static merge treats it as its own
+   domain and its visible flag still works afterwards (same arrangement as
+   gRoofSite). Its colliders are tagged "fence" through CTAG and collides()
+   skips them while the fence is out, so you do not walk into a wall that is
+   not drawn.
+
+   Out by default. The carport piers stay: they carry the canopy, and they are
+   the one part of the wall line that is structure rather than enclosure. */
+var gFence = new T.Group(); gSite.add(gFence);
+var FENCE_ON = false;
+gFence.visible = FENCE_ON;
+CTAG = "fence";
 var FH = 2.40, FT = 0.23;
 function fenceRun(x0,z0,x1,z1){
   var horiz = Math.abs(z1-z0)<1e-6;
   var len = horiz?Math.abs(x1-x0):Math.abs(z1-z0);
   if(len<0.05) return;
   var cx=(x0+x1)/2, cz=(z0+z1)/2;
-  addBox(horiz?len:FT, FH, horiz?FT:len, cx, FH/2, cz, MAT.fence, gSite, {solid:true});
-  addBox(horiz?len:FT+0.10, 0.16, horiz?FT+0.10:len, cx, FH+0.08, cz, MAT.accent, gSite, {});
+  addBox(horiz?len:FT, FH, horiz?FT:len, cx, FH/2, cz, MAT.fence, gFence, {solid:true});
+  addBox(horiz?len:FT+0.10, 0.16, horiz?FT+0.10:len, cx, FH+0.08, cz, MAT.accent, gFence, {});
   var n = Math.max(1, Math.round(len/3.2));
   for(var i=0;i<=n;i++){
     var f=i/n;
     var px = horiz? x0+(x1-x0)*f : cx;
     var pz = horiz? cz : z0+(z1-z0)*f;
-    addBox(0.36,FH+0.42,0.36, px, (FH+0.42)/2, pz, MAT.stone, gSite, {solid:true});
-    addBox(0.44,0.10,0.44, px, FH+0.47, pz, MAT.accent, gSite, {});
+    addBox(0.36,FH+0.42,0.36, px, (FH+0.42)/2, pz, MAT.stone, gFence, {solid:true});
+    addBox(0.44,0.10,0.44, px, FH+0.47, pz, MAT.accent, gFence, {});
   }
 }
 /* front wall with two gate openings */
@@ -97,11 +114,11 @@ fenceRun(X1, Z0, X1, Z1);
 
 /* gate pillars */
 function gatePillar(x,z,lamp){
-  addBox(0.55,3.10,0.55,x,1.55,z,MAT.stone,gSite,{solid:true});
-  addBox(0.68,0.14,0.68,x,3.17,z,MAT.accent,gSite,{});
+  addBox(0.55,3.10,0.55,x,1.55,z,MAT.stone,gFence,{solid:true});
+  addBox(0.68,0.14,0.68,x,3.17,z,MAT.accent,gFence,{});
   if(lamp){
-    addBox(0.26,0.42,0.26,x,3.45,z,MAT.lamp,gSite,{cast:false});
-    addBox(0.34,0.08,0.34,x,3.70,z,MAT.accent,gSite,{});
+    addBox(0.26,0.42,0.26,x,3.45,z,MAT.lamp,gFence,{cast:false});
+    addBox(0.34,0.08,0.34,x,3.70,z,MAT.accent,gFence,{});
   }
 }
 gatePillar(-8.85,Z0,true); gatePillar(-3.85,Z0,true);
@@ -122,7 +139,7 @@ var GATE = (function(){
     var g = new T.Group();
     g.userData.noMerge = true;
     g.position.set(hingeX, 0, Z0);
-    gSite.add(g);
+    gFence.add(g);
     /* built from the hinge outwards, so rotating the group swings it true */
     var m = dir * w/2;
     addBox(w, 0.16, 0.10, m, 2.32, 0, MAT.gate, g, {});
@@ -147,14 +164,15 @@ var GATE = (function(){
 (function(){
   var gx0=-1.15;
   var n=6;
-  for(var i=0;i<n;i++) addBox(0.07,2.05,0.07, gx0-0.10, 1.05, Z0-0.10-i*0.16, MAT.gate, gSite, {});
-  addBox(0.10,0.10,1.05, gx0-0.10, 2.12, Z0-0.55, MAT.gate, gSite, {});
+  for(var i=0;i<n;i++) addBox(0.07,2.05,0.07, gx0-0.10, 1.05, Z0-0.10-i*0.16, MAT.gate, gFence, {});
+  addBox(0.10,0.10,1.05, gx0-0.10, 2.12, Z0-0.55, MAT.gate, gFence, {});
 })();
 /* house number plaque */
-addBox(0.46,0.30,0.04, -1.30, 1.85, Z0-0.30, MAT.accent, gSite, {});
+addBox(0.46,0.30,0.04, -1.30, 1.85, Z0-0.30, MAT.accent, gFence, {});
 
 /* rear service gate in the boundary wall (utility yard) */
-addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gSite, {});
+addBox(1.10,2.05,0.08, 8.30, 1.02, Z1-0.02, MAT.gate, gFence, {});
+CTAG = null;          /* end of the boundary wall - see gFence above */
 
 /* ---------- carport ----------
    Now a cantilever off the boundary wall rather than a table on five legs.
@@ -851,17 +869,18 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
 (function(){
   var Y = 2.10;
   /* front wall, either side of the gate opening */
+  /* the boundary-wall runs, both faces, go with the wall into gFence */
   [-9.30, -2.35, 1.60, 5.20, 8.80].forEach(function(x){
-    extLight(x, Z0+0.13, Y, 2, gSite);
+    extLight(x, Z0+0.13, Y, 2, gFence);
   });
   /* the two side walls, facing in */
   [-11.60, -5.20, 1.20, 7.60, 13.90].forEach(function(z){
-    extLight(X0+0.13, z, Y, 1, gSite);
-    extLight(X1-0.13, z, Y, 3, gSite);
+    extLight(X0+0.13, z, Y, 1, gFence);
+    extLight(X1-0.13, z, Y, 3, gFence);
   });
   /* rear wall */
   [-6.40, -1.20, 4.60, 8.60].forEach(function(x){
-    extLight(x, Z1-0.13, Y, 0, gSite);
+    extLight(x, Z1-0.13, Y, 0, gFence);
   });
   /* the house's own flanks, lighting the side walks from the other side */
   [-4.20, 0.60, 5.40].forEach(function(z){
@@ -884,14 +903,14 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
      thirty bulkheads at 12 W is a further 360 W on the generator, all of it
      drawn through the hours the generator is least likely to be running. */
   [-9.30, -6.60, -3.90, -1.20, 1.60, 4.20, 6.80, 9.20].forEach(function(x){
-    extLight(x, Z0-0.13, Y, 0, gSite);
+    extLight(x, Z0-0.13, Y, 0, gFence);
   });
   [-11.60, -5.20, 1.20, 7.60, 13.90].forEach(function(z){
-    extLight(X0-0.13, z, Y, 3, gSite);
-    extLight(X1+0.13, z, Y, 1, gSite);
+    extLight(X0-0.13, z, Y, 3, gFence);
+    extLight(X1+0.13, z, Y, 1, gFence);
   });
   [-6.40, 1.20, 8.60].forEach(function(x){
-    extLight(x, Z1+0.13, Y, 2, gSite);
+    extLight(x, Z1+0.13, Y, 2, gFence);
   });
 })();
 
