@@ -1457,52 +1457,12 @@ function wall(x0,z0,x1,z1,o){
    them are built before the controls file is parsed. 06-controls.js still
    adds the garden and court zones to the end of this list. */
 function Z(name, y, x0,z0,x1,z1){ return {n:name, y:y, x0:Math.min(x0,x1), x1:Math.max(x0,x1), z0:Math.min(z0,z1), z1:Math.max(z0,z1)}; }
+/* Only the outdoor zones every design shares live here. Each design's file
+   puts its own rooms in FRONT of these with ZONES.unshift(), because zoneAt()
+   takes the first match and a room has to win over the ground it stands on. */
 var ZONES = [
-  /* ground floor */
-  Z("Living room", GF, hx(0),hz(0), hx(5.0),hz(7.0)),
-  Z("Dining room", GF, hx(0),hz(7.0), hx(5.0),hz(11.5)),
-  Z("Entrance foyer", GF, hx(5.0),hz(0), hx(8.55),hz(2.6)),
-  Z("Staircase", GF, hx(5.0),hz(2.6), hx(6.5),hz(7.36)),
-  Z("Stair hall", GF, hx(6.5),hz(2.6), hx(8.55),hz(7.36)),
-  Z("Rear lobby / breakfast", GF, hx(5.0),hz(7.36), hx(8.55),hz(11.5)),
-  Z("Guest bedroom", GF, hx(8.55),hz(0), hx(13.55),hz(4.6)),
-  Z("Guest cloakroom", GF, hx(8.55),hz(4.6), hx(10.4),hz(6.4)),
-  Z("Store", GF, hx(10.4),hz(4.6), hx(13.55),hz(6.4)),
-  Z("Kitchen", GF, hx(8.55),hz(6.4), hx(13.55),hz(10.2)),
-  Z("Pantry / laundry", GF, hx(8.55),hz(10.2), hx(13.55),hz(11.5)),
-  Z("Front porch", GF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
-  /* first floor */
-  /* The first floor was replanned when the master moved to the entrance side -
-     see the long note at the top of the wall block in 05-upper-floor.js. The
-     family room is the only L-shaped room in the house, so it takes two
-     entries; the more specific one has to come first for zoneAt() to find it,
-     and both carry the same name so the label reads as one room. */
-  Z("Family room", FF, hx(0),hz(2.6), hx(5.0),hz(4.0)),
-  Z("Family room", FF, hx(0),hz(0), hx(6.5),hz(2.6)),
-  Z("Study / library", FF, hx(0),hz(4.0), hx(5.0),hz(7.0)),
-  Z("Upstairs corridor", FF, hx(6.5),hz(0), hx(8.3),hz(7.36)),
-  Z("Upstairs landing", FF, hx(5.0),hz(7.36), hx(8.3),hz(10.2)),
-  Z("Upstairs gym", FF, hx(5.0),hz(10.2), hx(8.3),hz(13.9)),
-  Z("Bedroom 3 bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
-  Z("Bedroom 3 walk-in", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
-  Z("Bedroom 3", FF, hx(0),hz(10.2), hx(5.0),hz(13.9)),
-  Z("Master bedroom", FF, hx(8.3),hz(0), hx(13.55),hz(5.25)),
-  Z("Walk-in closet", FF, hx(8.3),hz(5.25), hx(10.8),hz(7.65)),
-  Z("Master bathroom", FF, hx(10.8),hz(5.25), hx(13.55),hz(7.65)),
-  Z("Bedroom 2 en-suite", FF, hx(8.3),hz(7.65), hx(10.8),hz(9.9)),
-  Z("Linen / plant store", FF, hx(10.8),hz(7.65), hx(13.55),hz(9.9)),
-  Z("Bedroom 2", FF, hx(8.3),hz(9.9), hx(13.55),hz(13.9)),
-  Z("Front balcony", FF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
-  /* games tent - in the garden, so it goes with the garden */
-  Z("Games tent", 0, -8.40, 11.10, -3.20, 14.70),
-  /* outdoors */
   Z("Driveway / carport", 0, -9.6,-16.7, -1.1,-11.2),
   Z("Front garden", 0, 0.2,-16.7, 9.7,-11.2),
-  /* The terrace and the lawn moved north with the house; the zone boxes did
-     not, so both still sat over ground that is now under the building. You
-     were standing on the terrace and being told you were in the rear lobby. */
-  Z("Rear terrace", 0, -1.3,4.3, 4.9,6.7),
-  Z("Rear lawn", 0, -9.7,6.7, 9.7,11.1),
   Z("Utility yard", 0, -9.7,15.0, 9.7,16.8),
   Z("West garden walk", 0, -9.7,-11.3, -6.8,7.8),
   Z("East service path", 0, 6.8,-11.3, 9.7,14.7)

@@ -177,21 +177,8 @@ if(typeof MODELS !== "undefined" && MODELS.whenReady){
   });
 }
 
-/* ZONES and Z() moved to 01-core.js - see the note there. */
-/* The rear of the plot reads differently depending on which option is up, so
-   the zones for each are tagged and filtered the same way the colliders are. */
-/* Listed broadest first: each unshift pushes in front of the last, so the
-   general "Rear garden" ends up behind the specific places inside it and the
-   more specific name wins. Same ordering trick as the court zones below. */
-[ Z("Rear garden", 0.012, -9.2,6.7, 9.2,15.0),
-  Z("Garden path", 0, 5.9,6.7, 8.1,15.0),
-  Z("Kitchen garden", 0, -8.3,13.2, 3.2,15.0),
-  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8)
-  /* The "Mini gym" zone went with the building when the gym moved indoors,
-     and nothing replaced it - that ground is open lawn now, so it falls
-     through to the general "Rear garden" rectangle above, which is correct. */
-].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
-/* The Courtside / Sports court / Basketball key zones went with the court. */
+/* ZONES and Z() live in 01-core.js; each design adds its own rooms and garden
+   places to them in its own file. */
 
 /* ---------- room labels ----------
    The room names were already in the model - zoneAt() has been reading them
@@ -1069,53 +1056,14 @@ function applyPost(q){
    looking at. They were all recomputed after the house moved 2.52 m north -
    the previous set was measured off the old position and half of them ended
    up standing inside a wall. */
+/* The viewpoints that belong to the plot rather than to a house; each design
+   adds its own rooms' viewpoints through DESIGN.spots. */
 var SPOTS = [
   ["Street view (outside the gate)",  -0.40, 0,    -22.00, Math.PI],
   ["At the gate",                     -1.05, 0,    -15.60, Math.PI],
   ["Driveway & carport",              -4.16, 0,    -10.40, Math.PI],
-  ["Front porch",                      0.62, GF,    -9.24, Math.PI],
-  ["Entrance foyer",                  -0.28, GF,    -5.74, Math.PI],
-  ["Living room",                     -4.57, GF,    -0.54, Math.PI],
-  ["Dining room",                     -2.28, GF,     2.56, Math.PI/2],
-  ["Kitchen",                          2.03, GF,     1.16, -Math.PI/2],
-  ["Guest bedroom",                    3.52, GF,    -4.14, -Math.PI/2],
-  ["Rear lobby / breakfast",           0.62, GF,     1.26, 0],
-  ["Foot of the stairs",               0.62, GF,    -3.84, Math.PI],
-  /* Every first-floor viewpoint below was re-set when the floor was replanned.
-     Each one stands in the corner furthest from the room's main piece of
-     furniture and looks diagonally at it, which is the view that shows a room
-     rather than a wall. */
-  ["Family room",                     -1.28, FF,    -6.04, 2.06],
-  ["Front balcony",                    1.12, FF,    -8.34, Math.PI],
-  ["Study / library",                 -2.88, FF,    -1.34, 1.44],
-  ["Upstairs corridor",                0.72, FF,    -1.54, 0],
-  ["Upstairs landing",                -0.38, FF,     1.46, 0],
-  ["Upstairs gym",                    -0.18, FF,     3.16, Math.PI],
-  ["Master bedroom",                   2.33, FF,    -2.64, -0.98],
-  ["Walk-in closet",                   2.78, FF,    -1.64, Math.PI],
-  ["Master bathroom",                  5.18, FF,    -1.64, 2.85],
-  ["Bedroom 2",                        2.43, FF,     3.36, -2.44],
-  ["Bedroom 3",                       -2.48, FF,     3.56, 2.32],
-  ["Bedroom 3 bathroom",              -5.78, FF,     1.16, Math.PI],
-  ["Bedroom 3 walk-in",               -2.87, FF,     0.86, 0],
-  ["Rear terrace (covered)",           3.16, 0,      5.56, 0],
-  ["Rear lawn (looking at the house)",-1.68, 0,      8.72, Math.PI],
-  /* garden viewpoints - only listed when the garden is up */
-  ["Games tent (at the table)",       -5.32, 0.08,  11.40, 0,     "garden"],
-  ["Games tent (from the lawn)",      -3.10, 0,     10.60, 2.40,  "garden"],
-  ["Pergola",                         -3.68, 0.10,   9.24, 3.10,  "garden"],
-  ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
-  ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"],
-  /* The "Mini gym" viewpoint went with the pavilion. Nothing replaced it:
-     "Rear lawn (looking at the house)" above already stands on that ground
-     and a second viewpoint on open grass is a second name for one place. */
-  /* the six court viewpoints went out with the court */
-  /* No extra driveway spot: "Driveway & carport" at (-4.16, -10.40) already
-     stands clear of all three bays, and the obvious alternative in front of
-     the cars is inside the F-150, whose tail sits at z = -10.36 now that it
-     is scaled to its real 5.89 m. */
   ["Utility yard / generator",        -2.30, 0,     15.70, -Math.PI/2]
-];
+].concat(DESIGN.spots || []);
 /* ---------- room index ("Walk me to...") ----------
    Ground and First come straight off ROOMS (js/06-plans.js) - the same net
    clear-area figures the 2D schedules print, so the numbers here cannot
@@ -1587,6 +1535,34 @@ function setFence(on){
 }
 document.getElementById("btnFence").onclick = function(){ setFence(!FENCE_ON); };
 setFence(FENCE_ON);
+
+/* ---------- design switcher ----------
+   Each design is a different building, built from scratch at load, so
+   switching reloads the page with the other one asked for. */
+(function(){
+  var chips = document.querySelectorAll(".design-chip");
+  for(var i=0;i<chips.length;i++){
+    chips[i].classList.toggle("on", chips[i].getAttribute("data-d") === DESIGN_ID);
+    chips[i].onclick = function(){
+      var d = this.getAttribute("data-d");
+      if(d === DESIGN_ID) return;
+      location.search = "?design=" + d;
+    };
+  }
+  var h = document.getElementById("hdrDesign");
+  if(h) h.textContent = DESIGN.name;
+  /* The specification document describes the original duplex in detail and
+     has not been rewritten for the new options yet. Say so at the top rather
+     than let it read as a description of the house on screen. */
+  var note = document.getElementById("designNote");
+  if(note && DESIGN_ID !== "ORIGINAL"){
+    note.style.display = "";
+    note.innerHTML = "<b>You are looking at option " + DESIGN.id + ", the " + DESIGN.name.toLowerCase() +
+      ".</b> This document was written for the original duplex and has not been rewritten yet, so its " +
+      "room sizes, layout notes and cost table describe that house. For this option's measured plans, " +
+      "room schedule, quantities and planning check, open Plans.";
+  }
+})();
 wireTOD();
 
 /* ---------- capsule reveal ----------
@@ -1631,4 +1607,4 @@ window.__J = { scene:scene, camera:camera, renderer:renderer, player:player, orb
   COLLIDERS:COLLIDERS, FLOORS:FLOORS,
   groups:{gSite:gSite,gGF:gGF,gFF:gFF,gRoof:gRoof,gGarden:gGarden},
   MAT:MAT, SPOTS:SPOTS,
-  hx:hx, hz:hz, EYE:EYE, MERGED:MERGED };
+  hx:hx, hz:hz, EYE:EYE, MERGED:MERGED, DESIGN:DESIGN };

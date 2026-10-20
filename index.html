@@ -20,7 +20,7 @@
 
 <div id="hdr">
   <div class="hdr-name">Jijoho Residence</div>
-  <div class="hdr-facts"><span>655 m&sup2;</span><span>Badagry axis</span></div>
+  <div class="hdr-facts"><span id="hdrDesign"></span><span>655 m&sup2;</span><span>Badagry axis</span></div>
 </div>
 
 <div id="cross"></div>
@@ -28,6 +28,10 @@
 <div id="capsule">
   <div class="cap-ghost" id="capGhost">Drag to look &middot; double-click the floor to walk there</div>
   <div class="cap-row cap-secondary" id="capSecondary">
+    <span class="cap-label">Design</span>
+    <button class="cap-chip design-chip" data-d="C">Courtyard</button>
+    <button class="cap-chip design-chip" data-d="G">Pavilions</button>
+    <span class="cap-div"></span>
     <button class="cap-chip" id="btnRoof">Roof off</button>
     <button class="cap-chip" id="btnFloor">Upper floor</button>
     <button class="cap-chip" id="btnFurn">Empty</button>
@@ -148,6 +152,7 @@
     <a href="#tab-areas">Areas</a><a href="#tab-materials">Materials</a><a href="#tab-cost">Cost</a><a href="#tab-site">Site</a>
   </div>
   <div class="doc">
+    <div class="note" id="designNote" style="display:none"></div>
     <h1>Jijoho Residence</h1>
     <div class="sub">
       Four-bedroom duplex with a landscaped rear garden and a games tent on the lawn.<br>
@@ -796,11 +801,26 @@
 <script src="js/vendor/three-post.js"></script>
 <script src="js/vendor/RGBELoader.js"></script>
 <script src="js/vendor/GLTFLoader.js"></script>
+<script>
+/* Which house to build. ?design=C (the default) or ?design=G; the original
+   duplex is kept, out of the switcher, at ?design=original. One design is
+   built per page load, so everything derived from the model - plans, door
+   leaves, schedules, checks, room labels - is that design's own. */
+var DESIGN_ID = (new URLSearchParams(location.search).get("design") || "C").toUpperCase();
+if(["C","G","ORIGINAL"].indexOf(DESIGN_ID) < 0) DESIGN_ID = "C";
+</script>
 <script src="js/01-core.js"></script>
 <script src="js/02-fittings.js"></script>
 <script src="js/03-site.js"></script>
-<script src="js/04-ground-floor.js"></script>
-<script src="js/05-upper-floor.js"></script>
+<script src="js/house-common.js"></script>
+<script>
+(function(){
+  var files = DESIGN_ID === "ORIGINAL" ? ["js/04-ground-floor.js", "js/05-upper-floor.js"]
+            : DESIGN_ID === "G"        ? ["js/house-g.js"]
+            :                            ["js/house-c.js"];
+  files.forEach(function(f){ document.write('<script src="' + f + '"><\/script>'); });
+})();
+</script>
 <script src="js/06-plans.js"></script>
 <script src="js/07-controls.js"></script>
 </body>

@@ -39,7 +39,7 @@ var LEAFOPEN  = 1.6581;
 /* rooms whose job is to be walked through. A door between one of these and a
    real room swings into the real room, which is the rule every plan follows
    and the reason you never open a bedroom door into a corridor. */
-var CIRC = /corridor|landing|foyer|hall|lobby|porch|balcony|stair/i;
+var CIRC = /corridor|landing|foyer|hall|lobby|porch|balcony|stair|entrance|zaure|gallery|verandah|breezeway/i;
 
 function planZoneAt(u, v, y){
   var x = hx(u), z = hz(v), best = null;
@@ -302,6 +302,39 @@ var ROOMS = (function(){
   }).sort(function(p,q){ return (p.y - q.y) || (p.v0 - q.v0) || (p.u0 - q.u0); });
 })();
 
+/* ---------- reading the design's own description ----------
+   Floor plates and roofed footprints come from DESIGN (see house-common.js)
+   as lists of u/v rectangles that may overlap, so areas are measured as the
+   union, on a 100 mm grid. */
+function rectsExtent(list){
+  var e = {u0:1e9, v0:1e9, u1:-1e9, v1:-1e9};
+  list.forEach(function(r){
+    e.u0 = Math.min(e.u0, r[0]); e.v0 = Math.min(e.v0, r[1]);
+    e.u1 = Math.max(e.u1, r[2]); e.v1 = Math.max(e.v1, r[3]);
+  });
+  return e;
+}
+function rectsArea(list){
+  if(!list || !list.length) return 0;
+  var e = rectsExtent(list), c = 0.1, n = 0;
+  for(var u = e.u0 + c/2; u < e.u1; u += c){
+    for(var v = e.v0 + c/2; v < e.v1; v += c){
+      for(var i = 0; i < list.length; i++){
+        var r = list[i];
+        if(u >= r[0] && u <= r[2] && v >= r[1] && v <= r[3]){ n++; break; }
+      }
+    }
+  }
+  return n * c * c;
+}
+
+/* the front-to-back middle of the house, which is what decides whether a
+   window on a cross wall faces the street or the garden */
+var VMID = (function(){
+  var e = rectsExtent(DESIGN.plates.gf.concat(DESIGN.plates.ff));
+  return (e.v0 + e.v1) / 2;
+})();
+
 /* ---------- quantities ---------- */
 var QUANT = (function(){
   var q = { extLen:0, intLen:0, extArea:0, intArea:0, openArea:0, glazedArea:0,
@@ -319,11 +352,10 @@ var QUANT = (function(){
     else if(o.kind === "screen"){ q.screens++; q.glazedArea += o.w*o.h; }
     else { q.doors++; q.leaves += o.leaves; }
   });
-  q.gfArea  = HW * HD;
-  q.ffArea  = HW * UV1;
-  q.balcony = 12.35 * Math.abs(UB);
-  q.porch   = 12.35 * 2.20;
-  q.roof    = HW * UV1;
+  q.gfArea  = rectsArea(DESIGN.plates.gf);
+  q.ffArea  = rectsArea(DESIGN.plates.ff);
+  q.roof    = rectsArea(DESIGN.cover);
+  q.extra   = DESIGN.extraQuant || [];
   return q;
 })();
 
@@ -338,11 +370,12 @@ var QUANT = (function(){
 var PLANNING = (function(){
   var reqFront = 6.0, reqRear = 3.0, reqSide = 3.0, maxCover = 60;
 
-  /* the deepest thing on each side, oversails included */
-  var front = (hz(UB)  - Z0);                 /* balcony/roof wing edge */
-  var rear  = (Z1 - hz(UV1));
-  var west  = (hx(0) - X0);
-  var east  = (X1 - hx(HW));
+  /* the deepest roofed thing on each side, oversails included */
+  var ext   = rectsExtent(DESIGN.cover);
+  var front = (hz(ext.v0) - Z0);
+  var rear  = (Z1 - hz(ext.v1));
+  var west  = (hx(ext.u0) - X0);
+  var east  = (X1 - hx(ext.u1));
 
   /* Roofed things standing outside the house outline still count against
      site coverage. The tent is canvas and arguably should not, but it was
@@ -360,7 +393,7 @@ var PLANNING = (function(){
   /* coverage is measured on the outline built over, so the first floor - not
      the smaller ground floor - is the number that counts, and the balcony
      counts with it because it is roofed */
-  var cover = HW * (UV1 + Math.abs(UB)) + tentA;
+  var cover = rectsArea(DESIGN.cover) + tentA;
   var plot  = PW * PD;
 
   function row(name, got, req, cmp){
@@ -369,10 +402,10 @@ var PLANNING = (function(){
              margin: cmp === "min" ? got - req : req - got };
   }
   return {
-    plot: plot, cover: cover, coverPct: cover/plot*100, tentA: tentA,
+    plot: plot, cover: cover, coverPct: cover/plot*100, tentA: tentA, ext: ext,
     rows: [
-      row("Front setback (to balcony edge)", front, reqFront, "min"),
-      row("Rear setback (to cantilever edge)", rear,  reqRear,  "min"),
+      row("Front setback", front, reqFront, "min"),
+      row("Rear setback", rear,  reqRear,  "min"),
       row("West side setback",  west, reqSide, "min"),
       row("East side setback",  east, reqSide, "min"),
       row("Plot coverage (%)", cover/plot*100, maxCover, "max")
@@ -640,20 +673,17 @@ var PLANSVG = (function(){
     var isFF = level > (GF+FF)/2;
     var body = "";
 
-    /* floor plate, so the rooms read as inside */
-    if(isFF){
-      body += rect(0, UB, HW, UV1, C.floor);
-      body += rect(0.6, UB, 12.95, 0, "#f4f1ea");
-    } else {
-      body += rect(0, 0, HW, HD, C.floor);
-      body += rect(0.6, -2.20, 12.95, 0, "#f4f1ea");
-    }
+    /* floor plates, so the rooms read as inside; roofed outdoor floors a
+       shade darker */
+    var lk = isFF ? "ff" : "gf";
+    (DESIGN.outdoor && DESIGN.outdoor[lk] || []).forEach(function(r){ body += rect(r[0], r[1], r[2], r[3], "#f4f1ea"); });
+    (DESIGN.plates[lk] || []).forEach(function(r){ body += rect(r[0], r[1], r[2], r[3], C.floor); });
 
-    /* the stairwell, drawn on both floors because it is on both floors */
-    if(isFF){
-      body += rect(SW0, SV0, SW1, 7.36, C.void_);
-      body += txt("VOID", (SW0+SW1)/2, 5.4, 0.22, C.dim);
-    }
+    /* voids - stairwells, double-height rooms */
+    (DESIGN.voids && DESIGN.voids[lk] || []).forEach(function(r){
+      body += rect(r[0], r[1], r[2], r[3], C.void_);
+      body += txt(r[4] || "VOID", (r[0]+r[2])/2, (r[1]+r[3])/2, 0.22, C.dim);
+    });
 
     /* walls */
     PLAN.walls.forEach(function(w){
@@ -667,18 +697,33 @@ var PLANSVG = (function(){
       body += openingSym(o);
     });
 
-    /* stair, from the same numbers that build it */
-    if(!isFF){
-      var i;
-      for(i = 1; i <= STEPS; i++){
-        body += line(SW0, SV0 + TREAD*i, SW1, SV0 + TREAD*i, C.thin, 0.016);
+    /* stairs, from the same numbers that build them */
+    if(!isFF) (DESIGN.stairs || []).forEach(function(st){
+      var i, um = (st.u0+st.u1)/2, label = "UP  " + st.risers + "R @ " + Math.round(st.rise*1000) + " / " + Math.round(st.tread*1000);
+      if(st.kind === "straight"){
+        var n = st.risers - 1;
+        for(i = 1; i <= n; i++) body += line(st.u0, st.v0 + st.tread*i, st.u1, st.v0 + st.tread*i, C.thin, 0.016);
+        body += line(st.u1-0.05, st.v0, st.u1-0.05, st.v1, C.line, 0.03);
+        body += line(um, st.v0+0.35, um, st.v1-0.35, C.txt, 0.025);
+        body += '<path d="M '+X(um)+' '+Y(st.v1-0.20)+' l -0.12 -0.28 l 0.24 0 Z" fill="'+C.txt+'"/>';
+        body += txt(label, um, st.v0 - 0.34, 0.20, C.dim);
+        return;
       }
-      body += line(SW1-0.05, SV0, SW1-0.05, SV0+TREAD*STEPS, C.line, 0.03);
-      body += line((SW0+SW1)/2, SV0+0.35, (SW0+SW1)/2, SV0+TREAD*STEPS-0.35, C.txt, 0.025);
-      body += '<path d="M '+X((SW0+SW1)/2)+' '+Y(SV0+TREAD*STEPS-0.20)+' l -0.12 -0.28 l 0.24 0 Z" fill="'+C.txt+'"/>';
-      body += txt("UP  " + RISERS + "R @ " + Math.round(RISE*1000) + " / " +
-                  Math.round(TREAD*1000), (SW0+SW1)/2, SV0 - 0.34, 0.20, C.dim);
-    }
+      /* dog-leg: flight A up the west half away from the start, a half
+         landing, flight B back up the east half */
+      var dir = st.start === "v0" ? 1 : -1, s0 = st.start === "v0" ? st.v0 : st.v1, land = s0 + dir*st.tread*8;
+      for(i = 1; i <= 8; i++){
+        body += line(st.u0, s0 + dir*st.tread*i, um, s0 + dir*st.tread*i, C.thin, 0.016);
+        body += line(um, s0 + dir*st.tread*(i-1), st.u1, s0 + dir*st.tread*(i-1), C.thin, 0.016);
+      }
+      body += line(st.u0, land, st.u1, land, C.line, 0.025);
+      body += line(um, st.v0, um, st.v1 - (dir > 0 ? (st.v1 - land) : 0) + (dir < 0 ? (land - st.v0) : 0), C.line, 0.04);
+      var ua = (st.u0 + um)/2, ub = (um + st.u1)/2;
+      body += line(ua, s0 + dir*0.25, ua, land - dir*0.2, C.txt, 0.025);
+      body += line(ub, land - dir*0.2, ub, s0 + dir*0.35, C.txt, 0.025);
+      body += '<path d="M '+X(ub)+' '+Y(s0 + dir*0.15)+' l -0.12 '+(dir>0?'-':'')+'0.28 l 0.24 0 Z" fill="'+C.txt+'"/>';
+      body += txt(label, um, s0 - dir*0.34 - (dir<0?0.1:0), 0.20, C.dim);
+    });
 
     /* furniture */
     PLAN.furn.forEach(function(f){
@@ -705,12 +750,13 @@ var PLANSVG = (function(){
     OPENINGS.forEach(function(o){
       if(Math.abs(o.y - level) > 0.05) return;
       var mu = o.u + (o.horiz ? 0 : (o.ext ? (o.u < HW/2 ? -0.40 : 0.40) : 0.30));
-      var mv = o.v + (o.horiz ? (o.ext ? (o.v < 5 ? -0.40 : 0.40) : 0.30) : 0);
+      var mv = o.v + (o.horiz ? (o.ext ? (o.v < VMID ? -0.40 : 0.40) : 0.30) : 0);
       body += txt(o.mark, mu, mv - 0.06, 0.17, C.dim);
     });
 
     /* dimension strings: the wall grid on each axis, then the overall */
-    var vTop = isFF ? UV1 : HD, vBot = isFF ? UB : -2.20;
+    var lvlExt = rectsExtent((DESIGN.plates[lk] || []).concat(DESIGN.outdoor && DESIGN.outdoor[lk] || []));
+    var vTop = lvlExt.v1, vBot = lvlExt.v0;
     var us = axisVals(level, true), vs = axisVals(level, false);
     if(us.indexOf(0) < 0) us.unshift(0);
     body += dimString(us, vBot - 0.85, true, 0.20, -1);
@@ -756,11 +802,13 @@ var PLANSVG = (function(){
       body += txt(z.n, (u0+u1)/2, (v0+v1)/2, 0.23, C.dim);
     });
 
-    /* the building: ground floor solid, the oversailing first floor dashed */
-    body += rect(0, 0, HW, HD, "#c9c4bb", C.poche, 0.10);
-    body += rect(0, UB, HW, UV1, "none", C.txt, 0.05, ' stroke-dasharray="0.6 0.35"');
-    body += txt("DUPLEX", HW/2, HD/2 + 0.5, 0.40, C.txt);
-    body += txt("ground floor 155.8 m²  ·  first floor over", HW/2, HD/2 - 0.5, 0.21, C.dim);
+    /* the building: ground floor solid, the first floor dashed over it */
+    var E = PLANNING.ext, mu = (E.u0+E.u1)/2, mv = (E.v0+E.v1)/2;
+    (DESIGN.outdoor && DESIGN.outdoor.gf || []).forEach(function(r){ body += rect(r[0], r[1], r[2], r[3], "#dcd8d0", C.line, 0.04); });
+    DESIGN.plates.gf.forEach(function(r){ body += rect(r[0], r[1], r[2], r[3], "#c9c4bb", C.poche, 0.08); });
+    DESIGN.plates.ff.forEach(function(r){ body += rect(r[0], r[1], r[2], r[3], "none", C.txt, 0.05, ' stroke-dasharray="0.6 0.35"'); });
+    body += txt(DESIGN.siteLabel || DESIGN.name.toUpperCase(), mu, mv + 0.5, 0.40, C.txt);
+    body += txt("ground floor " + QUANT.gfArea.toFixed(1) + " m²  ·  first floor " + QUANT.ffArea.toFixed(1) + " m²", mu, mv - 0.5, 0.21, C.dim);
 
     /* setback dimensions, measured not asserted */
     function sbDim(u0,v0,u1,v1,lbl,ok){
@@ -771,14 +819,10 @@ var PLANSVG = (function(){
       return s;
     }
     var R = {}; PLANNING.rows.forEach(function(r){ R[r.n] = r; });
-    body += sbDim(HW/2, pv0, HW/2, UB, R["Front setback (to balcony edge)"].got.toFixed(2)+" m",
-                  R["Front setback (to balcony edge)"].ok);
-    body += sbDim(HW/2, UV1, HW/2, pv1, R["Rear setback (to cantilever edge)"].got.toFixed(2)+" m",
-                  R["Rear setback (to cantilever edge)"].ok);
-    body += sbDim(pu0, HD/2, 0, HD/2, R["West side setback"].got.toFixed(2)+" m",
-                  R["West side setback"].ok);
-    body += sbDim(HW, HD/2, pu1, HD/2, R["East side setback"].got.toFixed(2)+" m",
-                  R["East side setback"].ok);
+    body += sbDim(mu, pv0, mu, E.v0, R["Front setback"].got.toFixed(2)+" m", R["Front setback"].ok);
+    body += sbDim(mu, E.v1, mu, pv1, R["Rear setback"].got.toFixed(2)+" m", R["Rear setback"].ok);
+    body += sbDim(pu0, mv, E.u0, mv, R["West side setback"].got.toFixed(2)+" m", R["West side setback"].ok);
+    body += sbDim(E.u1, mv, pu1, mv, R["East side setback"].got.toFixed(2)+" m", R["East side setback"].ok);
 
     /* plot dimensions */
     body += dimString([pu0, pu1], pv0 - 1.5, true, 0.26, -1);
@@ -916,7 +960,7 @@ var PLANSVG = (function(){
     s += '<h2>Window schedule</h2>';
     s += tbl(["Mark","Size (mm)","Sill (mm)","Elevation","Area (m²)"],
       OPENINGS.filter(function(o){ return o.kind === "window"; }).map(function(o){
-        var face = o.horiz ? (o.v < 5 ? "South" : "North") : (o.u < HW/2 ? "West" : "East");
+        var face = o.horiz ? (o.v < VMID ? "South" : "North") : (o.u < HW/2 ? "West" : "East");
         return [o.mark, Math.round(o.w*1000)+" × "+Math.round(o.h*1000),
                 Math.round(o.sill*1000), face, (o.w*o.h).toFixed(2)];
       }));
@@ -938,8 +982,7 @@ var PLANSVG = (function(){
       kv("Ground floor slab", QUANT.gfArea.toFixed(1)+" m²") +
       kv("First floor slab", QUANT.ffArea.toFixed(1)+" m²") +
       kv("Roof slab", QUANT.roof.toFixed(1)+" m²") +
-      kv("Balcony", QUANT.balcony.toFixed(1)+" m²") +
-      kv("Porch", QUANT.porch.toFixed(1)+" m²") +
+      QUANT.extra.map(function(x){ return kv(x[0], x[1].toFixed(1)+" m²"); }).join("") +
       '</div>';
 
     var glazedRatio = QUANT.glazedArea / (QUANT.gfArea + QUANT.ffArea) * 100;
@@ -954,9 +997,9 @@ var PLANSVG = (function(){
 
     s += '<div class="note"><b>What these drawings are not.</b> There is no structure and '+
          'no services here: no foundations, no column or beam sizes, no reinforcement, no '+
-         'electrical or plumbing layout. The 2.20 m roof cantilever over the balcony in '+
-         'particular is a real piece of engineering and its depth is a calculation, not a '+
-         'drawing decision. This is a design record accurate enough to brief a registered '+
+         'electrical or plumbing layout. Every roof span, beam depth and column size is a '+
+         'calculation for a structural engineer, not a drawing decision. This is a design '+
+         'record accurate enough to brief a registered '+
          'architect and a structural engineer with. It is not an approval set and nobody '+
          'should build from it.</div>';
 

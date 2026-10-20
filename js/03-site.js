@@ -57,9 +57,10 @@ for(var sz=-7.00; sz<=5.60; sz+=0.78){
   addBox(0.55,0.07,0.55, -7.90, 0.015, sz, MAT.paverWarm, gSite, {cast:false});
 }
 
-/* rear terrace - now entirely under the upper floor cantilever, so it is a
-   covered outdoor room rather than an exposed apron  (17 sqm) */
-surf(-1.20,4.26,5.60,6.66, MAT.paverWarm, 0.02);
+/* The rear terrace that sat under the old duplex's cantilever moved into
+   04-ground-floor.js with the house it belonged to. This file builds only what
+   every design shares: the plot, the street, the carport, the planting at the
+   edges, the utility yard and the boundary wall. */
 
 
 /* utility yard - a 1.4 m service strip hard against the rear wall.
@@ -798,15 +799,8 @@ palm(-8.85,12.40,5.8);
 
 shrub(7.30,2.40); shrub(7.30,5.60); shrub(-8.60,9.40);
 
-/* Rear terrace furniture. It moved north with the house and with the terrace
-   itself, which now sits at z 4.26..6.66 - entirely under the upper floor's
-   rear cantilever. The parasol that used to stand here has gone: there is a
-   2.40 m concrete soffit over this ground now, and a parasol under a roof is
-   just a thing to walk into. */
-diningSet(0.90,5.45,0.02,6,0,gSite);
-/* barbecue against the house wall, clear of the rear door */
-addBox(1.20,0.90,0.60,4.80,0.45,4.78,MAT.counter,gSite,{solid:true});
-addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
+/* (the old duplex's rear-terrace dining set and barbecue moved to
+   04-ground-floor.js) */
 
 
 /* ---------- utility yard along the rear wall ---------- */
@@ -882,14 +876,9 @@ addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
   [-6.40, -1.20, 4.60, 8.60].forEach(function(x){
     extLight(x, Z1-0.13, Y, 0, gFence);
   });
-  /* the house's own flanks, lighting the side walks from the other side */
-  [-4.20, 0.60, 5.40].forEach(function(z){
-    extLight(hx(0)-0.14, z, Y+0.20, 3, gSite);
-    extLight(hx(HW)+0.14, z, Y+0.20, 1, gSite);
-  });
-  /* over the two exterior doors */
-  extLight(4.80, hz(HD)+0.16, Y+0.35, 2, gSite);
-  /* and one on each carport pier, aimed down the driveway */
+  /* The lights on the house's own walls are built with the house, in each
+     design's file - they depend on where that design has walls. */
+  /* one on each carport pier, aimed down the driveway */
   [-9.20, -1.35].forEach(function(x){ extLight(x, -16.20, Y, 2, gSite); });
 
   /* ---- the OUTSIDE face of the boundary wall ----

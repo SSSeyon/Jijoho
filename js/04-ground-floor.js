@@ -4,9 +4,60 @@
    local u = 0..13.55 (across, west->east)
    local v = 0..11.50 (front/road -> rear)
    ============================================================ */
-function opH(u0,u1,sill,top,gl){ return {a:hx(u0), b:hx(u1), sill:sill, top:top, glass:gl}; }
-function opV(v0,v1,sill,top,gl){ return {a:hz(v0), b:hz(v1), sill:sill, top:top, glass:gl}; }
-var EXT = {t:0.23, mat:MAT.wallExt}, INT = {t:0.15, mat:MAT.wallInt};
+/* This is the ORIGINAL duplex, kept for reference and loaded only at
+   ?design=original. opH/opV/EXT/INT moved to house-common.js, which every
+   design loads first. */
+
+/* the original's rooms, in front of the shared outdoor zones */
+ZONES.unshift.apply(ZONES, [
+  /* ground floor */
+  Z("Living room", GF, hx(0),hz(0), hx(5.0),hz(7.0)),
+  Z("Dining room", GF, hx(0),hz(7.0), hx(5.0),hz(11.5)),
+  Z("Entrance foyer", GF, hx(5.0),hz(0), hx(8.55),hz(2.6)),
+  Z("Staircase", GF, hx(5.0),hz(2.6), hx(6.5),hz(7.36)),
+  Z("Stair hall", GF, hx(6.5),hz(2.6), hx(8.55),hz(7.36)),
+  Z("Rear lobby / breakfast", GF, hx(5.0),hz(7.36), hx(8.55),hz(11.5)),
+  Z("Guest bedroom", GF, hx(8.55),hz(0), hx(13.55),hz(4.6)),
+  Z("Guest cloakroom", GF, hx(8.55),hz(4.6), hx(10.4),hz(6.4)),
+  Z("Store", GF, hx(10.4),hz(4.6), hx(13.55),hz(6.4)),
+  Z("Kitchen", GF, hx(8.55),hz(6.4), hx(13.55),hz(10.2)),
+  Z("Pantry / laundry", GF, hx(8.55),hz(10.2), hx(13.55),hz(11.5)),
+  Z("Front porch", GF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
+  /* first floor - the family room is L-shaped, so it takes two entries,
+     the more specific first */
+  Z("Family room", FF, hx(0),hz(2.6), hx(5.0),hz(4.0)),
+  Z("Family room", FF, hx(0),hz(0), hx(6.5),hz(2.6)),
+  Z("Study / library", FF, hx(0),hz(4.0), hx(5.0),hz(7.0)),
+  Z("Upstairs corridor", FF, hx(6.5),hz(0), hx(8.3),hz(7.36)),
+  Z("Upstairs landing", FF, hx(5.0),hz(7.36), hx(8.3),hz(10.2)),
+  Z("Upstairs gym", FF, hx(5.0),hz(10.2), hx(8.3),hz(13.9)),
+  Z("Bedroom 3 bathroom", FF, hx(0),hz(7.0), hx(2.8),hz(10.2)),
+  Z("Bedroom 3 walk-in", FF, hx(2.8),hz(7.0), hx(5.0),hz(10.2)),
+  Z("Bedroom 3", FF, hx(0),hz(10.2), hx(5.0),hz(13.9)),
+  Z("Master bedroom", FF, hx(8.3),hz(0), hx(13.55),hz(5.25)),
+  Z("Walk-in closet", FF, hx(8.3),hz(5.25), hx(10.8),hz(7.65)),
+  Z("Master bathroom", FF, hx(10.8),hz(5.25), hx(13.55),hz(7.65)),
+  Z("Bedroom 2 en-suite", FF, hx(8.3),hz(7.65), hx(10.8),hz(9.9)),
+  Z("Linen / plant store", FF, hx(10.8),hz(7.65), hx(13.55),hz(9.9)),
+  Z("Bedroom 2", FF, hx(8.3),hz(9.9), hx(13.55),hz(13.9)),
+  Z("Front balcony", FF, hx(0.6),hz(-2.2), hx(12.95),hz(0)),
+  Z("Games tent", 0, -8.40, 11.10, -3.20, 14.70),
+  Z("Rear terrace", 0, -1.3,4.3, 4.9,6.7),
+  Z("Rear lawn", 0, -9.7,6.7, 9.7,11.1)
+]);
+
+/* rear terrace, under the first floor's rear cantilever (moved here from
+   03-site.js, because it only makes sense under this house) */
+surf(-1.20,4.26,5.60,6.66, MAT.paverWarm, 0.02);
+diningSet(0.90,5.45,0.02,6,0,gSite);
+addBox(1.20,0.90,0.60,4.80,0.45,4.78,MAT.counter,gSite,{solid:true});
+addBox(1.26,0.06,0.66,4.80,0.93,4.78,MAT.steel,gSite,{});
+/* the house's own flank lights and the light over the rear door */
+[-4.20, 0.60, 5.40].forEach(function(z){
+  extLight(hx(0)-0.14, z, 2.30, 3, gSite);
+  extLight(hx(HW)+0.14, z, 2.30, 1, gSite);
+});
+extLight(4.80, hz(HD)+0.16, 2.45, 2, gSite);
 
 /* ---------- plinth + ground slab ---------- */
 addBox(HW+0.36, GF, HD+0.36, hx(HW/2), GF/2, hz(HD/2), MAT.stone, gGF, {});

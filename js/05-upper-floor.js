@@ -761,3 +761,58 @@ CTAG = null;
     addBox(1.72, 0.05, 1.02, hx(1.90 + i*1.82), py, hz(HD/2), pv, gSolar, {});
   }
 })();
+
+/* ---------- the original garden's places (moved here from 07-controls.js) ----------
+   Listed broadest first: each unshift pushes in front of the last, so the
+   general "Rear garden" ends up behind the specific places inside it. */
+[ Z("Rear garden", 0.012, -9.2,6.7, 9.2,15.0),
+  Z("Garden path", 0, 5.9,6.7, 8.1,15.0),
+  Z("Kitchen garden", 0, -8.3,13.2, 3.2,15.0),
+  Z("Pergola", 0.10, -7.7,7.5, -2.7,11.8)
+].forEach(function(Zi){ Zi.t = "garden"; ZONES.unshift(Zi); });
+
+/* ---------- what the shared code needs to know about this house ----------
+   See house-common.js. Everything here is in the house's u/v frame. */
+var DESIGN = {
+  id: "ORIGINAL", name: "Original duplex", siteLabel: "DUPLEX",
+  plates: {
+    gf: [[0,0,HW,HD]],
+    ff: [[0,0,5,UV1],[5,0,6.5,2.6],[5,7.36,6.5,UV1],[6.5,0,HW,UV1]]
+  },
+  outdoor: { gf: [[0.6,-2.2,12.95,0]], ff: [[0.6,UB,12.95,0]] },
+  voids:   { ff: [[SW0,SV0,SW1,7.36,"VOID"]] },
+  stairs:  [{kind:"straight", u0:SW0, v0:SV0, u1:SW1, v1:SV0+TREAD*STEPS,
+             risers:RISERS, rise:RISE, tread:TREAD}],
+  cover:   [[0,UB,HW,UV1]],
+  extraQuant: [["Balcony", 12.35*Math.abs(UB)], ["Porch", 12.35*2.20]],
+  spots: [
+    ["Front porch",                      0.62, GF,    -9.24, Math.PI],
+    ["Entrance foyer",                  -0.28, GF,    -5.74, Math.PI],
+    ["Living room",                     -4.57, GF,    -0.54, Math.PI],
+    ["Dining room",                     -2.28, GF,     2.56, Math.PI/2],
+    ["Kitchen",                          2.03, GF,     1.16, -Math.PI/2],
+    ["Guest bedroom",                    3.52, GF,    -4.14, -Math.PI/2],
+    ["Rear lobby / breakfast",           0.62, GF,     1.26, 0],
+    ["Foot of the stairs",               0.62, GF,    -3.84, Math.PI],
+    ["Family room",                     -1.28, FF,    -6.04, 2.06],
+    ["Front balcony",                    1.12, FF,    -8.34, Math.PI],
+    ["Study / library",                 -2.88, FF,    -1.34, 1.44],
+    ["Upstairs corridor",                0.72, FF,    -1.54, 0],
+    ["Upstairs landing",                -0.38, FF,     1.46, 0],
+    ["Upstairs gym",                    -0.18, FF,     3.16, Math.PI],
+    ["Master bedroom",                   2.33, FF,    -2.64, -0.98],
+    ["Walk-in closet",                   2.78, FF,    -1.64, Math.PI],
+    ["Master bathroom",                  5.18, FF,    -1.64, 2.85],
+    ["Bedroom 2",                        2.43, FF,     3.36, -2.44],
+    ["Bedroom 3",                       -2.48, FF,     3.56, 2.32],
+    ["Bedroom 3 bathroom",              -5.78, FF,     1.16, Math.PI],
+    ["Bedroom 3 walk-in",               -2.87, FF,     0.86, 0],
+    ["Rear terrace (covered)",           3.16, 0,      5.56, 0],
+    ["Rear lawn (looking at the house)",-1.68, 0,      8.72, Math.PI],
+    ["Games tent (at the table)",       -5.32, 0.08,  11.40, 0,     "garden"],
+    ["Games tent (from the lawn)",      -3.10, 0,     10.60, 2.40,  "garden"],
+    ["Pergola",                         -3.68, 0.10,   9.24, 3.10,  "garden"],
+    ["Kitchen garden (raised beds)",    -2.14, 0,     12.52, 2.95,  "garden"],
+    ["Garden path (looking back)",       7.00, 0,     10.40, 2.95,  "garden"]
+  ]
+};
